@@ -34,16 +34,17 @@ $env:PVZ_GODOT  = "D:\apps\Godot\Godot_v4.7.2-stable_win64.exe"
 pwsh -File scripts\check_all.ps1
 ```
 
-四道关卡，任何一道失败即 exit 1：
+五道关卡，任何一道失败即 exit 1（全绿约 20s）：
 
 | 关卡 | 命令 | 守什么 |
 |---|---|---|
 | 1. Python 单测（50 个） | `python -m unittest tests...` | 伤害管线、引擎确定性、场景、回放、黄金文件同步 |
 | 2. 精灵表体检 | `python scripts/check_sprites.py` | 表结构、角色宽高比离群、源帧多角色拼图 |
-| 3. 一致性门禁 | `scripts\run_conformance.ps1` | GDScript 的 `resolve_hit` 与 Python 逐字段一致 |
-| 4. pygame 冒烟 | `python -m tdgame.app_pygame --smoke` | 渲染壳仍能起 |
+| 3. 校准基线 | `python scripts/check_calibration.py` | 20 局/场景固定 seed 的胜负/节奏/经济与基线**逐字段一致** |
+| 4. 一致性门禁 | `scripts\run_conformance.ps1` | GDScript 的 `resolve_hit` 与 Python 逐字段一致 |
+| 5. pygame 冒烟 | `python -m tdgame.app_pygame --smoke` | 渲染壳仍能起 |
 
-没有 Godot 时可以 `-SkipGodot` 跳过第 3 关。
+没有 Godot 时可以 `-SkipGodot` 跳过第 4 关。
 
 ---
 
@@ -57,7 +58,23 @@ pwsh -File scripts\check_all.ps1
 python scripts/gen_golden_hits.py
 ```
 
-然后重跑总检——第 3 关会告诉你 GDScript 侧要不要跟着改。
+然后重跑总检——第 4 关会告诉你 GDScript 侧要不要跟着改。
+
+### 改了引擎数值 / 节奏 / AI（`config.py`、`board.py`、`bot.py`、`wavegen.py`）
+
+第 3 关会红，因为它拿 20 局固定 seed 的结果和 `reports/calibration_baseline.json`
+**逐字段精确比对**（引擎确定性，同 seed 结果完全一致，所以不需要容差）。
+
+确认改动符合预期后，显式重新基线化：
+
+```powershell
+python scripts/check_calibration.py --update
+git add reports/calibration_baseline.json
+```
+
+> 这个闸门是为了防"改了 bot 逻辑、胜率悄悄从 0.90 掉到 0.65 却没人发现"。
+> 变异测试验证过：把 `config.py` 的 `SKY_SUN_VALUE` 从 25 改成 30，会报 14 处偏差、
+> exit 1（m1 胜率 0.90→0.95、endless 平均时长 263s→306s）。
 
 ### 改了 `godot/scripts/BalanceHit.gd`
 

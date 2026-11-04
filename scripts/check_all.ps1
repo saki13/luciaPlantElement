@@ -37,27 +37,32 @@ if ($env:PVZ_PYTHON) {
 Push-Location $root
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
-Write-Host "== 1/4 python unit tests =="
+Write-Host "== 1/5 python unit tests =="
 & $py -m unittest tests.test_balance tests.test_engine tests.test_scenarios `
     tests.test_replay tests.test_golden_sync 2>&1 | ForEach-Object { "$_" } | Write-Host
 if ($LASTEXITCODE -ne 0) { $failed += "unit tests" }
 
 Write-Host ""
-Write-Host "== 2/4 sprite health check =="
+Write-Host "== 2/5 sprite health check =="
 & $py scripts\check_sprites.py 2>&1 | ForEach-Object { "$_" } | Write-Host
 if ($LASTEXITCODE -ne 0) { $failed += "sprite health" }
 
 Write-Host ""
+Write-Host "== 3/5 calibration baseline =="
+& $py scripts\check_calibration.py 2>&1 | ForEach-Object { "$_" } | Write-Host
+if ($LASTEXITCODE -ne 0) { $failed += "calibration baseline" }
+
+Write-Host ""
 if ($SkipGodot) {
-    Write-Host "== 3/4 conformance gate == SKIPPED (-SkipGodot)"
+    Write-Host "== 4/5 conformance gate == SKIPPED (-SkipGodot)"
 } else {
-    Write-Host "== 3/4 resolve_hit conformance gate =="
+    Write-Host "== 4/5 resolve_hit conformance gate =="
     & (Join-Path $PSScriptRoot "run_conformance.ps1") 2>&1 | ForEach-Object { "$_" } | Write-Host
     if ($LASTEXITCODE -ne 0) { $failed += "conformance gate" }
 }
 
 Write-Host ""
-Write-Host "== 4/4 pygame smoke =="
+Write-Host "== 5/5 pygame smoke =="
 $env:SDL_VIDEODRIVER = "dummy"
 $env:SDL_AUDIODRIVER = "dummy"
 $env:PYTHONPATH = (Join-Path $root "libs") + ";" + $root
