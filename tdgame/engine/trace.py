@@ -54,6 +54,14 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
         "schedule": [[2.0, "shield_cadet", 4], [7.0, "shield_cadet", 4],
                      [13.0, "normal", 4]],
     },
+    "shoot_only": {
+        "cn": "直射 + 弹道命中（弹道的最小闭环）",
+        "seed": 1004,
+        "steps": 500,
+        "plants": [[2, 1, "peashooter"], [3, 1, "peashooter"]],
+        "schedule": [[3.0, "normal", 2], [9.0, "normal", 3],
+                     [16.0, "fast", 2], [24.0, "normal", 3]],
+    },
     "move_bite": {
         "cn": "移动 + 啃食（GDScript 移植的第一块，无弹道无特殊机制）",
         "seed": 1003,

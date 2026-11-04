@@ -1,13 +1,15 @@
 extends RefCounted
-## Python 引擎（`tdgame/engine/board.py`）的最小 GDScript 移植 —— 第一块：移动 + 啃食。
+## Python 引擎（`tdgame/engine/board.py`）的 GDScript 移植，按**可验证增量**推进。
 ##
-## 只覆盖 `move_bite` 场景需要的路径，刻意**不**包含弹道/护甲/格挡/召唤/阶段。
-## 每加一块就用对应的 trace 场景做逐步比对，避免"半成品移植看起来能用"。
+## 已移植：
+##   块 1 —— 移动 + 啃食 + 割草机/破线 + 清理 + 存活判定（trace 场景 move_bite）
+##   块 2 —— 远程射击 + 弹道飞行 + 命中扣血（trace 场景 shoot_only）
+## 未移植（后续增量，每个都要过对应 trace 场景）：
+##   护甲/格挡结算、AoE/溅射/碎片、控制（减速/击退）、召唤、Boss 阶段、经济
 ##
-## 与 Python 侧的对齐点（顺序也必须一致）：
-##   now += dt（round 到 6 位）-> cooldowns -> economy -> spawn_due
+## 与 Python 侧的对齐点（**顺序也必须一致**）：
+##   now += dt（round 6 位）-> cooldowns -> economy -> spawn_due
 ##   -> update_plants -> update_projectiles -> update_enemies -> cleanup -> check_end
-## 本块里 cooldowns/economy/projectiles/plants 都是空实现（坚果不产阳光、不攻击）。
 
 const DT := 0.1
 const ROWS := 5
@@ -26,9 +28,10 @@ var mowers_used := 0
 var breaches := 0
 var kills := 0
 
-var plants: Array = []       # [{row, col, key, hp}]
-var enemies: Array = []      # [{row, key, x, hp, dead, eating}]
-var schedule: Array = []     # [[t, key, row], ...]
+var plants: Array = []       # {row, col, key, hp, cx, combat, atk_timer, dead}
+var enemies: Array = []      # {row, key, x, hp, bite, speed, dead, eating}
+var projectiles: Array = []  # {row, x, speed, damage, hit_left, hit, dead}
+var schedule: Array = []
 var enemy_defs: Dictionary = {}
 var plant_defs: Dictionary = {}
 var _spawn_idx := 0
@@ -42,17 +45,19 @@ func setup(scenario: Dictionary, defs: Dictionary, pdefs: Dictionary = {}) -> vo
 		var row: int = int(entry[0])
 		var col: int = int(entry[1])
 		var key: String = String(entry[2])
-		var hp := float(plant_defs.get(key, {}).get("hp", 800.0))
-		plants.append({"row": row, "col": col, "key": key, "hp": hp})
+		var d: Dictionary = plant_defs.get(key, {})
+		plants.append({
+			"row": row, "col": col, "key": key,
+			"hp": float(d.get("hp", 100)),
+			"cx": float(col) + 0.5,
+			"combat": d.get("combat", {}),
+			"atk_timer": 0.0,          # Python 侧 Plant.attack_timer 初值就是 0
+			"dead": false,
+		})
 	schedule.clear()
-	for entry in scenario.get("schedule", []):
-		schedule.append([float(entry[0]), String(entry[1]), int(entry[2])])
+	for entry2 in scenario.get("schedule", []):
+		schedule.append([float(entry2[0]), String(entry2[1]), int(entry2[2])])
 	schedule.sort_custom(func(a, b): return a[0] < b[0])
-
-
-func _plant_hp(key: String) -> float:
-	# 本块只有坚果，血量从 defs 里取；缺省给 1 防止除零
-	return float(enemy_defs.get("__plant_" + key, {}).get("hp", 800.0))
 
 
 # ---------------------------------------------------------------------- 主步进
@@ -60,9 +65,11 @@ func step() -> void:
 	if over:
 		return
 	# 注意：GDScript 的 round() 是**取整**，Python 的 round(x, 6) 是保留 6 位小数，
-	# 两者不能互换（写成 round() 会把 now 直接归零）。这里用 snappedf 对齐语义。
+	# 两者不能互换（写 round() 会把 now 直接归零）。用 snappedf 对齐语义。
 	now = snappedf(now + DT, 0.000001)
 	_spawn_due()
+	_update_plants()
+	_update_projectiles()
 	_update_enemies()
 	_cleanup()
 	_check_end()
@@ -72,51 +79,131 @@ func _spawn_due() -> void:
 	while _spawn_idx < schedule.size() and float(schedule[_spawn_idx][0]) <= now:
 		var entry = schedule[_spawn_idx]
 		var key: String = String(entry[1])
-		var row: int = int(entry[2])
 		var d: Dictionary = enemy_defs.get(key, {})
 		enemies.append({
-			"row": row,
-			"key": key,
-			"x": SPAWN_X,
+			"row": int(entry[2]), "key": key, "x": SPAWN_X,
 			"hp": float(d.get("hp_body", 100)),
 			"bite": float(d.get("bite_dps", 0)),
 			"speed": float(d.get("speed", 0)),
-			"dead": false,
-			"eating": -1,
+			"dead": false, "eating": -1,
 		})
 		_spawn_idx += 1
 
 
+# ---------------------------------------------------------------------- 植物行为
+func _update_plants() -> void:
+	for p in plants:
+		if bool(p.get("dead", false)):
+			continue
+		var combat: Dictionary = p["combat"]
+		if combat.is_empty():
+			continue
+		p["atk_timer"] = float(p["atk_timer"]) - DT
+		if float(p["atk_timer"]) <= 0.0:
+			if _plant_attack(p, combat):
+				p["atk_timer"] = float(p["atk_timer"]) + float(combat["atk_interval"])
+
+
+func _plant_attack(p: Dictionary, combat: Dictionary) -> bool:
+	var rng: Dictionary = combat.get("range", {"type": "row", "cells": COLS})
+	if String(rng.get("type", "row")) != "row":
+		# 近战/其它形态尚未移植，明确不假装支持
+		return false
+	var target := _ranged_target(p, float(rng.get("cells", COLS)))
+	if target < 0:
+		return false
+	var proj: Dictionary = combat["projectile"]
+	projectiles.append({
+		"row": int(p["row"]),
+		"x": float(p["cx"]) + 0.2,
+		"speed": float(proj["speed"]) / CELL,   # Python: Projectile 把像素速度除以 CELL
+		"damage": float(combat["damage"]),
+		"hit_left": 1,                           # pierce 计数，本块恒为 1
+		"dead": false,
+		"hit": String(proj.get("hit", "single")),
+	})
+	return true
+
+
+func _ranged_target(p: Dictionary, range_cells: float) -> int:
+	var best := -1
+	var best_x := 1e18
+	for i in enemies.size():
+		var e = enemies[i]
+		if bool(e["dead"]) or int(e["row"]) != int(p["row"]):
+			continue
+		var ex: float = float(e["x"])
+		if ex <= float(p["cx"]) + range_cells and ex > float(p["cx"]) - 1.0:
+			if ex < best_x:
+				best_x = ex
+				best = i
+	return best
+
+
+# ---------------------------------------------------------------------- 弹道
+func _update_projectiles() -> void:
+	for pr in projectiles:
+		if bool(pr["dead"]):
+			continue
+		pr["x"] = float(pr["x"]) + float(pr["speed"]) * DT
+		if float(pr["x"]) > COLS + 1.0:
+			pr["dead"] = true
+			continue
+		var hit_idx := _projectile_find_target(pr)
+		if hit_idx >= 0:
+			_resolve_projectile_hit(pr, enemies[hit_idx])
+
+
+func _projectile_find_target(pr: Dictionary) -> int:
+	var best := -1
+	var best_x := 1e18
+	for i in enemies.size():
+		var e = enemies[i]
+		if bool(e["dead"]) or int(e["row"]) != int(pr["row"]):
+			continue
+		var ex: float = float(e["x"])
+		if float(pr["x"]) >= ex - 0.3 and float(pr["x"]) <= ex + 0.6:
+			if ex < best_x:
+				best_x = ex
+				best = i
+	return best
+
+
+func _resolve_projectile_hit(pr: Dictionary, enemy: Dictionary) -> void:
+	# 本块只做直击单体伤害；护甲/格挡/AoE/控制留给下一个增量
+	enemy["hp"] = snappedf(float(enemy["hp"]) - float(pr["damage"]), 0.000001)
+	pr["hit_left"] = int(pr["hit_left"]) - 1
+	if int(pr["hit_left"]) <= 0 or not String(pr["hit"]).begins_with("pierce:"):
+		pr["dead"] = true
+
+
+# ---------------------------------------------------------------------- 敌人
 func _update_enemies() -> void:
 	for e in enemies:
-		if e["dead"]:
+		if bool(e["dead"]):
 			continue
 		var blocker := _blocker_for(e)
 		if blocker >= 0:
 			e["eating"] = blocker
 			var dmg: float = float(e["bite"]) * DT
-			plants[blocker]["hp"] -= dmg
+			plants[blocker]["hp"] = float(plants[blocker]["hp"]) - dmg
 			if float(plants[blocker]["hp"]) <= 0.0:
 				plants[blocker]["hp"] = 0.0
-				e["eating"] = -1
-				# 标记死亡由 cleanup 统一处理（与 Python 的 _cleanup 一致）
 				plants[blocker]["dead"] = true
+				e["eating"] = -1
 		else:
 			e["eating"] = -1
-			# current_speed_mult 在本块里恒为 1.0（没有减速源）
 			e["x"] = float(e["x"]) - float(e["speed"]) * DT / CELL
 			if float(e["x"]) <= TRIGGER_X:
 				_handle_breach(e)
 
 
 func _blocker_for(e: Dictionary) -> int:
-	## 返回最靠右、且与敌人接触的植物下标；没有则 -1。
-	## 与 Python 的 `_blocker_for` 同义：先取本行最右的活植物，再判断是否接触。
 	var best := -1
 	var best_col := -1
 	for i in plants.size():
 		var p = plants[i]
-		if p.get("dead", false):
+		if bool(p.get("dead", false)):
 			continue
 		if int(p["row"]) != int(e["row"]):
 			continue
@@ -149,14 +236,23 @@ func _handle_breach(e: Dictionary) -> void:
 func _cleanup() -> void:
 	var live_e := []
 	for e in enemies:
-		if not bool(e["dead"]):
-			live_e.append(e)
+		if bool(e["dead"]):
+			continue
+		if float(e["hp"]) <= 0.0:
+			kills += 1
+			continue
+		live_e.append(e)
 	enemies = live_e
 	var live_p := []
 	for p in plants:
 		if not bool(p.get("dead", false)) and float(p["hp"]) > 0.0:
 			live_p.append(p)
 	plants = live_p
+	var live_pr := []
+	for pr in projectiles:
+		if not bool(pr["dead"]):
+			live_pr.append(pr)
+	projectiles = live_pr
 
 
 func _check_end() -> void:
@@ -180,13 +276,17 @@ func digest() -> Dictionary:
 		e_arr.append([int(e["row"]), snappedf(float(e["x"]), 0.0001),
 			snappedf(float(e["hp"]), 0.0001)])
 	e_arr.sort_custom(func(a, b): return _lt(a, b))
+	var pr_arr := []
+	for pr in projectiles:
+		pr_arr.append([int(pr["row"]), snappedf(float(pr["x"]), 0.0001)])
+	pr_arr.sort_custom(func(a, b): return _lt(a, b))
 	return {
 		"t": snappedf(now, 0.0001),
 		"sun": sun,
 		"lives": lives,
 		"plants": p_arr,
 		"enemies": e_arr,
-		"proj": [],
+		"proj": pr_arr,
 		"kills": kills,
 		"mowers": mowers_used,
 		"breaches": breaches,

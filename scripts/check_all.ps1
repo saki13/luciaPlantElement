@@ -81,14 +81,15 @@ if ($SkipGodot) {
 }
 
 Run-Step "7/8 izombie mode gate" {
-    & \D:\ProgramDatanaconda3\python.exe scripts\check_izombie.py
+    & $py scripts\check_izombie.py
 }
 
 Run-Step "8/8 board.step trace gate" {
     # 有 Godot 就顺带跑 GDScript 侧的逐步比对（E-01 移植校验）
-    if (\) {
-        & \D:\ProgramDatanaconda3\python.exe scripts\check_board_trace.py --godot-exe \n    } else {
-        & \D:\ProgramDatanaconda3\python.exe scripts\check_board_trace.py
+    if ($env:PVZ_GODOT) {
+        & $py scripts\check_board_trace.py --godot-exe $env:PVZ_GODOT
+    } else {
+        & $py scripts\check_board_trace.py
     }
 }
 
