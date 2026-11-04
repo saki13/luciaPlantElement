@@ -54,6 +54,13 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
         "schedule": [[2.0, "shield_cadet", 4], [7.0, "shield_cadet", 4],
                      [13.0, "normal", 4]],
     },
+    "summon_boss": {
+        "cn": "召唤 + Boss 二阶段（一只 boss_50 边啃坚果边召唤）",
+        "seed": 1007,
+        "steps": 500,
+        "plants": [[2, 3, "wallnut"]],
+        "schedule": [[2.0, "boss_50", 2]],
+    },
     "economy": {
         "cn": "经济：天空阳光 + 向日葵产阳光（补 sun 恒为 0 的盲区）",
         "seed": 1006,

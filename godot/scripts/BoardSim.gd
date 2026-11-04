@@ -122,19 +122,33 @@ func _spawn_due() -> void:
 		var entry = schedule[_spawn_idx]
 		var key: String = String(entry[1])
 		var d: Dictionary = enemy_defs.get(key, {})
+		# GDScript 的 `or` 返回 bool，不能写 `(d.get("summon") or {})`
+		var summ: Dictionary = d.get("summon", {})
+		var ph: Dictionary = d.get("phase", {})
+		var armor_def: Dictionary = d.get("armor", {})
 		enemies.append({
 			"row": int(entry[2]), "key": key, "x": SPAWN_X,
 			"hp": float(d.get("hp_body", 100)),
 			"bite": float(d.get("bite_dps", 0)),
 			"speed": float(d.get("speed", 0)),
-			"armor": float(d.get("armor", {}).get("hp", 0)),
-			"armor_red": float(d.get("armor", {}).get("reduction", 0)),
+			"armor": float(armor_def.get("hp", 0)),
+			"armor_red": float(armor_def.get("reduction", 0)),
 			"block": float(d.get("block_flat", 0)),
 			"slow_resist": float(d.get("slow_resist", 0)),
 			"weight": float(d.get("weight", 1)),
 			"kb_immune": bool(d.get("kb_immune", false)),
 			"slow_mult": 1.0,
 			"slow_until": -1.0,
+			"summon_mob": String(summ.get("mob", "")),
+			"summon_interval": float(summ.get("interval", 0.0)),
+			"summon_max": int(summ.get("max_alive", 0)),
+			"summon_timer": float(summ.get("interval", 0.0)),
+			"summoned_by": -1,
+			"phase": 1,
+			"phase_ratio": float(ph.get("hp_ratio", 0.0)),
+			"phase_speed_mult": float(ph.get("speed_mult", 1.0)),
+			"phase_summon_mult": float(ph.get("summon_interval_mult", 1.0)),
+			"hp_max": float(d.get("hp_body", 100)),
 			"dead": false, "eating": -1,
 		})
 		_spawn_idx += 1
@@ -307,7 +321,76 @@ func _current_speed_mult(e: Dictionary) -> float:
 
 
 # ---------------------------------------------------------------------- 敌人
+func _update_boss_phases() -> void:
+	## 本体血量跌破阈值 -> 进二阶段：提速、召唤更频繁。
+	for e in enemies:
+		if bool(e["dead"]) or int(e["phase"]) != 1 or float(e["phase_ratio"]) <= 0.0:
+			continue
+		if float(e["hp_max"]) <= 0.0:
+			continue
+		if float(e["hp"]) / float(e["hp_max"]) <= float(e["phase_ratio"]):
+			e["phase"] = 2
+			e["speed"] = float(e["speed"]) * float(e["phase_speed_mult"])
+			if float(e["summon_interval"]) > 0.0:
+				e["summon_interval"] = float(e["summon_interval"]) * float(e["phase_summon_mult"])
+
+
+func _update_summons() -> void:
+	## 每 interval 秒生一只 mob，同父存活数不超过 max_alive。
+	## Python 侧遍历的是 list(self.enemies) 的快照，所以这里也先拷一份下标。
+	for idx in range(enemies.size()):
+		var e = enemies[idx]
+		if bool(e["dead"]) or String(e["summon_mob"]) == "":
+			continue
+		if float(e["summon_interval"]) <= 0.0:
+			continue
+		e["summon_timer"] = float(e["summon_timer"]) - DT
+		if float(e["summon_timer"]) > 0.0:
+			continue
+		e["summon_timer"] = float(e["summon_timer"]) + float(e["summon_interval"])
+		var alive := 0
+		for c in enemies:
+			if not bool(c["dead"]) and int(c["summoned_by"]) == idx:
+				alive += 1
+		if alive >= int(e["summon_max"]):
+			continue
+		var mob: String = String(e["summon_mob"])
+		var d: Dictionary = enemy_defs.get(mob, {})
+		var summ2: Dictionary = d.get("summon", {})
+		var ph2: Dictionary = d.get("phase", {})
+		var armor2: Dictionary = d.get("armor", {})
+		var child := {
+			"row": int(e["row"]), "key": mob,
+			"x": minf(COLS + 0.5, float(e["x"]) + 0.8),
+			"hp": float(d.get("hp_body", 100)),
+			"bite": float(d.get("bite_dps", 0)),
+			"speed": float(d.get("speed", 0)),
+			"armor": float(armor2.get("hp", 0)),
+			"armor_red": float(armor2.get("reduction", 0)),
+			"block": float(d.get("block_flat", 0)),
+			"slow_resist": float(d.get("slow_resist", 0)),
+			"weight": float(d.get("weight", 1)),
+			"kb_immune": bool(d.get("kb_immune", false)),
+			"slow_mult": 1.0,
+			"slow_until": -1.0,
+			"summon_mob": String(summ2.get("mob", "")),
+			"summon_interval": float(summ2.get("interval", 0.0)),
+			"summon_max": int(summ2.get("max_alive", 0)),
+			"summon_timer": float(summ2.get("interval", 0.0)),
+			"summoned_by": idx,
+			"phase": 1,
+			"phase_ratio": float(ph2.get("hp_ratio", 0.0)),
+			"phase_speed_mult": float(ph2.get("speed_mult", 1.0)),
+			"phase_summon_mult": float(ph2.get("summon_interval_mult", 1.0)),
+			"hp_max": float(d.get("hp_body", 100)),
+			"dead": false, "eating": -1,
+		}
+		enemies.append(child)
+
+
 func _update_enemies() -> void:
+	_update_boss_phases()
+	_update_summons()
 	for e in enemies:
 		if bool(e["dead"]):
 			continue

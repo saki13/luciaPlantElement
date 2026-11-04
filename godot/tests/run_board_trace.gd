@@ -8,6 +8,9 @@ extends SceneTree
 
 const TOL := 1e-4          # 与 Python 侧 round(...,4) 的粒度一致
 const TRACE_PATH := "res://tests/golden_board_trace.json"
+# summon_boss 暂未纳入：召唤实现已完成，但与 Python 存在**恰好 1 个步长**的时序差
+# （GDScript 早一步召唤），怀疑是 summon_timer 反复减 0.1 的浮点累加与 Python 不一致。
+# 在定位到根因之前不放进 ONLY —— 宁可少覆盖一个场景，也不要让门禁"看起来通过"。
 const ONLY := ["move_bite", "shoot_only", "armor_only", "block_shield", "core_shoot_bite", "armor_slow", "economy"]  # 已移植的场景；armor_slow/core_shoot_bite 含溅射/减速，待后续增量
 
 
