@@ -40,43 +40,43 @@ PHASES: Dict[str, PhaseDef] = {
                    "每50轮一个T10门槛Boss；50轮成就解锁僵尸编辑器"),
 }
 
-# 各能力挑战关首通代币（P2 内累计，数值为草案，headless 校准回填）
-CHALLENGE_TOKEN_REWARD = {
-    "m2_shield": FIRST_CLEAR_TOKENS,   # 格挡考场 = 第一次 200
-    "m2_armor": 120,
-    "m2_speed": 100,
-    "m2_swarm": 120,
-    "m2_control": 100,
-    "m2_weight": 140,
-}
-
-
 def phase_of_level(level_key: str) -> Optional[str]:
     # 关卡键前缀用 M1..M4，阶段码用 P1..P4，这里统一映射
     prefix = level_key.split("_", 1)[0].upper().replace("M", "P")
     return prefix if prefix in PHASES else None
 
 
-def reward_for_level(level_key: str, first_clear: bool = True) -> Dict[str, int]:
-    """返回该关首通/重复通关的设计代币奖励。"""
+def reward_for_level(level_key: str, first_clear: bool = True,
+                     levels: Optional[Dict[str, Dict]] = None) -> Dict[str, int]:
+    """返回该关首通/重复通关的设计代币奖励。
+
+    **奖励以关卡 JSON 为唯一来源**（`levels[key]["reward"]["design_tokens"]`）。
+    早期这里另存了一份 `CHALLENGE_TOKEN_REWARD` 硬编码表，与关卡数据双写，改 JSON 不生效，
+    已删除。调用方必须传入 `levels`，否则一律按 0 处理。
+    """
     if not first_clear:
         return {"design_tokens": 0}
-    if level_key in CHALLENGE_TOKEN_REWARD:
-        return {"design_tokens": CHALLENGE_TOKEN_REWARD[level_key]}
+    if levels and level_key in levels:
+        reward = (levels[level_key].get("reward") or {})
+        return {"design_tokens": int(reward.get("design_tokens", 0) or 0)}
     return {"design_tokens": 0}
 
 
 class PlayerProgress:
-    """内存态玩家进度（持久化序列化为 JSON 的工作留给上层存档模块）。"""
+    """内存态玩家进度（持久化序列化为 JSON 的工作留给上层存档模块）。
 
-    def __init__(self) -> None:
+    `levels` 传 `level_run.load_levels()` 的结果；奖励只从关卡 JSON 读。
+    """
+
+    def __init__(self, levels: Optional[Dict[str, Dict]] = None) -> None:
+        self.levels = levels
         self.cleared: List[str] = []
         self.design_tokens = 0
         self.unlocked = set(PHASES["P1"].unlocks)
 
     def clear_level(self, level_key: str) -> int:
         first = level_key not in self.cleared
-        reward = reward_for_level(level_key, first)["design_tokens"]
+        reward = reward_for_level(level_key, first, self.levels)["design_tokens"]
         if first:
             self.cleared.append(level_key)
             self.design_tokens += reward

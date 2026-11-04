@@ -21,7 +21,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install deps
-        run: pip install --quiet numpy pillow
+        run: pip install --quiet numpy pillow pygame
 
       - name: Unit tests
         run: |
@@ -36,6 +36,18 @@ jobs:
         # 注：源帧在 .gitignore 里（体积原因），所以这一步在 CI 只跑
         # 表结构 + 宽高比；多角色帧判据在本地跑 scripts/check_all.ps1 时才完整。
         run: python scripts/check_sprites.py
+
+      - name: Calibration baseline
+        run: python scripts/check_calibration.py
+
+      - name: Level regression
+        run: python scripts/check_levels.py
+
+      - name: Render assertions
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: python scripts/check_render.py
 
   conformance:
     name: resolve_hit conformance

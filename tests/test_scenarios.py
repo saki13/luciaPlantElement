@@ -104,18 +104,33 @@ class EndlessTests(unittest.TestCase):
 
 
 class ProgressionTests(unittest.TestCase):
+    def setUp(self):
+        self.levels = level_run.load_levels(DATA / "levels")
+        self.p = pg.PlayerProgress(self.levels)
+
     def test_first_clear_grants_200_repeat_gives_none(self):
-        p = pg.PlayerProgress()
-        self.assertEqual(p.clear_level("m2_shield"), 200)
-        self.assertEqual(p.clear_level("m2_shield"), 0)
-        self.assertEqual(p.design_tokens, 200)
-        self.assertIn("plant_customizer", p.unlocked)
+        self.assertEqual(self.p.clear_level("m2_shield"), 200)
+        self.assertEqual(self.p.clear_level("m2_shield"), 0)
+        self.assertEqual(self.p.design_tokens, 200)
+        self.assertIn("plant_customizer", self.p.unlocked)
 
     def test_phase_detection(self):
-        p = pg.PlayerProgress()
-        self.assertEqual(p.reached_phase(), "P1")
-        p.clear_level("m2_shield")
-        self.assertEqual(p.reached_phase(), "P2")
+        self.assertEqual(self.p.reached_phase(), "P1")
+        self.p.clear_level("m2_shield")
+        self.assertEqual(self.p.reached_phase(), "P2")
+
+    def test_reward_single_source_is_level_json(self):
+        """奖励以关卡 JSON 为唯一来源，progression 不得再持有硬编码表。"""
+        self.assertFalse(hasattr(pg, "CHALLENGE_TOKEN_REWARD"),
+                         "CHALLENGE_TOKEN_REWARD 已删除，避免与关卡 JSON 双写")
+        for key, lv in self.levels.items():
+            expected = int((lv.get("reward") or {}).get("design_tokens", 0) or 0)
+            got = pg.reward_for_level(key, True, self.levels)["design_tokens"]
+            self.assertEqual(got, expected, key)
+
+    def test_reward_without_levels_is_zero(self):
+        """不传 levels 时没有回退表，一律 0。"""
+        self.assertEqual(pg.reward_for_level("m2_shield")["design_tokens"], 0)
 
 
 class LevelRunTests(unittest.TestCase):

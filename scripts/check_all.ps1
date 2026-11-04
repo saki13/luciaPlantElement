@@ -5,17 +5,19 @@
 #       $ErrorActionPreference = "Stop" is set, so we keep it at Continue and
 #       check $LASTEXITCODE explicitly instead.
 #
-# Runs, in order:
-#   1. python unit tests            (balance / engine / scenarios / replay / golden sync)
-#   2. sprite health check          (aspect outliers + multi-character source frames)
-#   3. resolve_hit conformance gate (GDScript vs Python oracle, needs Godot)
-#   4. pygame smoke                 (render shell stays runnable)
+# Stages:
+#   1. python unit tests      balance / engine / scenarios / replay / golden sync
+#   2. sprite health          sheet structure, aspect outliers, multi-character frames
+#   3. calibration baseline   20 runs/scene, exact match against the baseline
+#   4. level regression       every data/levels/*.json actually simulated
+#   5. render assertions      app_pygame loads 21 sheets, animates, renders non-flat
+#   6. conformance gate       GDScript resolve_hit vs Python oracle (needs Godot)
 #
 # Usage:
 #   pwsh -File scripts\check_all.ps1
 #   pwsh -File scripts\check_all.ps1 -SkipGodot
 #
-# Env overrides: PVZ_PYTHON, PVZ_GODOT
+# Env overrides: PVZ_PYTHON, PVZ_GODOT, PVZ_SHOT_DIR
 
 param(
     [switch]$SkipGodot
@@ -34,47 +36,49 @@ if ($env:PVZ_PYTHON) {
     $py = $cmd.Source
 }
 
+function Run-Step([string]$title, [scriptblock]$body) {
+    Write-Host ""
+    Write-Host "== $title =="
+    & $body 2>&1 | ForEach-Object { "$_" } | Write-Host
+    $code = $LASTEXITCODE
+    if ($code -ne 0) { $script:failed += $title }
+}
+
 Push-Location $root
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
-Write-Host "== 1/5 python unit tests =="
-& $py -m unittest tests.test_balance tests.test_engine tests.test_scenarios `
-    tests.test_replay tests.test_golden_sync 2>&1 | ForEach-Object { "$_" } | Write-Host
-if ($LASTEXITCODE -ne 0) { $failed += "unit tests" }
+Run-Step "1/6 python unit tests" {
+    & $py -m unittest tests.test_balance tests.test_engine tests.test_scenarios `
+        tests.test_replay tests.test_golden_sync
+}
 
-Write-Host ""
-Write-Host "== 2/5 sprite health check =="
-& $py scripts\check_sprites.py 2>&1 | ForEach-Object { "$_" } | Write-Host
-if ($LASTEXITCODE -ne 0) { $failed += "sprite health" }
+Run-Step "2/6 sprite health check" {
+    & $py scripts\check_sprites.py
+}
 
-Write-Host ""
-Write-Host "== 3/5 calibration baseline =="
-& $py scripts\check_calibration.py 2>&1 | ForEach-Object { "$_" } | Write-Host
-if ($LASTEXITCODE -ne 0) { $failed += "calibration baseline" }
+Run-Step "3/6 calibration baseline" {
+    & $py scripts\check_calibration.py
+}
 
-Write-Host ""
+Run-Step "4/6 level regression" {
+    & $py scripts\check_levels.py
+}
+
+Run-Step "5/6 render assertions" {
+    $dir = $env:PVZ_SHOT_DIR
+    if (-not $dir) { $dir = Join-Path $root "logs" }
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    & $py scripts\check_render.py --shot-dir $dir
+}
+
 if ($SkipGodot) {
-    Write-Host "== 4/5 conformance gate == SKIPPED (-SkipGodot)"
+    Write-Host ""
+    Write-Host "== 6/6 conformance gate == SKIPPED (-SkipGodot)"
 } else {
-    Write-Host "== 4/5 resolve_hit conformance gate =="
-    & (Join-Path $PSScriptRoot "run_conformance.ps1") 2>&1 | ForEach-Object { "$_" } | Write-Host
-    if ($LASTEXITCODE -ne 0) { $failed += "conformance gate" }
+    Run-Step "6/6 resolve_hit conformance gate" {
+        & (Join-Path $PSScriptRoot "run_conformance.ps1")
+    }
 }
-
-Write-Host ""
-Write-Host "== 5/5 pygame smoke =="
-$env:SDL_VIDEODRIVER = "dummy"
-$env:SDL_AUDIODRIVER = "dummy"
-$env:PYTHONPATH = (Join-Path $root "libs") + ";" + $root
-if ($env:PVZ_SMOKE_SHOT) {
-    $shot = $env:PVZ_SMOKE_SHOT
-} else {
-    $logDir = Join-Path $root "logs"
-    if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
-    $shot = Join-Path $logDir "check_all_app.png"
-}
-& $py -m tdgame.app_pygame --smoke --frames 2 --shot $shot 2>&1 | ForEach-Object { "$_" } | Write-Host
-if ($LASTEXITCODE -ne 0) { $failed += "pygame smoke" }
 
 Pop-Location
 $sw.Stop()

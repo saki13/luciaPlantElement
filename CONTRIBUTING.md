@@ -34,17 +34,18 @@ $env:PVZ_GODOT  = "D:\apps\Godot\Godot_v4.7.2-stable_win64.exe"
 pwsh -File scripts\check_all.ps1
 ```
 
-五道关卡，任何一道失败即 exit 1（全绿约 20s）：
+六道关卡，任何一道失败即 exit 1（全绿约 23s）：
 
 | 关卡 | 命令 | 守什么 |
 |---|---|---|
-| 1. Python 单测（50 个） | `python -m unittest tests...` | 伤害管线、引擎确定性、场景、回放、黄金文件同步 |
+| 1. Python 单测（52 个） | `python -m unittest tests...` | 伤害管线、引擎确定性、场景、回放、黄金文件同步、奖励同源 |
 | 2. 精灵表体检 | `python scripts/check_sprites.py` | 表结构、角色宽高比离群、源帧多角色拼图 |
 | 3. 校准基线 | `python scripts/check_calibration.py` | 20 局/场景固定 seed 的胜负/节奏/经济与基线**逐字段一致** |
-| 4. 一致性门禁 | `scripts\run_conformance.ps1` | GDScript 的 `resolve_hit` 与 Python 逐字段一致 |
-| 5. pygame 冒烟 | `python -m tdgame.app_pygame --smoke` | 渲染壳仍能起 |
+| 4. 关卡回归 | `python scripts/check_levels.py` | **18 个 `levels/*.json` 全部真的被模拟过**，结果与基线一致 |
+| 5. 渲染断言 | `python scripts/check_render.py` | 21 张表加载、动画推进、截图非纯色、降级模式可跑 |
+| 6. 一致性门禁 | `scripts\run_conformance.ps1` | GDScript 的 `resolve_hit` 与 Python 逐字段一致 |
 
-没有 Godot 时可以 `-SkipGodot` 跳过第 4 关。
+没有 Godot 时可以 `-SkipGodot` 跳过第 6 关。
 
 ---
 
@@ -59,6 +60,22 @@ python scripts/gen_golden_hits.py
 ```
 
 然后重跑总检——第 4 关会告诉你 GDScript 侧要不要跟着改。
+
+### 改了关卡数据（`tdgame/data/levels/*.json`）
+
+第 4 关会红。确认改动符合预期后：
+
+```powershell
+python scripts/check_levels.py --update
+git add reports/levels_baseline.json
+```
+
+> 关卡奖励的**唯一来源是关卡 JSON 的 `reward.design_tokens`**。
+> `progression` 不再持有硬编码表（早期双写过，改 JSON 不生效）。有测试守着这条。
+
+### 改了渲染层（`app_pygame.py` / `animation.py`）
+
+第 5 关会红。它会真的构造 `GameApp`、跑动画、截图并检查画面不是纯色。
 
 ### 改了引擎数值 / 节奏 / AI（`config.py`、`board.py`、`bot.py`、`wavegen.py`）
 

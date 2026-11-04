@@ -12,7 +12,7 @@ from .endless import (
     BOSS_EVERY, SOLVABILITY_MIN, allowed_for_round, build_round_schedule,
     ensure_solvable, pick_counter_enemies, profile_cards,
 )
-from .progression import PHASES, CHALLENGE_TOKEN_REWARD, PlayerProgress, phase_of_level
+from .progression import PHASES, PlayerProgress, phase_of_level, reward_for_level
 from .level_run import build_schedule_from_level, run_level, load_levels
 
 __all__ = [
@@ -22,6 +22,6 @@ __all__ = [
     "quote_points", "validate_enemy_build",
     "BOSS_EVERY", "SOLVABILITY_MIN", "allowed_for_round", "build_round_schedule",
     "ensure_solvable", "pick_counter_enemies", "profile_cards",
-    "PHASES", "CHALLENGE_TOKEN_REWARD", "PlayerProgress", "phase_of_level",
+    "PHASES", "PlayerProgress", "phase_of_level", "reward_for_level",
     "build_schedule_from_level", "run_level", "load_levels",
 ]
