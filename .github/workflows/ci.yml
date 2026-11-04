@@ -30,7 +30,8 @@ jobs:
             tests.test_engine \
             tests.test_scenarios \
             tests.test_replay \
-            tests.test_golden_sync
+            tests.test_golden_sync \
+            tests.test_session
 
       - name: Sprite health check
         # 注：源帧在 .gitignore 里（体积原因），所以这一步在 CI 只跑

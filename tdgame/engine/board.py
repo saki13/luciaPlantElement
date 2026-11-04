@@ -87,6 +87,21 @@ class Simulation:
         self.plants_placed += 1
         return True
 
+    def remove_plant(self, row: int, col: int) -> bool:
+        """铲掉指定格的植物（不返还阳光，与 PVZ 一致）。
+
+        正在啃它的敌人会立即松开，避免 `eating` 指向已死对象。
+        """
+        target = self.plant_at(row, col)
+        if target is None:
+            return False
+        target.alive = False
+        for e in self.enemies:
+            if e.eating is target:
+                e.eating = None
+        self.plants = [p for p in self.plants if p is not target]
+        return True
+
     def _add_sun(self, amount: int) -> None:
         self.sun += amount
         self.sun_earned += amount

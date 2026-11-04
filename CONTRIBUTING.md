@@ -38,7 +38,7 @@ pwsh -File scripts\check_all.ps1
 
 | 关卡 | 命令 | 守什么 |
 |---|---|---|
-| 1. Python 单测（52 个） | `python -m unittest tests...` | 伤害管线、引擎确定性、场景、回放、黄金文件同步、奖励同源 |
+| 1. Python 单测（74 个） | `python -m unittest tests...` | 伤害管线、引擎确定性、场景、回放、黄金同步、奖励同源、**交互会话** |
 | 2. 精灵表体检 | `python scripts/check_sprites.py` | 表结构、角色宽高比离群、源帧多角色拼图 |
 | 3. 校准基线 | `python scripts/check_calibration.py` | 20 局/场景固定 seed 的胜负/节奏/经济与基线**逐字段一致** |
 | 4. 关卡回归 | `python scripts/check_levels.py` | **18 个 `levels/*.json` 全部真的被模拟过**，结果与基线一致 |
@@ -50,6 +50,20 @@ pwsh -File scripts\check_all.ps1
 ---
 
 ## 3. 常见改动怎么做
+
+### 跑起来玩
+
+```powershell
+$env:PYTHONPATH = "D:\lucia\rea\project\pvz\libs;D:\lucia\rea\project\pvz"
+& "D:\ProgramData\anaconda3\python.exe" -m tdgame.app_pygame
+```
+
+点卡栏选卡 → 点格子种下；点铲子（或按 X）再点植物可铲除；R 重开，Q 退出。
+`--level m2_shield` 换关卡，`--autoplay` 让 RuleBot 自己打（截图/演示用）。
+
+**交互逻辑不在渲染层**：点选/种植/铲种/冷却/胜负全在 `tdgame/engine/session.py`
+的 `PlaySession` 里，渲染层只做"鼠标坐标 → (row,col)"和绘制。所以这些都能量在
+`tests/test_session.py` 里 headless 验证，不依赖 pygame 或 Godot。
 
 ### 改了 `tdgame/balance.py`
 

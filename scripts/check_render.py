@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
-"""渲染层断言：`app_pygame` 之前完全没有测试引用，改坏了只能靠人眼发现。
+"""渲染层断言：`app_pygame` 现在是可玩客户端，改坏了必须能被自动发现。
 
-本脚本在 SDL dummy 下真实构造 `GameApp`，断言：
-
-1. 21 张精灵表全部加载（0 missing / 0 failed）
-2. 13 植物 + 8 敌人都在展示场景里拿到了 sprite
-3. 动画时钟真的在推进（有单位换过帧）
-4. 截图能落盘，且画面不是纯色（说明棋盘/精灵真的画上去了）
-5. `--no-sprites` 降级模式仍能跑（工程"永远可跑"的底线）
+断言：
+1. 21 张精灵表全部可加载（逐 key 强制取一遍）
+2. 会话可用：卡栏数量与卡池一致，能种下植物并被 entities() 反映
+3. 自动对局 20 秒不崩，且棋盘上确实存在植物
+4. 截图落盘且画面不是纯色
+5. `--no-sprites` 降级模式仍能跑
 
 用法：
-    python scripts/check_render.py
+    python scripts/check_render.py [--shot-dir DIR]
 """
 from __future__ import annotations
 
@@ -45,51 +44,55 @@ def distinct_colors(png: Path) -> int:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--shot-dir", default="", help="截图目录，默认系统临时目录")
+    ap.add_argument("--shot-dir", default="")
     args = ap.parse_args(argv)
-
-    from tdgame.app_pygame import GameApp
-
     shot_dir = Path(args.shot_dir) if args.shot_dir else Path(tempfile.gettempdir())
 
-    print("== 1. 精灵表加载 ==")
+    from tdgame.app_pygame import GameApp
+    from tdgame.engine.loader import load_registry
+
+    reg = load_registry(ROOT / "tdgame" / "data")
+
+    print("== 1. 21 张精灵表全部可加载 ==")
     app = GameApp(use_sprites=True)
     lib = app.sprites
     check(lib.enabled, "animation 模块可用")
-    check(lib.loaded_count() == 21, f"加载 {lib.loaded_count()}/21 张表")
-    check(not lib.missing, f"无缺失（missing={lib.missing[:3]}）")
-    check(not lib.failed, f"无加载失败（failed={lib.failed[:3]}）")
+    bad = []
+    for key in reg.plants:
+        if lib.sheet(key, "plant") is None:
+            bad.append(f"plant:{key}")
+    for key in reg.enemies:
+        if lib.sheet(key, "enemy") is None:
+            bad.append(f"enemy:{key}")
+    check(not bad, f"13 植物 + 8 敌人全部可加载（失败 {bad}）")
+    check(lib.loaded_count() == 21, f"loaded={lib.loaded_count()}/21")
 
-    print("\n== 2. 展示场景拿到 sprite ==")
-    plants = app.scene_plants
-    enemies = app.scene_enemies
-    check(len(plants) == 15, f"植物摆位 {len(plants)} 个")
-    check(len(enemies) == 8, f"敌人摆位 {len(enemies)} 个")
-    check(all(p["sprite"] is not None for p in plants), "所有植物都有 sprite")
-    check(all(e["sprite"] is not None for e in enemies), "所有敌人都有 sprite")
-    keys_p = {p["key"] for p in plants}
-    keys_e = {e["key"] for e in enemies}
-    check(len(keys_p) == 13, f"覆盖 {len(keys_p)}/13 种植物")
-    check(len(keys_e) == 8, f"覆盖 {len(keys_e)}/8 种敌人")
+    print("\n== 2. 会话与卡栏 ==")
+    cards = app.session.cards()
+    pool = app.level["card_pool"]
+    check(len(cards) == len(pool), f"卡栏 {len(cards)} 张 = 卡池 {len(pool)} 张")
+    check(all("sun" in c and "cd" in c for c in cards), "卡片带阳光价与冷却字段")
 
-    print("\n== 3. 动画推进 ==")
-    seen = set()
-    for _ in range(200):
-        app.advance(16)
-        for p in plants:
-            if p["sprite"] is not None:
-                seen.add((p["key"], p["sprite"].frame_idx))
-        for e in enemies:
-            if e["sprite"] is not None:
-                seen.add((e["key"] + "@enemy", e["sprite"].frame_idx))
-    animated = {k for k, _ in seen}
-    check(len(animated) >= 20, f"{len(animated)} 个单位出现过 ≥1 帧（换帧观测点 {len(seen)} 个）")
-    multi = sum(1 for k in animated if len({f for kk, f in seen if kk == k}) > 1)
-    check(multi >= 15, f"{multi} 个单位实际切过多帧")
+    first_key = cards[0]["key"]
+    app.session.select(first_key)
+    ok, reason = app.session.place(0, 0)
+    check(ok, f"在第 0 行第 0 列种下 {first_key}（{reason}）")
+    ents = app.session.entities()
+    check(any(p["row"] == 0 and p["col"] == 0 for p in ents["plants"]),
+          "entities() 反映出这株植物")
+
+    print("\n== 3. 自动对局 20 秒 ==")
+    app2 = GameApp(use_sprites=True, autoplay=True)
+    for _ in range(20 * 60):
+        app2.advance(1 / 60)
+    st = app2.session.status()
+    check(st["time"] >= 19.0, f"推进到 t={st['time']}s")
+    check(st["plants"] > 0, f"自动对局中有 {st['plants']} 株植物")
+    app2.draw()
 
     print("\n== 4. 截图非空且非纯色 ==")
-    shot = shot_dir / "check_render_sprites.png"
-    app.save_snapshot(shot)
+    shot = shot_dir / "check_render_play.png"
+    app2.save_snapshot(shot, warmup_frames=1)
     check(shot.exists(), f"截图落盘 {shot}")
     if shot.exists():
         size = shot.stat().st_size
@@ -98,12 +101,14 @@ def main(argv=None) -> int:
         check(colors > 20, f"画面含 {colors} 种颜色（>20 说明不是纯色底）")
 
     print("\n== 5. --no-sprites 降级模式 ==")
-    app2 = GameApp(use_sprites=False)
-    check(not app2.sprites.enabled, "精灵模式已关闭")
-    check(app2.sprites.loaded_count() == 0, "没有加载任何表")
+    app3 = GameApp(use_sprites=False)
+    check(not app3.sprites.enabled, "精灵模式已关闭")
+    check(app3.sprites.sheet("peashooter", "plant") is None, "sheet() 返回 None")
     shot2 = shot_dir / "check_render_fallback.png"
-    app2.advance(320)
-    app2.save_snapshot(shot2)
+    for _ in range(120):
+        app3.advance(1 / 60)
+    app3.draw()
+    app3.save_snapshot(shot2, warmup_frames=1)
     check(shot2.exists(), "降级模式也能截图")
 
     print()

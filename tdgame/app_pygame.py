@@ -1,20 +1,18 @@
 # -*- coding: utf-8 -*-
-"""pygame 薄渲染壳（M1：接入精灵表动画）。
+"""pygame 版可玩客户端（M1 交互层）。
 
-职责边界（与 HANDOVER §3 一致）：headless 引擎（balance/engine/scenarios）承载全部确定性
-逻辑与数值；本文件**只读** Registry 数据并把它画到屏幕上，绝不重算任何战斗公式。
-棋盘上摆的植物/敌人是**纯展示场景**（固定格位、无 Simulation 步进），用于验证渲染通路。
+职责边界（与 HANDOVER §3 一致）：headless 引擎承载全部战斗逻辑与数值，
+本文件只做两件事——**把鼠标/键盘事件翻译成 `PlaySession` 的调用**，
+以及**把 `session.status()/cards()/entities()` 画出来**。绝不重算任何战斗公式。
 
-本版相对 M0 色块版新增：
-- key→精灵表路径映射：植物 `anim_demo/assets/sprites/<key>.png`，
-  敌人 `anim_demo/assets/sprites/enemies/<key>.png`；
-- 卡栏缩略图、棋盘植物、演示敌人全部走 `animation.SpriteSheet / AnimatedSprite`，
-  带 idle/walk/attack 状态与底部锚点；
-- 三级降级：精灵表缺失 → 色块占位；animation 模块导入失败 → 全局色块模式；
-  `--no-sprites` 可强制色块模式做对照回归。
+玩法：
+    点卡栏选卡 -> 点格子种下；点铲子再点植物可铲除；R 重开；Q 退出。
 
-冒烟：
-    set SDL_VIDEODRIVER=dummy && python -m tdgame.app_pygame --smoke --frames 3 --shot out.png
+命令：
+    python -m tdgame.app_pygame                                      # 开窗口玩
+    python -m tdgame.app_pygame --level m2_shield                    # 指定关卡
+    python -m tdgame.app_pygame --smoke --frames 60 --shot out.png   # 离屏冒烟
+    python -m tdgame.app_pygame --no-sprites                         # 色块降级对照
 """
 from __future__ import annotations
 
@@ -27,53 +25,69 @@ import pygame
 
 from . import config as C
 from .engine.loader import load_registry
+from .engine.bot import RuleBot
+from .engine.session import SHOVEL, PlaySession
+from .scenarios.level_run import load_levels
 
-# 绿色系卡板配色（避免大面积靛蓝/紫）
-COL_GRASS_A = (124, 196, 92)
-COL_GRASS_B = (108, 180, 80)
-COL_PANEL = (236, 244, 226)
-COL_LINE = (255, 255, 255)
-COL_CARD = (214, 234, 196)
-COL_PLANT = (64, 150, 72)
-COL_ENEMY = (150, 74, 66)
-COL_TEXT = (34, 60, 34)
+# ---- 配色 ----
+COL_A = (126, 196, 95)
+COL_B = (115, 185, 86)
+COL_SEAM = (64, 112, 48)
+COL_BORDER = (56, 97, 43)
+COL_DIRT = (115, 92, 67)
+COL_DIRT_D = (89, 70, 50)
+COL_PANEL_BG = (242, 240, 222)
+COL_PANEL_EDGE = (173, 168, 138)
+COL_CARD = (254, 252, 240)
+COL_CARD_DIM = (216, 216, 208)
+COL_TEXT = (33, 61, 23)
+COL_TEXT_DIM = (115, 115, 112)
+COL_SUN = (251, 211, 73)
+COL_SUN_RIM = (208, 160, 37)
+COL_MOWER = (217, 64, 56)
+COL_PROJ = (46, 82, 31)
+COL_SHOVEL = (176, 132, 84)
 
-ROOT = Path(__file__).resolve().parents[1]
-ANIM_DIR = ROOT / "anim_demo"
-SPRITE_ROOT = ANIM_DIR / "assets" / "sprites"
+TOP_H = C.TOP_H
+CELL = C.CELL
+ROWS = C.ROWS
+COLS = C.COLS
+GUTTER = C.BOARD_GUTTER
+BOARD_W = COLS * CELL
+WIN_W = GUTTER + BOARD_W
+BAR_H = 26
+WIN_H = TOP_H + ROWS * CELL + BAR_H
 
-# 棋盘展示场景：5 行摆满全部 13 种植物的代表位（纯视图状态，不含战斗逻辑）
-DEMO_PLANTS = [
-    (0, 0, "sunbloom"), (0, 2, "peashooter"), (0, 4, "repeater"),
-    (1, 0, "sunbloom"), (1, 2, "frostbell"), (1, 4, "melonpult"),
-    (2, 0, "sunbloom"), (2, 2, "leafdancer"), (2, 4, "winter_melon"),
-    (3, 0, "wallnut"), (3, 2, "bamboo"), (3, 4, "bombberry"),
-    (4, 0, "pine_needler"), (4, 2, "morningglory"), (4, 4, "custom_shieldbreaker"),
-]
-# 敌人展示：8 种全部出场，混合 walk/idle/attack 三种状态
-DEMO_ENEMIES = [
-    (0, 7, "normal", "walk"), (0, 8, "cone", "walk"),
-    (1, 6, "fast", "walk"), (1, 7, "banner", "idle"),
-    (2, 5, "giant", "walk"), (2, 7, "bucket", "attack"),
-    (3, 6, "shield_cadet", "walk"),
-    (4, 6, "boss_50", "attack"),
-]
-
-PLANT_SCALE = C.CELL / 64 * 0.94      # 精灵表每格 64px，放大到填满 76px 棋盘格
-ENEMY_SCALE = C.CELL / 64 * 1.06
-GROUND_INSET = 6                      # 底部锚点离格底内缩，留一点草地
+PLANT_SCALE = CELL / 64.0 * 0.94
+ENEMY_SCALE = CELL / 64.0 * 1.06
+GROUND_INSET = 6
 
 
 def _load_animation_module():
-    """惰性导入 anim_demo/animation.py（它自己会把自包含 libs/ 插进 sys.path）。"""
-    if str(ANIM_DIR) not in sys.path:
-        sys.path.insert(0, str(ANIM_DIR))
-    import animation  # noqa: WPS433 (运行期按需导入)
+    anim_dir = Path(__file__).resolve().parents[1] / "anim_demo"
+    if str(anim_dir) not in sys.path:
+        sys.path.insert(0, str(anim_dir))
+    import animation  # noqa: WPS433
     return animation
 
 
+def _load_font(size: int):
+    """优先用系统中文字体；拿不到就退回内置字体并标记 cjk=False（改用英文文案）。"""
+    for cand in ("C:/Windows/Fonts/msyh.ttc", "C:/Windows/Fonts/msyhl.ttc",
+                 "C:/Windows/Fonts/simhei.ttf", "C:/Windows/Fonts/simsun.ttc",
+                 "/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"):
+        if os.path.exists(cand):
+            try:
+                return pygame.font.Font(cand, size), True
+            except Exception:  # noqa: BLE001
+                continue
+    return pygame.font.Font(None, size), False
+
+
 class SpriteLibrary:
-    """key → SpriteSheet 的缓存与降级。表缺失时返回 None，由调用方画色块。"""
+    """key -> SpriteSheet 的缓存与降级。表缺失时返回 None，由调用方画色块。"""
+
+    SPRITE_ROOT = Path(__file__).resolve().parents[1] / "anim_demo" / "assets" / "sprites"
 
     def __init__(self, enabled: bool = True) -> None:
         self.enabled = enabled
@@ -85,12 +99,12 @@ class SpriteLibrary:
             return
         try:
             self.module = _load_animation_module()
-        except Exception as exc:  # noqa: BLE001 - 任何导入问题都降级到色块
+        except Exception as exc:  # noqa: BLE001
             self.enabled = False
             self.failed.append(("animation", repr(exc)))
 
     def path_for(self, key: str, kind: str = "plant") -> Path:
-        sub = SPRITE_ROOT / "enemies" if kind == "enemy" else SPRITE_ROOT
+        sub = self.SPRITE_ROOT / "enemies" if kind == "enemy" else self.SPRITE_ROOT
         return sub / f"{key}.png"
 
     def sheet(self, key: str, kind: str = "plant"):
@@ -99,7 +113,7 @@ class SpriteLibrary:
         path = self.path_for(key, kind)
         if path in self._cache:
             return self._cache[path]
-        # 必须先判存在：SpriteSheet 在文件缺失时会**写字占位表**，渲染层不能落盘。
+        # 必须先判存在：SpriteSheet 在文件缺失时会往磁盘写占位表
         if not path.exists():
             self.missing.append(f"{kind}:{key}")
             self._cache[path] = None
@@ -112,169 +126,368 @@ class SpriteLibrary:
         self._cache[path] = sheet
         return sheet
 
-    def icon(self, key: str, kind: str, size: tuple[int, int]):
-        """卡栏用静态缩略图（取 idle 首帧）。"""
-        sheet = self.sheet(key, kind)
-        if sheet is None:
-            return None
-        frame = sheet.frames["idle"][0]
-        return pygame.transform.smoothscale(frame, size)
-
     def loaded_count(self) -> int:
         return sum(1 for v in self._cache.values() if v is not None)
 
 
 class GameApp:
-    def __init__(self, data_dir: str | Path | None = None, use_sprites: bool = True) -> None:
+    def __init__(self, data_dir: str | Path | None = None, use_sprites: bool = True,
+                 level_key: str = "m1_01", seed: int = 1000, autoplay: bool = False) -> None:
         pygame.init()
-        pygame.display.set_caption("PVZ-like 薄壳（M1 精灵表渲染）")
-        self.screen = pygame.display.set_mode((C.BOARD_W, C.TOP_H + C.ROWS * C.CELL))
+        pygame.display.set_caption("PVZ-like 可玩版（M1）")
+        self.screen = pygame.display.set_mode((WIN_W, WIN_H))
         self.clock = pygame.time.Clock()
         data_dir = Path(data_dir) if data_dir else Path(__file__).parent / "data"
         self.registry = load_registry(data_dir)
-        # 用内置默认字体，避免 SysFont 在部分 Windows 环境枚举系统字体崩溃；仅渲染英文 key/数字
-        self.font = pygame.font.Font(None, 18)
-        self.card_keys = list(self.registry.plants.keys())[: 8]
-        # 精灵表必须在 set_mode 之后加载（convert_alpha 需要已建立视频模式）
+        self.levels = load_levels(data_dir / "levels")
+        if not self.levels:
+            raise SystemExit(f"没有读到关卡：{data_dir / 'levels'}")
+        self.level_key = level_key if level_key in self.levels else sorted(self.levels)[0]
+        self.seed = seed
+        self.autoplay = autoplay
+        self.font, self.cjk = _load_font(18)
+        self.big_font, _ = _load_font(56)
+        if self.cjk:
+            self.lbl_plants, self.lbl_enemies = "植物", "僵尸"
+            self.lbl_restart = "R 重开    Q 退出"
+            self.reason_text = {
+                "no_sun": "阳光不足", "recharging": "卡片冷却中",
+                "occupied": "这格已经有植物", "no_selection": "先选一张卡",
+                "empty": "这格没有植物", "out_of_board": "超出棋盘",
+                "over": "本局已结束",
+            }
+        else:
+            self.lbl_plants, self.lbl_enemies = "plants", "zombies"
+            self.lbl_restart = "R restart    Q quit"
+            self.reason_text = {
+                "no_sun": "not enough sun", "recharging": "recharging",
+                "occupied": "occupied", "no_selection": "pick a card first",
+                "empty": "nothing here", "out_of_board": "out of board",
+                "over": "round over",
+            }
         self.sprites = SpriteLibrary(use_sprites)
-        self._icon_cache: dict[tuple[str, str, int, int], object] = {}
-        self.scene_plants: list[dict] = []
-        self.scene_enemies: list[dict] = []
-        self._build_demo_scene()
+        self._build_visual_resources()
+        self.cards_rect: list[tuple[pygame.Rect, str]] = []
+        self.shovel_rect = pygame.Rect(0, 0, 0, 0)
+        self.running = True
+        self.message = ""
+        self.message_t = 0.0
+        self.new_game()
 
-    # ---- 展示场景（纯视图状态）----
-    def _ground_y(self, row: int) -> int:
-        return C.TOP_H + row * C.CELL + C.CELL - GROUND_INSET
+    # ------------------------------------------------------------------ 局
+    def new_game(self) -> None:
+        self.level = self.levels[self.level_key]
+        self.session = PlaySession(self.level, self.registry, seed=self.seed)
+        self.views: dict[int, object] = {}
+        self.message = ""
+        self.message_t = 0.0
+        self.bot = RuleBot(self.session.pool, smart=True) if self.autoplay else None
 
-    def _cell_cx(self, col: int) -> int:
-        return col * C.CELL + C.CELL // 2
+    # ------------------------------------------------------------------ 素材
+    def _build_visual_resources(self) -> None:
+        self.grass = self._make_grass()
+        self.panel = self._make_gradient((247, 245, 230), (226, 224, 201), 4, 64)
+        self.panel_shadow = self._make_gradient((60, 60, 50, 56), (60, 60, 50, 0), 4, 32)
+        self.shadow = self._make_radial_shadow()
 
-    def _build_demo_scene(self) -> None:
-        anim = self.sprites.module
-        for row, col, key in DEMO_PLANTS:
-            sprite = None
-            sheet = self.sprites.sheet(key, "plant")
-            if sheet is not None:
-                sprite = anim.AnimatedSprite(sheet, self._cell_cx(col), self._ground_y(row),
-                                             scale=PLANT_SCALE)
-            self.scene_plants.append(
-                {"row": row, "col": col, "key": key, "sprite": sprite})
-        for row, col, key, hint in DEMO_ENEMIES:
-            sprite = None
-            sheet = self.sprites.sheet(key, "enemy")
-            if sheet is not None:
-                sprite = anim.AnimatedSprite(sheet, self._cell_cx(col), self._ground_y(row),
-                                             scale=ENEMY_SCALE)
-                sprite.facing = -1                      # 敌人朝左前进
-                if hint == "attack":
-                    sprite.play("attack", force=True)
-            self.scene_enemies.append(
-                {"row": row, "col": col, "key": key, "hint": hint, "sprite": sprite})
+    def _make_grass(self):
+        import random
+        rnd = random.Random(20261104)
+        surf = pygame.Surface((96, 96), pygame.SRCALPHA)
+        for _ in range(1400):
+            x, y = rnd.randrange(96), rnd.randrange(96)
+            a = rnd.randrange(8, 34)
+            pygame.draw.circle(surf, (0, 0, 0, a), (x, y), rnd.choice((1, 1, 2, 3)))
+        return pygame.transform.smoothscale(surf, (BOARD_W, ROWS * CELL))
 
-    def advance(self, ms: int = 16) -> None:
-        """推进动画时钟（不动任何战斗状态）。"""
-        for item in self.scene_plants:
-            if item["sprite"] is not None:
-                item["sprite"].update(ms, moving=False)
-        for item in self.scene_enemies:
-            sp = item["sprite"]
-            if sp is None:
-                continue
-            if item["hint"] == "attack":
-                if sp.state != "attack":
-                    sp.play("attack")
-                sp.update(ms, moving=False)
-            else:
-                sp.update(ms, moving=item["hint"] == "walk")
+    @staticmethod
+    def _make_gradient(top, bottom, w, h):
+        top = tuple(top) + ((255,) if len(top) == 3 else ())
+        bottom = tuple(bottom) + ((255,) if len(bottom) == 3 else ())
+        surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        for y in range(h):
+            k = y / max(1, h - 1)
+            col = tuple(int(top[i] + (bottom[i] - top[i]) * k) for i in range(4))
+            pygame.draw.line(surf, col, (0, y), (w, y))
+        return surf
 
-    # ---- 绘制 ----
-    def _board_rect(self, row: int, col: int):
-        return pygame.Rect(col * C.CELL, C.TOP_H + row * C.CELL, C.CELL, C.CELL)
+    def _make_radial_shadow(self):
+        size = 64
+        surf = pygame.Surface((size, size), pygame.SRCALPHA)
+        for r in range(size // 2, 0, -1):
+            a = int(90 * (1 - r / (size / 2)) ** 0.7)
+            pygame.draw.circle(surf, (0, 0, 0, a), (size // 2, size // 2), r)
+        return surf
 
-    def draw(self) -> None:
-        self.screen.fill(COL_PANEL)
-        self._draw_cards()
-        self._draw_board()
-        for item in self.scene_plants:
-            if item["sprite"] is not None:
-                item["sprite"].draw(self.screen)
-            else:
-                self._plant_dot(item["row"], item["col"])
-        for item in self.scene_enemies:
-            if item["sprite"] is not None:
-                item["sprite"].draw(self.screen)
-            else:
-                self._enemy_dot(item["row"], item["col"])
-        pygame.display.flip()
+    # ------------------------------------------------------------------ 坐标
+    def cell_rect(self, row: int, col: int) -> pygame.Rect:
+        return pygame.Rect(GUTTER + col * CELL, TOP_H + row * CELL, CELL, CELL)
 
-    def _draw_cards(self) -> None:
-        pygame.draw.rect(self.screen, COL_PANEL, (0, 0, C.BOARD_W, C.TOP_H))
-        for i, key in enumerate(self.card_keys):
-            r = pygame.Rect(8 + i * 82, 10, 74, C.TOP_H - 20)
-            pygame.draw.rect(self.screen, COL_CARD, r, border_radius=8)
-            icon = self._card_icon(key)
-            if icon is not None:
-                self.screen.blit(icon, (r.x + (r.width - icon.get_width()) // 2, r.y + 3))
-            else:
-                pygame.draw.rect(self.screen, COL_PLANT, (r.x + 23, r.y + 6, 28, 28),
-                                 border_radius=6)
-            sun = self.registry.plants[key].get("sun", 0)
-            self._text(str(sun), (r.x + 5, r.y + 47))
-            self._text(key[:9], (r.x + 5, r.y + 59))
+    def cell_at(self, pos):
+        x, y = pos
+        if x < GUTTER or y < TOP_H:
+            return None
+        col = (x - GUTTER) // CELL
+        row = (y - TOP_H) // CELL
+        if 0 <= row < ROWS and 0 <= col < COLS:
+            return int(row), int(col)
+        return None
 
-    def _card_icon(self, key: str):
-        size = (44, 44)
-        cache_key = (key, "plant", size[0], size[1])
-        if cache_key in self._icon_cache:
-            return self._icon_cache[cache_key]
-        icon = self.sprites.icon(key, "plant", size)
-        self._icon_cache[cache_key] = icon
-        return icon
+    # ------------------------------------------------------------------ 输入
+    def handle_event(self, ev) -> None:
+        if ev.type == pygame.QUIT:
+            self.running = False
+        elif ev.type == pygame.KEYDOWN:
+            if ev.key in (pygame.K_q, pygame.K_ESCAPE):
+                self.running = False
+            elif ev.key == pygame.K_r:
+                self.new_game()
+            elif ev.key == pygame.K_x:
+                self.session.toggle_shovel()
+            elif pygame.K_1 <= ev.key <= pygame.K_9:
+                idx = ev.key - pygame.K_1
+                cards = self.session.cards()
+                if idx < len(cards):
+                    self.session.select(cards[idx]["key"])
+        elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1:
+            self._on_click(ev.pos)
 
-    def _draw_board(self) -> None:
-        for row in range(C.ROWS):
-            for col in range(C.COLS):
-                color = COL_GRASS_A if (row + col) % 2 == 0 else COL_GRASS_B
-                pygame.draw.rect(self.screen, color, self._board_rect(row, col))
-                pygame.draw.rect(self.screen, COL_LINE, self._board_rect(row, col), 1)
+    def _on_click(self, pos) -> None:
+        for rect, key in self.cards_rect:
+            if rect.collidepoint(pos):
+                self.session.select(key)
+                return
+        if self.shovel_rect.collidepoint(pos):
+            self.session.toggle_shovel()
+            return
+        cell = self.cell_at(pos)
+        if cell is None:
+            return
+        ok, reason = self.session.click_cell(*cell)
+        if not ok:
+            self.message = self.reason_text.get(reason, reason)
+            self.message_t = 2.0
 
-    def _plant_dot(self, row: int, col: int) -> None:
-        r = self._board_rect(row, col)
-        pygame.draw.circle(self.screen, COL_PLANT, r.center, C.CELL // 3)
-        pygame.draw.circle(self.screen, (230, 255, 220),
-                           (r.centerx - 8, r.centery - 8), 6)
+    # ------------------------------------------------------------------ 主循环
+    def advance(self, dt_seconds: float) -> None:
+        if self.bot is not None and not self.session.over:
+            self.bot.think(self.session.sim)
+        self.session.tick(dt_seconds)
+        if self.message_t > 0:
+            self.message_t -= dt_seconds
+            if self.message_t <= 0:
+                self.message = ""
 
-    def _enemy_dot(self, row: int, col: int) -> None:
-        r = self._board_rect(row, col)
-        pygame.draw.circle(self.screen, COL_ENEMY, r.center, C.CELL // 3)
-        pygame.draw.circle(self.screen, (255, 220, 210),
-                           (r.centerx + 6, r.centery - 4), 4)
-
-    def _text(self, s: str, pos) -> None:
-        img = self.font.render(s, True, COL_TEXT)
-        self.screen.blit(img, pos)
-
-    # ---- 主循环 ----
-    def run(self, frames_limit: int | None = None) -> None:
+    def run(self, frames_limit: int | None = None, dt_seconds: float = 1 / 60) -> None:
         frame = 0
-        running = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-            # TODO(M1+)：在此接入 Simulation.step(DT) 与点选落子，用真实实体替换展示场景
-            self.advance(16)
+        while self.running:
+            for ev in pygame.event.get():
+                self.handle_event(ev)
+            self.advance(dt_seconds)
             self.draw()
-            self.clock.tick(30)
+            self.clock.tick(60)
             frame += 1
             if frames_limit is not None and frame >= frames_limit:
-                running = False
+                self.running = False
         pygame.quit()
 
-    def save_snapshot(self, path: str | Path, warmup_ms: int = 480) -> Path:
-        """先把动画推进一小段，截图才不会全是第 0 帧。"""
-        for _ in range(max(1, warmup_ms // 16)):
-            self.advance(16)
+    # ------------------------------------------------------------------ 绘制
+    def draw(self) -> None:
+        s = self.screen
+        s.fill(COL_PANEL_BG)
+        self._draw_top_panel()
+        self._draw_board()
+        self._draw_entities()
+        self._draw_bottom_bar()
+        self._draw_overlay()
+        pygame.display.flip()
+
+    def _draw_top_panel(self) -> None:
+        s = self.screen
+        s.blit(self.panel, (0, 0))
+        pygame.draw.line(s, COL_PANEL_EDGE, (0, TOP_H), (WIN_W, TOP_H), 2)
+
+        cards = self.session.cards()
+        n = max(1, len(cards))
+        gap = 6
+        card_w = min(64, (BOARD_W - 100 - (n - 1) * gap) / n)
+        card_h = TOP_H - 20
+        total = n * card_w + (n - 1) * gap
+        x0 = GUTTER + (BOARD_W - total) / 2
+        self.cards_rect = []
+
+        for i, card in enumerate(cards):
+            cx = int(x0 + i * (card_w + gap))
+            rect = pygame.Rect(cx, 10, int(card_w), int(card_h))
+            self.cards_rect.append((rect, card["key"]))
+            usable = card["affordable"] and card["ready"]
+            pygame.draw.rect(s, COL_CARD if usable else COL_CARD_DIM, rect, border_radius=6)
+            pygame.draw.rect(s, (60, 60, 50) if card["selected"] else COL_PANEL_EDGE,
+                             rect, 3 if card["selected"] else 1, border_radius=6)
+
+            sheet = self.sprites.sheet(card["key"], "plant")
+            icon_size = max(8, int(card_w - 10))
+            if sheet is not None:
+                frame = sheet.frames["idle"][0]
+                icon = pygame.transform.smoothscale(frame, (icon_size, icon_size))
+                if not usable:
+                    icon = icon.copy()
+                    icon.fill((110, 110, 110), special_flags=pygame.BLEND_RGB_SUB)
+                s.blit(icon, (rect.x + 5, rect.y + 3))
+            else:
+                pygame.draw.rect(s, (64, 150, 72),
+                                 (rect.x + 12, rect.y + 8, icon_size - 8, icon_size - 8),
+                                 border_radius=4)
+
+            if card["cd"] > 0 and card["cd_max"] > 0:
+                k = min(1.0, card["cd"] / card["cd_max"])
+                h = int(rect.height * k)
+                mask = pygame.Surface((rect.width, h), pygame.SRCALPHA)
+                mask.fill((20, 30, 20, 140))
+                s.blit(mask, (rect.x, rect.y + rect.height - h))
+
+            txt = self.font.render(str(card["sun"]), True,
+                                   COL_TEXT if usable else COL_TEXT_DIM)
+            s.blit(txt, (rect.x + 4, rect.y + rect.height - 16))
+
+        self.shovel_rect = pygame.Rect(int(x0 + total + 8), 10, 40, int(card_h))
+        sel = self.session.selected == SHOVEL
+        pygame.draw.rect(s, (240, 226, 196) if sel else COL_CARD, self.shovel_rect,
+                         border_radius=6)
+        pygame.draw.rect(s, (60, 60, 50) if sel else COL_PANEL_EDGE, self.shovel_rect,
+                         3 if sel else 1, border_radius=6)
+        cx, cy = self.shovel_rect.center
+        pygame.draw.rect(s, COL_SHOVEL, (cx - 3, cy - 9, 6, 14), border_radius=2)
+        pygame.draw.rect(s, (120, 90, 56), (cx - 8, cy + 5, 16, 4), border_radius=2)
+
+    def _draw_board(self) -> None:
+        s = self.screen
+        for r in range(ROWS):
+            for c in range(COLS):
+                pygame.draw.rect(s, COL_A if (r + c) % 2 == 0 else COL_B, self.cell_rect(r, c))
+        s.blit(self.grass, (GUTTER, TOP_H))
+        for r in range(1, ROWS):
+            y = TOP_H + r * CELL
+            pygame.draw.line(s, COL_SEAM, (GUTTER, y), (GUTTER + BOARD_W, y), 1)
+        for c in range(1, COLS):
+            x = GUTTER + c * CELL
+            pygame.draw.line(s, COL_SEAM, (x, TOP_H), (x, TOP_H + ROWS * CELL), 1)
+
+        pygame.draw.rect(s, COL_DIRT, (0, TOP_H, GUTTER, ROWS * CELL))
+        pygame.draw.line(s, COL_DIRT_D, (GUTTER, TOP_H), (GUTTER, TOP_H + ROWS * CELL), 2)
+        pygame.draw.rect(s, COL_BORDER, (GUTTER, TOP_H, BOARD_W, ROWS * CELL), 2)
+        s.blit(self.panel_shadow, (GUTTER, TOP_H))
+
+        for r in range(ROWS):
+            if r < self.session.lives:
+                cx, cy = GUTTER // 2, TOP_H + r * CELL + CELL // 2
+                pygame.draw.circle(s, COL_MOWER, (cx, cy), 10)
+                pygame.draw.circle(s, COL_SUN, (cx, cy), 6)
+                pygame.draw.circle(s, (70, 48, 36), (cx, cy), 2)
+
+    def _sprite_for(self, uid: int, key: str, kind: str):
+        if uid in self.views:
+            return self.views[uid]
+        sheet = self.sprites.sheet(key, kind)
+        if sheet is None:
+            self.views[uid] = None
+            return None
+        scale = PLANT_SCALE if kind == "plant" else ENEMY_SCALE
+        sprite = self.sprites.module.AnimatedSprite(sheet, 0, 0, scale=scale)
+        if kind == "enemy":
+            sprite.facing = -1
+        self.views[uid] = sprite
+        return sprite
+
+    def _draw_entities(self) -> None:
+        s = self.screen
+        data = self.session.entities()
+        alive = set()
+
+        for p in data["plants"]:
+            uid = hash(("p", p["row"], p["col"], p["key"]))
+            alive.add(uid)
+            sprite = self._sprite_for(uid, p["key"], "plant")
+            if sprite is None:
+                r = self.cell_rect(p["row"], p["col"])
+                pygame.draw.circle(s, (64, 150, 72), r.center, CELL // 3)
+                continue
+            sprite.x = GUTTER + int((p["col"] + 0.5) * CELL)
+            sprite.ground_y = TOP_H + p["row"] * CELL + CELL - GROUND_INSET
+            sprite.update(16, moving=False)
+            sprite.draw(s)
+
+        for e in data["enemies"]:
+            uid = hash(("e", e["row"], e["key"], round(e["x"], 1)))
+            alive.add(uid)
+            sprite = self._sprite_for(uid, e["key"], "enemy")
+            px = GUTTER + int((e["x"] + 0.4) * CELL)
+            py = TOP_H + e["row"] * CELL + CELL - GROUND_INSET
+            if sprite is None:
+                pygame.draw.circle(s, (150, 74, 66), (px, py - CELL // 3), CELL // 3)
+                continue
+            sprite.x = px
+            sprite.ground_y = py
+            if e["eating"]:
+                if sprite.state != "attack":
+                    sprite.play("attack")
+                sprite.update(16, moving=False)
+            else:
+                sprite.update(16, moving=True)
+            sprite.draw(s)
+
+        for old in list(self.views):
+            if old not in alive:
+                self.views.pop(old, None)
+
+        for pr in data["projectiles"]:
+            px = GUTTER + int(pr["x"] * CELL)
+            py = TOP_H + pr["row"] * CELL + CELL // 2
+            pygame.draw.circle(s, (255, 255, 255), (px, py), 5)
+            pygame.draw.circle(s, COL_PROJ, (px, py), 4)
+
+    def _draw_bottom_bar(self) -> None:
+        s = self.screen
+        y = TOP_H + ROWS * CELL
+        s.blit(self.panel, (0, y))
+        pygame.draw.line(s, COL_PANEL_EDGE, (0, y), (WIN_W, y), 2)
+        cy = y + BAR_H // 2
+        pygame.draw.circle(s, COL_SUN, (18, cy), 9)
+        pygame.draw.circle(s, COL_SUN_RIM, (18, cy), 9, 2)
+        s.blit(self.font.render(str(self.session.sun), True, COL_TEXT), (31, cy - 7))
+
+        st = self.session.status()
+        info = (f"{st['level']}  t={st['time']:.0f}s  "
+                f"{self.lbl_plants} {st['plants']}  {self.lbl_enemies} {st['enemies']}")
+        s.blit(self.font.render(info, True, (76, 86, 66)), (92, cy - 7))
+
+        if self.message:
+            img = self.font.render(self.message, True, (170, 60, 40))
+            s.blit(img, (WIN_W - img.get_width() - 120, cy - 7))
+
+        for i in range(max(0, self.session.lives)):
+            cx = WIN_W - 16 - i * 18
+            pygame.draw.circle(s, COL_MOWER, (cx, cy), 7)
+            pygame.draw.circle(s, COL_SUN, (cx, cy), 4)
+
+    def _draw_overlay(self) -> None:
+        if not self.session.over:
+            return
+        s = self.screen
+        veil = pygame.Surface((WIN_W, WIN_H), pygame.SRCALPHA)
+        veil.fill((10, 20, 10, 150))
+        s.blit(veil, (0, 0))
+        win = self.session.won
+        title = "CLEARED" if win else "GAME OVER"
+        col = (240, 255, 210) if win else (255, 190, 180)
+        img = self.big_font.render(title, True, col)
+        s.blit(img, (WIN_W // 2 - img.get_width() // 2, WIN_H // 2 - 46))
+        hint = self.font.render(self.lbl_restart, True, (230, 230, 220))
+        s.blit(hint, (WIN_W // 2 - hint.get_width() // 2, WIN_H // 2 + 10))
+
+    def save_snapshot(self, path: str | Path, warmup_frames: int = 30) -> Path:
+        for _ in range(warmup_frames):
+            self.advance(1 / 60)
         self.draw()
         path = Path(path)
         pygame.image.save(self.screen, str(path))
@@ -283,24 +496,37 @@ class GameApp:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--level", default="m1_01")
+    ap.add_argument("--seed", type=int, default=1000)
     ap.add_argument("--smoke", action="store_true", help="有限帧冒烟（可配合 dummy 驱动）")
-    ap.add_argument("--frames", type=int, default=3)
+    ap.add_argument("--frames", type=int, default=60)
     ap.add_argument("--shot", default="", help="冒烟截图保存路径")
     ap.add_argument("--no-sprites", action="store_true", help="强制色块占位（对照回归用）")
+    ap.add_argument("--autoplay", action="store_true", help="用 RuleBot 自动对局（截图/演示用）")
+    ap.add_argument("--warmup", type=float, default=0.5, help="截图前先推进几秒")
     args = ap.parse_args(argv)
+
     if args.smoke:
         os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
         os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
-    app = GameApp(use_sprites=not args.no_sprites)
+
+    app = GameApp(use_sprites=not args.no_sprites, level_key=args.level, seed=args.seed,
+                  autoplay=args.autoplay)
     lib = app.sprites
-    print(f"sprites: enabled={lib.enabled} loaded={lib.loaded_count()} "
+    print(f"level={app.level_key} sprites_enabled={lib.enabled} loaded={lib.loaded_count()} "
           f"missing={len(lib.missing)} failed={len(lib.failed)}")
     for item in lib.missing:
         print(f"  [missing] {item}")
     for key, err in lib.failed:
         print(f"  [failed] {key}: {err}")
+
     if args.shot:
-        out = app.save_snapshot(args.shot)
+        if args.warmup > 0:
+            steps = max(1, int(args.warmup * 60))
+            for _ in range(steps):
+                app.advance(1 / 60)
+        app.draw()
+        out = app.save_snapshot(args.shot, warmup_frames=1)
         print("snapshot:", out)
     if args.smoke:
         app.run(frames_limit=args.frames)
