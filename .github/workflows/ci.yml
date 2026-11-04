@@ -65,10 +65,20 @@ jobs:
       - name: Install deps
         run: pip install --quiet pillow
 
+      - name: Install Godot runtime libs
+        # 官方 Linux 编辑器二进制即使只跑 --version 也要动态链接这些库，
+        # runner 上默认没有，缺了就会在 `./godot --version` 那步直接崩。
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            libx11-6 libxcursor1 libxinerama1 libxi6 libxrandr2 \
+            libgl1 libasound2 libpulse0
+
       - name: Download Godot
         run: |
           set -euo pipefail
-          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          V=4.7.2-stable
+          URL="https://github.com/godotengine/godot/releases/download/$V/Godot_v${V}_linux.x86_64.zip"
           echo "URL=$URL"
           curl -fsSL --retry 3 --retry-delay 2 -o godot.zip "$URL"
           ls -l godot.zip
@@ -79,7 +89,9 @@ jobs:
           echo "BIN=$BIN"
           mv "$BIN" godot
           chmod +x godot
-          ./godot --version
+
+      - name: Godot version
+        run: ./godot --version
 
       - name: Regenerate golden cases from the Python oracle
         run: python scripts/gen_golden_hits.py
