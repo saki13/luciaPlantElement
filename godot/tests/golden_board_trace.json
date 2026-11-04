@@ -106,48 +106,6 @@
      }
     },
     "enemies": {
-     "normal": {
-      "key": "normal",
-      "cn": "普通僵尸",
-      "budget": 1,
-      "hp_body": 100,
-      "armor": {
-       "hp": 0,
-       "reduction": 0
-      },
-      "block_flat": 0,
-      "regen": 0,
-      "speed": 34,
-      "bite_dps": 25,
-      "weight": 1,
-      "slow_resist": 0,
-      "kb_immune": false,
-      "tags": [],
-      "art_prompt": "Q版粗描边卡通手游怪物，一只灰绿色笨拙僵尸，圆头小眼睛穿破旧棕外套，正面直立白底，纯白背景，明快平涂上色，可爱不恐怖",
-      "_nominal_hp": 100.0,
-      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\normal.json"
-     },
-     "fast": {
-      "key": "fast",
-      "cn": "快速僵尸",
-      "budget": 1,
-      "hp_body": 70,
-      "armor": {
-       "hp": 0,
-       "reduction": 0
-      },
-      "block_flat": 0,
-      "regen": 0,
-      "speed": 60,
-      "bite_dps": 25,
-      "weight": 1,
-      "slow_resist": 0,
-      "kb_immune": false,
-      "tags": [],
-      "art_prompt": "Q版粗描边卡通手游怪物，一只瘦长橙红色冲刺僵尸，身体前倾作奔跑姿势带速度线，白底纯白背景，明快平涂，可爱不恐怖",
-      "_nominal_hp": 70.0,
-      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\fast.json"
-     },
      "cone": {
       "key": "cone",
       "cn": "路障僵尸",
@@ -170,6 +128,48 @@
       "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸头顶倒扣一个橙白相间交通路锥当轻甲，白底纯白背景，明快平涂，可爱不恐怖",
       "_nominal_hp": 280.0,
       "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\cone.json"
+     },
+     "fast": {
+      "key": "fast",
+      "cn": "快速僵尸",
+      "budget": 1,
+      "hp_body": 70,
+      "armor": {
+       "hp": 0,
+       "reduction": 0
+      },
+      "block_flat": 0,
+      "regen": 0,
+      "speed": 60,
+      "bite_dps": 25,
+      "weight": 1,
+      "slow_resist": 0,
+      "kb_immune": false,
+      "tags": [],
+      "art_prompt": "Q版粗描边卡通手游怪物，一只瘦长橙红色冲刺僵尸，身体前倾作奔跑姿势带速度线，白底纯白背景，明快平涂，可爱不恐怖",
+      "_nominal_hp": 70.0,
+      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\fast.json"
+     },
+     "normal": {
+      "key": "normal",
+      "cn": "普通僵尸",
+      "budget": 1,
+      "hp_body": 100,
+      "armor": {
+       "hp": 0,
+       "reduction": 0
+      },
+      "block_flat": 0,
+      "regen": 0,
+      "speed": 34,
+      "bite_dps": 25,
+      "weight": 1,
+      "slow_resist": 0,
+      "kb_immune": false,
+      "tags": [],
+      "art_prompt": "Q版粗描边卡通手游怪物，一只灰绿色笨拙僵尸，圆头小眼睛穿破旧棕外套，正面直立白底，纯白背景，明快平涂上色，可爱不恐怖",
+      "_nominal_hp": 100.0,
+      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\normal.json"
      }
     }
    },
@@ -11341,6 +11341,29 @@
      }
     },
     "enemies": {
+     "cone": {
+      "key": "cone",
+      "cn": "路障僵尸",
+      "budget": 2,
+      "hp_body": 100,
+      "armor": {
+       "hp": 180,
+       "reduction": 0.15
+      },
+      "block_flat": 0,
+      "regen": 0,
+      "speed": 30,
+      "bite_dps": 25,
+      "weight": 1,
+      "slow_resist": 0,
+      "kb_immune": false,
+      "tags": [
+       "armored"
+      ],
+      "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸头顶倒扣一个橙白相间交通路锥当轻甲，白底纯白背景，明快平涂，可爱不恐怖",
+      "_nominal_hp": 280.0,
+      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\cone.json"
+     },
      "bucket": {
       "key": "bucket",
       "cn": "铁桶僵尸",
@@ -11364,29 +11387,6 @@
       "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸头上扣一只深灰色金属铁桶当重甲，桶身高光厚重，白底纯白背景，明快平涂，可爱不恐怖",
       "_nominal_hp": 650.0,
       "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\bucket.json"
-     },
-     "cone": {
-      "key": "cone",
-      "cn": "路障僵尸",
-      "budget": 2,
-      "hp_body": 100,
-      "armor": {
-       "hp": 180,
-       "reduction": 0.15
-      },
-      "block_flat": 0,
-      "regen": 0,
-      "speed": 30,
-      "bite_dps": 25,
-      "weight": 1,
-      "slow_resist": 0,
-      "kb_immune": false,
-      "tags": [
-       "armored"
-      ],
-      "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸头顶倒扣一个橙白相间交通路锥当轻甲，白底纯白背景，明快平涂，可爱不恐怖",
-      "_nominal_hp": 280.0,
-      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\cone.json"
      }
     }
    },
@@ -20064,6 +20064,27 @@
      }
     },
     "enemies": {
+     "normal": {
+      "key": "normal",
+      "cn": "普通僵尸",
+      "budget": 1,
+      "hp_body": 100,
+      "armor": {
+       "hp": 0,
+       "reduction": 0
+      },
+      "block_flat": 0,
+      "regen": 0,
+      "speed": 34,
+      "bite_dps": 25,
+      "weight": 1,
+      "slow_resist": 0,
+      "kb_immune": false,
+      "tags": [],
+      "art_prompt": "Q版粗描边卡通手游怪物，一只灰绿色笨拙僵尸，圆头小眼睛穿破旧棕外套，正面直立白底，纯白背景，明快平涂上色，可爱不恐怖",
+      "_nominal_hp": 100.0,
+      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\normal.json"
+     },
      "shield_cadet": {
       "key": "shield_cadet",
       "cn": "格挡盾兵",
@@ -20087,27 +20108,6 @@
       "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸双手举一面实木小圆盾挡在身前，盾面有金属包边和潦草徽记，白底纯白背景，明快平涂，可爱不恐怖",
       "_nominal_hp": 100.0,
       "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\shield_cadet.json"
-     },
-     "normal": {
-      "key": "normal",
-      "cn": "普通僵尸",
-      "budget": 1,
-      "hp_body": 100,
-      "armor": {
-       "hp": 0,
-       "reduction": 0
-      },
-      "block_flat": 0,
-      "regen": 0,
-      "speed": 34,
-      "bite_dps": 25,
-      "weight": 1,
-      "slow_resist": 0,
-      "kb_immune": false,
-      "tags": [],
-      "art_prompt": "Q版粗描边卡通手游怪物，一只灰绿色笨拙僵尸，圆头小眼睛穿破旧棕外套，正面直立白底，纯白背景，明快平涂上色，可爱不恐怖",
-      "_nominal_hp": 100.0,
-      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\normal.json"
      }
     }
    },
@@ -25971,6 +25971,29 @@
       "art_prompt": "Q版粗描边卡通手游Boss怪物，披金属重甲的巨型僵尸将军，胸甲有发光纹章，一手巨盾一手重锤，头顶小皇冠，暖橙护甲配深绿皮肤，白底纯白背景，明快平涂，威武但圆润不恐怖",
       "_nominal_hp": 4400.0,
       "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\boss_50.json"
+     },
+     "cone": {
+      "key": "cone",
+      "cn": "路障僵尸",
+      "budget": 2,
+      "hp_body": 100,
+      "armor": {
+       "hp": 180,
+       "reduction": 0.15
+      },
+      "block_flat": 0,
+      "regen": 0,
+      "speed": 30,
+      "bite_dps": 25,
+      "weight": 1,
+      "slow_resist": 0,
+      "kb_immune": false,
+      "tags": [
+       "armored"
+      ],
+      "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸头顶倒扣一个橙白相间交通路锥当轻甲，白底纯白背景，明快平涂，可爱不恐怖",
+      "_nominal_hp": 280.0,
+      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\cone.json"
      }
     }
    },
@@ -49798,6 +49821,29 @@
      }
     },
     "enemies": {
+     "cone": {
+      "key": "cone",
+      "cn": "路障僵尸",
+      "budget": 2,
+      "hp_body": 100,
+      "armor": {
+       "hp": 180,
+       "reduction": 0.15
+      },
+      "block_flat": 0,
+      "regen": 0,
+      "speed": 30,
+      "bite_dps": 25,
+      "weight": 1,
+      "slow_resist": 0,
+      "kb_immune": false,
+      "tags": [
+       "armored"
+      ],
+      "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸头顶倒扣一个橙白相间交通路锥当轻甲，白底纯白背景，明快平涂，可爱不恐怖",
+      "_nominal_hp": 280.0,
+      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\cone.json"
+     },
      "bucket": {
       "key": "bucket",
       "cn": "铁桶僵尸",
@@ -49821,29 +49867,6 @@
       "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸头上扣一只深灰色金属铁桶当重甲，桶身高光厚重，白底纯白背景，明快平涂，可爱不恐怖",
       "_nominal_hp": 650.0,
       "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\bucket.json"
-     },
-     "cone": {
-      "key": "cone",
-      "cn": "路障僵尸",
-      "budget": 2,
-      "hp_body": 100,
-      "armor": {
-       "hp": 180,
-       "reduction": 0.15
-      },
-      "block_flat": 0,
-      "regen": 0,
-      "speed": 30,
-      "bite_dps": 25,
-      "weight": 1,
-      "slow_resist": 0,
-      "kb_immune": false,
-      "tags": [
-       "armored"
-      ],
-      "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸头顶倒扣一个橙白相间交通路锥当轻甲，白底纯白背景，明快平涂，可爱不恐怖",
-      "_nominal_hp": 280.0,
-      "_source": "D:\\lucia\\rea\\project\\pvz\\tdgame\\data\\enemies\\cone.json"
      }
     }
    },

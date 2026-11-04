@@ -153,7 +153,20 @@ def run_scenario(name: str) -> Dict[str, Any]:
     # 把本场景用到的角色定义一并塞进 trace：GDScript 侧不需要能访问仓库外的
     # tdgame/data（res:// 走不出项目目录），trace 因此是自包含的。
     used_plants = {k: reg.plants[k] for _r, _c, k in spec["plants"] if k in reg.plants}
-    used_enemies = {k: reg.enemies[k] for _t, k, _r in spec["schedule"] if k in reg.enemies}
+
+    # 敌人定义要**递归**收集：被召唤出来的 mob 不在出怪表里，但 GDScript 侧也需要它
+    # （否则拿不到 speed/hp，召唤出来的怪会当场不动 —— 这个坑实际踩过）。
+    used_enemies: Dict[str, Any] = {}
+    queue = [k for _t, k, _r in spec["schedule"] if k in reg.enemies]
+    while queue:
+        k = queue.pop()
+        if k in used_enemies:
+            continue
+        d = reg.enemies[k]
+        used_enemies[k] = d
+        mob = (d.get("summon") or {}).get("mob")
+        if mob and mob in reg.enemies:
+            queue.append(mob)
 
     return {
         "format": TRACE_FORMAT,
