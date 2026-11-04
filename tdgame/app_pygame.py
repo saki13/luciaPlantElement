@@ -28,6 +28,7 @@ from .engine.loader import load_registry
 from .engine.bot import RuleBot
 from .engine.session import SHOVEL, PlaySession
 from .scenarios.i_zombie import ZombieBot, ZombiePlaySession
+from .scenarios.savegame import default_save_path, load_from, save_to
 from .scenarios.level_run import load_levels
 
 # ---- 配色 ----
@@ -192,6 +193,10 @@ class GameApp:
                 "empty": "nothing here", "out_of_board": "out of board",
                 "over": "round over",
             }
+        # 存档：坏档不会炸游戏，load_from 兜底成新档 + 一条 warning
+        self.save_path = default_save_path()
+        self.progress, self.save_warning = load_from(self.save_path, self.levels)
+        self._recorded = False
         self.sprites = SpriteLibrary(use_sprites)
         self._build_visual_resources()
         self.cards_rect: list[tuple[pygame.Rect, str]] = []
@@ -213,6 +218,20 @@ class GameApp:
         self.views: dict[int, object] = {}
         self.message = ""
         self.message_t = 0.0
+        self._recorded = False
+
+    def _record_clear_if_needed(self) -> None:
+        """通关时记一次进度并落盘。每局只记一次，避免每帧重复写文件。"""
+        if self._recorded or not self.session.over or not self.session.won:
+            return
+        self._recorded = True
+        if self.mode == "izombie":
+            return          # M5 关卡不参与主线阶段解锁
+        try:
+            self.progress.clear_level(self.level_key)
+            save_to(self.save_path, self.progress)
+        except Exception as exc:      # noqa: BLE001 - 存档失败不该影响玩
+            self.save_warning = f"存档写入失败：{exc.__class__.__name__}"
 
     # ------------------------------------------------------------------ 素材
     def _build_visual_resources(self) -> None:
@@ -305,6 +324,7 @@ class GameApp:
             target = self.session.core if self.mode == "izombie" else self.session.sim
             self.bot.think(target)
         self.session.tick(dt_seconds)
+        self._record_clear_if_needed()
         if self.message_t > 0:
             self.message_t -= dt_seconds
             if self.message_t <= 0:

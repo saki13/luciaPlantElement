@@ -41,3 +41,5 @@ reports/_dsh_write_probe.txt
 *.swp
 Thumbs.db
 desktop.ini
+
+saves/
