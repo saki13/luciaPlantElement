@@ -36,7 +36,8 @@ jobs:
             tests.test_endless \
             tests.test_izombie \
             tests.test_savegame \
-            tests.test_tower
+            tests.test_tower \
+            tests.test_trace
 
       - name: Sprite health check
         # 注：源帧在 .gitignore 里（体积原因），所以这一步在 CI 只跑
@@ -48,6 +49,9 @@ jobs:
 
       - name: Level regression
         run: python scripts/check_levels.py
+
+      - name: Board step trace
+        run: python scripts/check_board_trace.py
 
       - name: Render assertions
         env:
