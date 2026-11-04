@@ -17,7 +17,7 @@
 | B-03 奖励数据双写 | ✅ 已修 | 删除 `progression.CHALLENGE_TOKEN_REWARD`，改为只读关卡 JSON 的 `reward.design_tokens`；新增 2 个测试守住（含"硬编码表不得复活"） |
 | B-04 渲染层无测试 | ✅ 已修 | 新增 `scripts/check_render.py`：21 张表加载、21 单位动画推进、截图非纯色、降级模式可跑 |
 | B-02 `scenarios/` 无线上调用方 | ⏳ 批次 ② 处理 | 交互版会真正调 `progression`（关卡奖励）与 `endless`（无尽模式） |
-| B-05 CI 未实测 | ⏳ 待一次真实 push | CI 已补上关卡回归与渲染断言两步 |
+| B-05 CI 未实测 | ✅ 已实测并修复 | 真实 push 后 CI 确实跑起来了（9+ 次运行），首轮**全红**，暴露两个本地无法发现的问题：① `check_render.py` 无条件把项目自带的 `libs/`（win_amd64 的 `.pyd`）插到 `sys.path` 最前，Linux runner 上 `import pygame` 直接失败；② Godot 下载步骤疑似解压后文件名/可执行位问题。两处均已修（见 `4da818c..2551a75`），等下一轮 CI 验证 |
 | B-06 门禁只覆盖 `resolve_hit` | ⏳ 随阶段 2 | — |
 
 **总检已从 4 关扩到 6 关**，全绿 23.2s。测试 50 → 52。
