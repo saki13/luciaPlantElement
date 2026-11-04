@@ -143,14 +143,21 @@ python -m tdgame.replay --scene m1_day_10w --seed 1000
 
 `.github/workflows/ci.yml` 两个 job：
 
-- `python checks`：单测 + 精灵表体检
-- `resolve_hit conformance`：下载 Godot → 重新生成黄金用例 → 跑门禁
+- `python checks`：单测 + 精灵表体检 + 校准基线 + 关卡回归 + 渲染断言
+- `resolve_hit conformance`：装 Godot 运行库 → 下载 Godot → 重新生成黄金用例 → 跑门禁
 
-Godot 版本通过 workflow 顶部的 `GODOT_VERSION` 控制。
+Godot 版本以 `V=4.7.2-stable` 内联在 `Download Godot` 步骤里（不依赖顶层 env，
+免得变量没传进去时 URL 变成 `download//Godot_v_linux...` 这种静默 404）。
 
-> ⚠️ 这份 workflow **尚未在真实 CI 上跑过**（本地无法验证 GitHub Actions）。
-> 首次 push 若 `Download Godot` 步骤失败，多半是版本号对应的文件名不匹配，
-> 改 `GODOT_VERSION` 即可。
+> ⚠️ **踩过的两个坑（本地无法发现、只有真跑 CI 才暴露）**
+>
+> 1. **`libs/` 是 Windows 专用**：里面全是 `*.cp311-win_amd64.pyd`。
+>    任何脚本都不能无条件把 `libs/` 插到 `sys.path` 最前面，否则 Linux runner 上
+>    `import pygame` 会优先加载 Windows 二进制并直接失败。
+>    正确写法见 `scripts/check_render.py`：先 `import pygame`，`ImportError` 时才回退到 `libs/`。
+> 2. **Godot 官方 Linux 二进制即使只跑 `--version` 也要动态链接 X/GL 库**，
+>    runner 上默认没有。CI 里用 `apt-get install libx11-6 libxcursor1 libxinerama1
+>    libxi6 libxrandr2 libgl1 libasound2 libpulse0` 补齐。
 
 ---
 
