@@ -1,0 +1,41 @@
+{
+  "key": "m2_weight",
+  "phase": "M2",
+  "name": "m2_weight",
+  "cn": "重量免控考场",
+  "start_resource": 250,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "repeater",
+    "morningglory",
+    "wallnut",
+    "custom_shieldbreaker",
+    "frostbell",
+    "bombberry",
+    "leafdancer",
+    "pine_needler",
+    "melonpult",
+    "winter_melon",
+    "bamboo"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 6,
+    "allowed": [
+      "normal",
+      "cone",
+      "bucket",
+      "giant"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 2,
+    "cap_grow": 1,
+    "cap_max": 6
+  },
+  "reward": {
+    "design_tokens": 140,
+    "unlock": []
+  }
+}

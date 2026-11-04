@@ -1,0 +1,10 @@
+{
+  "key": "boss_50", "cn": "五十轮统领·壁垒巨尸", "budget": 0,
+  "hp_body": 2600, "armor": {"hp": 1800, "reduction": 0.3}, "block_flat": 30, "regen": 0,
+  "speed": 18, "bite_dps": 40, "weight": 99, "slow_resist": 0.6, "kb_immune": true,
+  "tags": ["boss", "shield", "armored", "heavy"],
+  "unlock_stage": "M4",
+  "boss_abilities": ["block", "heavy_armor", "summon", "phase_immunity"],
+  "summon": {"mob": "cone", "interval": 12.0, "max_alive": 3},
+  "art_prompt": "Q版粗描边卡通手游Boss怪物，披金属重甲的巨型僵尸将军，胸甲有发光纹章，一手巨盾一手重锤，头顶小皇冠，暖橙护甲配深绿皮肤，白底纯白背景，明快平涂，威武但圆润不恐怖"
+}

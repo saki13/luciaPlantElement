@@ -1,0 +1,7 @@
+{
+  "key": "banner", "cn": "旗手僵尸", "budget": 1,
+  "hp_body": 100, "armor": {"hp": 0, "reduction": 0}, "block_flat": 0, "regen": 0,
+  "speed": 40, "bite_dps": 25, "weight": 1, "slow_resist": 0, "kb_immune": false,
+  "tags": ["banner"],
+  "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸高举一面破旧小红旗作冲锋信号，白底纯白背景，明快平涂，可爱不恐怖"
+}

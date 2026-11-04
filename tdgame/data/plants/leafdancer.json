@@ -1,0 +1,11 @@
+{
+  "key": "leafdancer", "cn": "飞叶射手", "role": "ranged", "tier": 3,
+  "axes": {"fire": 2, "area": 3, "pierce": 0, "durability": 1, "control": 0},
+  "tags": ["pierce"], "sun": 150, "recharge": 7.5, "hp": 100,
+  "art_prompt": "Q版粗描边卡通手游植物，一株翠绿色飞叶射手，叶片如折扇张开，可射出旋转锋利叶片，灵动眼神，白底纯白背景，明快绿色平涂",
+  "combat": {
+    "atk_interval": 1.6, "damage": 20,
+    "range": {"type": "row", "cells": 9},
+    "projectile": {"key": "leaf", "speed": 340, "hit": "pierce:2"}
+  }
+}

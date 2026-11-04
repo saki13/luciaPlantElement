@@ -1,0 +1,43 @@
+# ---- 机密：绝不可入库 ----
+anim_demo/.ms_token
+*.token
+
+# ---- 版权敏感：不属于原创交付物，也不得分发 ----
+ghidra-project/
+unpacked/
+
+# ---- AI 原始大图（约 215MB）：属于单独的"美术源材包"，不进代码库 ----
+# 成品精灵表 anim_demo/assets/sprites/ 正常入库，这里只排除原图与逐帧
+# 早期试验角色 blade_tree 整个目录（不在 21 个正式花名册内）
+anim_demo/assets/plants/blade_tree/
+anim_demo/assets/plants/*/base.png
+anim_demo/assets/plants/*/frames/
+anim_demo/assets/enemies/*/base.png
+anim_demo/assets/enemies/*/frames/
+anim_demo/assets/plants/*/candidates/
+anim_demo/assets/enemies/*/candidates/
+anim_demo/assets/frames_raw/
+
+# ---- 体积大且可重新生成的打包产物 ----
+*.zip
+
+# ---- 各引擎 / 语言的构建缓存 ----
+__pycache__/
+*.py[cod]
+godot/.godot/
+*.import
+
+# ---- 本地过程产物（可随时重建） ----
+_work/
+_artfix/
+logs/
+reports/headless_*.json
+# 权限探测留下的空文件（可随手删除）
+reports/_dsh_write_probe.txt
+
+# ---- 编辑器 / 系统杂物 ----
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini

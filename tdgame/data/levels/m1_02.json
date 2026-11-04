@@ -1,0 +1,29 @@
+{
+  "key": "m1_02",
+  "phase": "M1",
+  "name": "m1_02",
+  "cn": "新手白天 第2关",
+  "start_resource": 100,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 2,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 2,
+    "cap_grow": 1,
+    "cap_max": 6
+  },
+  "reward": {
+    "design_tokens": 0,
+    "unlock": []
+  }
+}

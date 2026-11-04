@@ -1,0 +1,33 @@
+{
+  "key": "m1_10",
+  "phase": "M1",
+  "name": "m1_10",
+  "cn": "新手白天 第10关",
+  "start_resource": 100,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "wallnut",
+    "morningglory",
+    "repeater"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 10,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner",
+      "cone"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 2,
+    "cap_grow": 1,
+    "cap_max": 6
+  },
+  "reward": {
+    "design_tokens": 0,
+    "unlock": []
+  }
+}

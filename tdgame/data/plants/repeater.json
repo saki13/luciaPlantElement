@@ -1,0 +1,11 @@
+{
+  "key": "repeater", "cn": "双发射手", "role": "ranged", "tier": 3,
+  "axes": {"fire": 3, "area": 2, "pierce": 0, "durability": 1, "control": 0},
+  "tags": [], "sun": 200, "recharge": 7.5, "hp": 100,
+  "art_prompt": "Q版粗描边卡通手游植物，一株深绿双发射手，头部上下并排两个豌豆炮口，戴小斗士眉眼神认真，正面直立白底，纯白背景，明快绿色平涂",
+  "combat": {
+    "atk_interval": 0.7, "damage": 20,
+    "range": {"type": "row", "cells": 9},
+    "projectile": {"key": "pea", "speed": 320, "hit": "single"}
+  }
+}

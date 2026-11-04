@@ -1,0 +1,6 @@
+{
+  "key": "wallnut", "cn": "坚果壳", "role": "wall", "tier": 1,
+  "axes": {"fire": 0, "area": 0, "pierce": 0, "durability": 4, "control": 0},
+  "tags": ["wall"], "sun": 50, "recharge": 15.0, "hp": 800,
+  "art_prompt": "Q版粗描边卡通手游植物，一颗棕色坚硬坚果墙，椭圆果壳带木纹和坚定的小圆眼抿嘴表情，正面直立白底，纯白背景，暖棕明快平涂"
+}

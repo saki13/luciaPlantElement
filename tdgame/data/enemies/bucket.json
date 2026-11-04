@@ -1,0 +1,7 @@
+{
+  "key": "bucket", "cn": "铁桶僵尸", "budget": 4,
+  "hp_body": 100, "armor": {"hp": 550, "reduction": 0.25}, "block_flat": 0, "regen": 0,
+  "speed": 26, "bite_dps": 25, "weight": 2, "slow_resist": 0.5, "kb_immune": false,
+  "tags": ["armored", "heavy"],
+  "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸头上扣一只深灰色金属铁桶当重甲，桶身高光厚重，白底纯白背景，明快平涂，可爱不恐怖"
+}

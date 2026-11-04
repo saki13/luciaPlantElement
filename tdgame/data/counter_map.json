@@ -1,0 +1,87 @@
+{
+  "version": "0.2",
+  "principles": [
+    "同威胁点预算内把点数投到玩家短板轴，打贬值不堆数值",
+    "前期怪最多带1个机制，第50轮Boss才允许多机制复合",
+    "每个生成组合必须存在当前卡池可打出>50%胜率的解法，否则作废重roll"
+  ],
+  "matchups": {
+    "block": {
+      "label": "格挡",
+      "enemy_fields": ["block_flat"],
+      "countered_by_tags": ["shield_break"],
+      "countered_by_axis": {"fire": "high_single_hit"},
+      "punishes": ["fire_low_per_hit", "area_fragments"],
+      "rule": "per_instance hit=max(0,dmg-block_flat); shield_break ignores; zero damage allowed"
+    },
+    "armor": {
+      "label": "护甲",
+      "enemy_fields": ["armor.hp", "armor.reduction"],
+      "countered_by_tags": ["armor_pierce"],
+      "countered_by_axis": {"fire": "burst"},
+      "punishes": ["low_dps_focus_fire"],
+      "rule": "ap multiplier only on armor segment; overflow x(1-reduction) to body; EHP conserved"
+    },
+    "thick_body": {
+      "label": "厚本体无甲",
+      "enemy_fields": ["hp_body"],
+      "countered_by_tags": [],
+      "countered_by_axis": {"fire": "sustained_dps"},
+      "punishes": ["pure_armor_pierce"],
+      "rule": "armor_pierce gives no bonus when armor_hp=0"
+    },
+    "speed": {
+      "label": "高速",
+      "enemy_fields": ["speed"],
+      "countered_by_tags": ["control"],
+      "countered_by_axis": {"control": "slow_or_knockback", "fire": "ranged_rapid"},
+      "punishes": ["melee_short_range", "low_dps"],
+      "rule": "lane traverse=width/speed; slow extends it, mitigated by slow_resist"
+    },
+    "swarm": {
+      "label": "人海数量",
+      "enemy_fields": ["budget_allocated_to_count"],
+      "countered_by_tags": ["aoe", "pierce", "fragments"],
+      "countered_by_axis": {"area": "multitarget"},
+      "punishes": ["single_target_sniper"],
+      "rule": "spend budget on many low-cost mobs to saturate single-target fire"
+    },
+    "weight_control_immune": {
+      "label": "重量免控",
+      "enemy_fields": ["weight", "slow_resist", "kb_immune"],
+      "countered_by_tags": ["armor_pierce"],
+      "countered_by_axis": {"fire": "raw_firepower"},
+      "punishes": ["control_specialist"],
+      "rule": "knockback=base/weight; kb_immune cancels; slow scaled by (1-slow_resist)"
+    },
+    "high_bite": {
+      "label": "高啃咬破墙",
+      "enemy_fields": ["bite_dps"],
+      "countered_by_tags": ["wall"],
+      "countered_by_axis": {"durability": "wall_time", "fire": "fast_pickoff"},
+      "punishes": ["squishy_backline", "low_durability"],
+      "rule": "wall seconds=hp/bite_dps; elite bite=40 vs baseline 25"
+    }
+  },
+  "reserved_phase2": {
+    "regen": {"enemy_fields": ["regen"], "counter": "burst_window_or_heal_block(预留)", "enabled": false},
+    "flight": {"enemy_fields": ["flight"], "counter": "anti_air_tag", "enabled": false},
+    "metal": {"enemy_fields": ["material=metal"], "counter": "magnet_remove_armor", "enabled": false},
+    "vehicle": {"enemy_fields": ["vehicle"], "counter": "spike_trap", "enabled": false},
+    "bungee": {"enemy_fields": ["bungee"], "counter": "anti_bungee", "enabled": false}
+  },
+  "selector_rules": [
+    {"id": 1, "when_player": "pierce_specialist_low_fire", "deploy": "zero_armor_high_body_mid_speed", "weakens_axis": "pierce"},
+    {"id": 2, "when_player": "single_target_sniper", "deploy": "low_cost_fast_swarm", "weakens_axis": "fire"},
+    {"id": 3, "when_player": "aoe_low_single", "deploy": "few_tanky_elites_spread_lines_plus_fast", "weakens_axis": "area"},
+    {"id": 4, "when_player": "control_specialist", "deploy": "high_weight_immune_slow_resist", "weakens_axis": "control"},
+    {"id": 5, "when_player": "melee_short_range", "deploy": "fast_high_bite", "weakens_axis": "durability"},
+    {"id": 6, "when_player": "has_shield_break", "deploy": "one_shield_plus_many_unshielded_mix", "weakens_axis": "tag_coverage"}
+  ],
+  "headless_targets": {
+    "normal_endless_win_rate": [0.55, 0.75],
+    "boss_50_qualified_T10": [0.40, 0.60],
+    "boss_50_below_T10_max": 0.10,
+    "solvability_min_win_rate": 0.50
+  }
+}

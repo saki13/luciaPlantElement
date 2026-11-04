@@ -1,0 +1,11 @@
+{
+  "key": "melonpult", "cn": "西瓜投手", "role": "ranged", "tier": 6,
+  "axes": {"fire": 3, "area": 4, "pierce": 0, "durability": 1, "control": 0},
+  "tags": ["aoe"], "sun": 325, "recharge": 15.0, "hp": 100,
+  "art_prompt": "Q版粗描边卡通手游植物，粗壮绿纹西瓜投手，怀里抱着一颗大圆西瓜作抛石弹，憨厚大眼，白底纯白背景，明快绿红平涂",
+  "combat": {
+    "atk_interval": 1.5, "damage": 80,
+    "range": {"type": "row", "cells": 9},
+    "projectile": {"key": "melon", "speed": 240, "hit": "splash:1", "edge_damage_mult": 1.0}
+  }
+}

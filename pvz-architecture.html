@@ -1,0 +1,102 @@
+<html style="margin:0;padding:0;">
+<title>植物大战僵尸 逆向架构图</title>
+<div style="width:100%;box-sizing:border-box;padding:18px;background:#f4f6f8;font-family:'Segoe UI','Microsoft YaHei',sans-serif;color:#1f2933;">
+
+  <div style="max-width:1080px;margin:0 auto;">
+    <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin-bottom:4px;">
+      <span style="font-size:20px;font-weight:700;">PlantsVsZombies.exe 逆向架构</span>
+      <span style="font-size:13px;color:#5b6b7b;">32 位 x86 · C++/MSVC · 内部代号 "lawn" · 镜像基址 0x00400000</span>
+    </div>
+    <div style="font-size:12px;color:#7a8794;margin-bottom:14px;">证据来源：Ghidra 12.1.4 headless 自动分析（断言字符串 / 导入表 / 节区），示意图</div>
+
+    <!-- Layer 1: game logic -->
+    <div style="border:1px solid #cfe0d6;border-radius:10px;background:#eef7f1;padding:12px 14px;">
+      <div style="font-size:13px;font-weight:700;color:#2f7d4f;margin-bottom:9px;">游戏逻辑层 · 证据：断言字符串保留的类名/成员名</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <div style="flex:1 1 150px;min-width:140px;background:#fff;border:1px solid #cfe0d6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">关卡 / 波次系统</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">ZombiePicker · MAX_ZOMBIE_WAVES · 僵尸点数分配 · preboardlevelinit</div>
+        </div>
+        <div style="flex:1 1 150px;min-width:140px;background:#fff;border:1px solid #cfe0d6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">植物系统（4 层）</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">mNormal / mPumpkin / mUnder / mFlying · PlantOnLawn</div>
+        </div>
+        <div style="flex:1 1 150px;min-width:140px;background:#fff;border:1px solid #cfe0d6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">僵尸类型枚举</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">普通/路障/撑杆/铁桶/梯子/矿工/蹦极/橄榄球/气球 · NUM_ZOMBIE_TYPES</div>
+        </div>
+        <div style="flex:1 1 150px;min-width:140px;background:#fff;border:1px solid #cfe0d6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">动画 / 粒子</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">Reanimation · ParticleSystem · gParticleDefCount</div>
+        </div>
+        <div style="flex:1 1 150px;min-width:140px;background:#fff;border:1px solid #cfe0d6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">UI / 图鉴 / 本地化</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">[VIEW_PLANTS] 等字符串 ID 查表 · SUBURBAN_ALMANAC</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;color:#9aa7b2;font-size:16px;line-height:1;margin:6px 0;">▼</div>
+
+    <!-- Layer 2: engine/framework -->
+    <div style="border:1px solid #cfd9e6;border-radius:10px;background:#eef3fa;padding:12px 14px;">
+      <div style="font-size:13px;font-weight:700;color:#2f5f9e;margin-bottom:9px;">引擎 / 框架层 · 证据：源码路径字符串 + 976 个命名函数</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <div style="flex:1 1 180px;min-width:160px;background:#fff;border:1px solid #cfd9e6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">PopCap 内部库 todlib</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">d:\seattlep4\games\lawn\...\todlib\DataArray.h</div>
+        </div>
+        <div style="flex:1 1 180px;min-width:160px;background:#fff;border:1px solid #cfd9e6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">资源加载（main.pak）</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">约 48MB PopCap PAK 包 · 图片/音频/动画/配置</div>
+        </div>
+        <div style="flex:1 1 180px;min-width:160px;background:#fff;border:1px solid #cfd9e6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">静态链接 C++ STL / CRT</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">iostream · locale · string · 线程同步原语</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;color:#9aa7b2;font-size:16px;line-height:1;margin:6px 0;">▼</div>
+
+    <!-- Layer 3: platform -->
+    <div style="border:1px solid #e3d6c6;border-radius:10px;background:#faf3ec;padding:12px 14px;">
+      <div style="font-size:13px;font-weight:700;color:#9e6b2f;margin-bottom:9px;">系统 / 平台层 · 证据：外部 DLL 导入表</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        <div style="flex:1 1 150px;min-width:140px;background:#fff;border:1px solid #e3d6c6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">GDI 软件渲染</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">CreateDIBSection 直接操作像素 · 无 DirectX</div>
+        </div>
+        <div style="flex:1 1 150px;min-width:140px;background:#fff;border:1px solid #e3d6c6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">音频</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">WINMM PlaySound + 第三方 bass.dll</div>
+        </div>
+        <div style="flex:1 1 150px;min-width:140px;background:#fff;border:1px solid #e3d6c6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">窗口 / 线程 / 文件</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">USER32(82) · KERNEL32(138) · 事件/互斥/内存映射</div>
+        </div>
+        <div style="flex:1 1 150px;min-width:140px;background:#fff;border:1px solid #e3d6c6;border-radius:8px;padding:8px 10px;">
+          <div style="font-weight:600;font-size:13px;">注册表 / 网络</div>
+          <div style="font-size:11.5px;color:#5b6b7b;margin-top:3px;">ADVAPI32 存档 · WININET+WSOCK32 HTTP/Socket</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- metrics -->
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;">
+      <div style="flex:1 1 120px;background:#fff;border:1px solid #dde3e8;border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:#2f5f9e;">6773</div><div style="font-size:12px;color:#5b6b7b;">识别函数</div>
+      </div>
+      <div style="flex:1 1 120px;background:#fff;border:1px solid #dde3e8;border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:#2f7d4f;">976</div><div style="font-size:12px;color:#5b6b7b;">已命名（多为 STL/CRT）</div>
+      </div>
+      <div style="flex:1 1 120px;background:#fff;border:1px solid #dde3e8;border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:#9e6b2f;">5185</div><div style="font-size:12px;color:#5b6b7b;">定义字符串</div>
+      </div>
+      <div style="flex:1 1 120px;background:#fff;border:1px solid #dde3e8;border-radius:8px;padding:10px;text-align:center;">
+        <div style="font-size:20px;font-weight:700;color:#8a4f9e;">273s</div><div style="font-size:12px;color:#5b6b7b;">自动分析耗时</div>
+      </div>
+    </div>
+  </div>
+</div>
+</html>

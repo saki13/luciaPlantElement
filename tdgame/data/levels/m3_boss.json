@@ -1,0 +1,64 @@
+{
+  "key": "m3_boss",
+  "phase": "M3",
+  "name": "m3_boss",
+  "cn": "阶段Boss·五十轮门槛",
+  "start_resource": 800,
+  "max_seconds": 320,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "repeater",
+    "morningglory",
+    "wallnut",
+    "custom_shieldbreaker",
+    "frostbell",
+    "bombberry",
+    "leafdancer",
+    "pine_needler",
+    "melonpult",
+    "winter_melon",
+    "bamboo"
+  ],
+  "spawn": {
+    "mode": "fixed",
+    "entries": [
+      [
+        8,
+        "normal"
+      ],
+      [
+        14,
+        "cone"
+      ],
+      [
+        20,
+        "bucket"
+      ],
+      [
+        28,
+        "boss_50"
+      ],
+      [
+        46,
+        "cone"
+      ],
+      [
+        60,
+        "bucket"
+      ]
+    ],
+    "rows": [
+      2,
+      1,
+      3,
+      2,
+      1,
+      3
+    ]
+  },
+  "reward": {
+    "design_tokens": 300,
+    "unlock": []
+  }
+}

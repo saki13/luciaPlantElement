@@ -1,0 +1,7 @@
+{
+  "key": "fast", "cn": "快速僵尸", "budget": 1,
+  "hp_body": 70, "armor": {"hp": 0, "reduction": 0}, "block_flat": 0, "regen": 0,
+  "speed": 60, "bite_dps": 25, "weight": 1, "slow_resist": 0, "kb_immune": false,
+  "tags": [],
+  "art_prompt": "Q版粗描边卡通手游怪物，一只瘦长橙红色冲刺僵尸，身体前倾作奔跑姿势带速度线，白底纯白背景，明快平涂，可爱不恐怖"
+}

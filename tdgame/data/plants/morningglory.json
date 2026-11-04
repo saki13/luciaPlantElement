@@ -1,0 +1,16 @@
+{
+  "key": "morningglory", "cn": "牵牛花射手", "role": "ranged", "tier": 2,
+  "axes": {"fire": 2, "area": 2, "pierce": 0, "durability": 1, "control": 1},
+  "tags": [], "sun": 100, "recharge": 5.0, "hp": 100,
+  "art_prompt": "一株蓝紫色喇叭花造型射手，漏斗状花冠是炮口，筒身带浅色竖纹和两只圆眼，Q版粗描边白底纯白背景，明快平涂",
+  "combat": {
+    "atk_interval": 1.4, "damage": 25,
+    "range": {"type": "row", "cells": 9},
+    "projectile": {"key": "seed", "speed": 320, "hit": "single"},
+    "ability": {
+      "name": "饱胀重籽", "trigger": "every_n", "n": 4, "damage": 45,
+      "knockback_cells": 0.3, "use_projectile": "heavy_seed",
+      "projectile_overrides": {"speed": 300}
+    }
+  }
+}

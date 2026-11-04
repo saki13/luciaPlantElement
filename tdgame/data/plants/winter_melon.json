@@ -1,0 +1,13 @@
+{
+  "key": "winter_melon", "cn": "冰西瓜", "role": "ranged", "tier": 7,
+  "axes": {"fire": 3, "area": 4, "pierce": 0, "durability": 1, "control": 3},
+  "tags": ["aoe", "control", "upgrade"], "sun": 500, "recharge": 27.5, "hp": 100,
+  "upgrade_base": "melonpult",
+  "art_prompt": "Q版粗描边卡通手游植物，冰蓝色霜冻西瓜投手，西瓜表面挂冰棱和雪花，吐出冰蓝瓜弹带寒气，冷静眼神，白底纯白背景，冰蓝明快平涂",
+  "combat": {
+    "atk_interval": 1.5, "damage": 80,
+    "range": {"type": "row", "cells": 9},
+    "projectile": {"key": "ice_melon", "speed": 240, "hit": "splash:1",
+                    "edge_damage_mult": 1.0, "slow": {"factor": 0.5, "duration": 2.5}}
+  }
+}

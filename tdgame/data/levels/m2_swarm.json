@@ -1,0 +1,40 @@
+{
+  "key": "m2_swarm",
+  "phase": "M2",
+  "name": "m2_swarm",
+  "cn": "人海教学考场",
+  "start_resource": 200,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "repeater",
+    "morningglory",
+    "wallnut",
+    "custom_shieldbreaker",
+    "frostbell",
+    "bombberry",
+    "leafdancer",
+    "pine_needler",
+    "melonpult",
+    "winter_melon",
+    "bamboo"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 4,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 4,
+    "cap_grow": 2,
+    "cap_max": 12
+  },
+  "reward": {
+    "design_tokens": 120,
+    "unlock": []
+  }
+}

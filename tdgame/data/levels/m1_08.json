@@ -1,0 +1,33 @@
+{
+  "key": "m1_08",
+  "phase": "M1",
+  "name": "m1_08",
+  "cn": "新手白天 第8关",
+  "start_resource": 100,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "wallnut",
+    "morningglory",
+    "repeater"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 8,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner",
+      "cone"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 2,
+    "cap_grow": 1,
+    "cap_max": 6
+  },
+  "reward": {
+    "design_tokens": 0,
+    "unlock": []
+  }
+}

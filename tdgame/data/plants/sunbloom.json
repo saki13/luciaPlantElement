@@ -1,0 +1,7 @@
+{
+  "key": "sunbloom", "cn": "向阳花", "role": "economy", "tier": 1,
+  "axes": {"fire": 0, "area": 0, "pierce": 0, "durability": 1, "control": 0},
+  "tags": ["economy"], "sun": 50, "recharge": 5.0, "hp": 100,
+  "art_prompt": "Q版粗描边卡通手游植物，一株金黄向阳花，圆脸花瓣微笑，头顶一颗发光小阳光蓓蕾，正面直立白底，纯白背景，暖黄明快平涂",
+  "economy": {"produce": 25, "interval": 8.0, "first": 4.0}
+}

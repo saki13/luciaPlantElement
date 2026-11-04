@@ -1,0 +1,128 @@
+{
+  "plant:peashooter": {
+    "cn": "豌豆射手",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:bamboo": {
+    "cn": "竹笋刀手",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:morningglory": {
+    "cn": "牵牛花射手",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:repeater": {
+    "cn": "双发射手",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:sunbloom": {
+    "cn": "向阳花",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:wallnut": {
+    "cn": "坚果壳",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:bombberry": {
+    "cn": "爆栗果",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:frostbell": {
+    "cn": "寒仙子",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:leafdancer": {
+    "cn": "飞叶射手",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:melonpult": {
+    "cn": "西瓜投手",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:winter_melon": {
+    "cn": "冰西瓜",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:pine_needler": {
+    "cn": "松针射手",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "plant:custom_shieldbreaker": {
+    "cn": "工坊·破盾整行株",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "enemy:normal": {
+    "cn": "普通僵尸",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "enemy:fast": {
+    "cn": "快速僵尸",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "enemy:banner": {
+    "cn": "旗手僵尸",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "enemy:cone": {
+    "cn": "路障僵尸",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "enemy:shield_cadet": {
+    "cn": "格挡盾兵",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "enemy:bucket": {
+    "cn": "铁桶僵尸",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "enemy:giant": {
+    "cn": "巨人僵尸",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  },
+  "enemy:boss_50": {
+    "cn": "五十轮统领·壁垒巨尸",
+    "base": true,
+    "frames": true,
+    "sheet": true
+  }
+}

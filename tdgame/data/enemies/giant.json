@@ -1,0 +1,7 @@
+{
+  "key": "giant", "cn": "巨人僵尸", "budget": 8,
+  "hp_body": 1600, "armor": {"hp": 0, "reduction": 0}, "block_flat": 0, "regen": 0,
+  "speed": 20, "bite_dps": 40, "weight": 99, "slow_resist": 0.5, "kb_immune": true,
+  "tags": ["elite", "giant"],
+  "art_prompt": "Q版粗描边卡通手游怪物，体型巨大的深绿巨人僵尸，肩扛一根粗电线杆，厚重阴影压迫感但造型圆润可爱，白底纯白背景，明快平涂"
+}

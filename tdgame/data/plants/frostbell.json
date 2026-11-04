@@ -1,0 +1,12 @@
+{
+  "key": "frostbell", "cn": "寒仙子", "role": "ranged", "tier": 4,
+  "axes": {"fire": 1, "area": 2, "pierce": 0, "durability": 1, "control": 3},
+  "tags": ["control"], "sun": 175, "recharge": 7.5, "hp": 100,
+  "art_prompt": "Q版粗描边卡通手游植物，一株冰蓝色铃兰仙子，下垂冰铃花口吐出寒霜，周围点缀小雪花，清冷眼神，白底纯白背景，冰蓝明快平涂",
+  "combat": {
+    "atk_interval": 1.4, "damage": 15,
+    "range": {"type": "row", "cells": 9},
+    "projectile": {"key": "frost", "speed": 300, "hit": "single",
+                    "slow": {"factor": 0.5, "duration": 2.5}}
+  }
+}

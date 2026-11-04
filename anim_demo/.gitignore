@@ -1,0 +1,9 @@
+# 本地密钥，切勿提交
+.ms_token
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 预览缓存
+.preview/

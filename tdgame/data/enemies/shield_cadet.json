@@ -1,0 +1,8 @@
+{
+  "key": "shield_cadet", "cn": "格挡盾兵", "budget": 2,
+  "hp_body": 100, "armor": {"hp": 0, "reduction": 0}, "block_flat": 20, "regen": 0,
+  "speed": 30, "bite_dps": 25, "weight": 1, "slow_resist": 0, "kb_immune": false,
+  "tags": ["shield"],
+  "unlock_stage": "M2",
+  "art_prompt": "Q版粗描边卡通手游怪物，灰绿僵尸双手举一面实木小圆盾挡在身前，盾面有金属包边和潦草徽记，白底纯白背景，明快平涂，可爱不恐怖"
+}

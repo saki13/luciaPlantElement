@@ -1,0 +1,94 @@
+{
+  "key": "m2_shield",
+  "phase": "M2",
+  "name": "m2_shield",
+  "cn": "格挡教学考场",
+  "start_resource": 200,
+  "max_seconds": 200,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "repeater",
+    "morningglory",
+    "wallnut",
+    "custom_shieldbreaker",
+    "frostbell",
+    "bombberry",
+    "leafdancer",
+    "pine_needler",
+    "melonpult",
+    "winter_melon",
+    "bamboo"
+  ],
+  "spawn": {
+    "mode": "fixed",
+    "entries": [
+      [
+        12,
+        "normal"
+      ],
+      [
+        18,
+        "normal"
+      ],
+      [
+        26,
+        "fast"
+      ],
+      [
+        34,
+        "shield_cadet"
+      ],
+      [
+        42,
+        "normal"
+      ],
+      [
+        50,
+        "shield_cadet"
+      ],
+      [
+        58,
+        "cone"
+      ],
+      [
+        66,
+        "shield_cadet"
+      ],
+      [
+        74,
+        "normal"
+      ],
+      [
+        82,
+        "shield_cadet"
+      ],
+      [
+        90,
+        "fast"
+      ],
+      [
+        98,
+        "normal"
+      ]
+    ],
+    "rows": [
+      1,
+      2,
+      1,
+      1,
+      2,
+      2,
+      1,
+      1,
+      2,
+      2,
+      1,
+      2
+    ]
+  },
+  "reward": {
+    "design_tokens": 200,
+    "unlock": []
+  }
+}
