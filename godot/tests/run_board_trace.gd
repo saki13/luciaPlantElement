@@ -8,7 +8,7 @@ extends SceneTree
 
 const TOL := 1e-4          # 与 Python 侧 round(...,4) 的粒度一致
 const TRACE_PATH := "res://tests/golden_board_trace.json"
-const ONLY := ["move_bite", "shoot_only", "armor_only", "block_shield"]  # 已移植的场景；armor_slow/core_shoot_bite 含溅射/减速，待后续增量
+const ONLY := ["move_bite", "shoot_only", "armor_only", "block_shield", "core_shoot_bite", "armor_slow"]  # 已移植的场景；armor_slow/core_shoot_bite 含溅射/减速，待后续增量
 
 
 func _initialize() -> void:

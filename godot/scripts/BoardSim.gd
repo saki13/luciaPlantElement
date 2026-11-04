@@ -90,6 +90,11 @@ func _spawn_due() -> void:
 			"armor": float(d.get("armor", {}).get("hp", 0)),
 			"armor_red": float(d.get("armor", {}).get("reduction", 0)),
 			"block": float(d.get("block_flat", 0)),
+			"slow_resist": float(d.get("slow_resist", 0)),
+			"weight": float(d.get("weight", 1)),
+			"kb_immune": bool(d.get("kb_immune", false)),
+			"slow_mult": 1.0,
+			"slow_until": -1.0,
 			"dead": false, "eating": -1,
 		})
 		_spawn_idx += 1
@@ -125,6 +130,9 @@ func _plant_attack(p: Dictionary, combat: Dictionary) -> bool:
 		"damage": float(combat["damage"]),
 		"hit_left": 1,                           # pierce 计数，本块恒为 1
 		"tags": p["tags"],
+		"slow": proj.get("slow", {}),
+		"knockback_cells": proj.get("knockback_cells", 0.0),
+		"edge_mult": float(proj.get("edge_damage_mult", 1.0)),
 		"dead": false,
 		"hit": String(proj.get("hit", "single")),
 	})
@@ -178,6 +186,13 @@ func _projectile_find_target(pr: Dictionary) -> int:
 func _resolve_projectile_hit(pr: Dictionary, enemy: Dictionary) -> void:
 	# 直击伤害走统一入口；AoE/溅射/控制留给后续增量
 	_apply_damage(enemy, float(pr["damage"]), pr["tags"])
+	# 普通溅射弹（西瓜类）：直击之后对周围再打一次，中心单位不吃边缘衰减
+	var hit: String = String(pr.get("hit", "single"))
+	if hit.begins_with("splash:"):
+		var radius := float(hit.split(":", true, 1)[1])
+		_area_damage(int(enemy["row"]), float(enemy["x"]) + 0.4, radius,
+			float(pr["damage"]), pr["tags"], float(pr["edge_mult"]), enemy)
+	_apply_control(enemy, pr)
 	pr["hit_left"] = int(pr["hit_left"]) - 1
 	if int(pr["hit_left"]) <= 0 or not String(pr["hit"]).begins_with("pierce:"):
 		pr["dead"] = true
@@ -216,6 +231,41 @@ func _apply_damage(enemy: Dictionary, raw: float, tags) -> void:
 		enemy["hp"] = snappedf(float(enemy["hp"]) - dmg, 0.000001)
 
 
+func _area_damage(row: int, cx: float, radius: float, damage: float, tags,
+		edge_mult: float, center_enemy: Dictionary) -> void:
+	## 镜像 board.py::_area_damage：行差与列差都在半径内才吃伤害；
+	## 中心单位乘 1.0，其余乘 edge_mult。
+	for e in enemies:
+		if bool(e["dead"]):
+			continue
+		if absf(float(e["row"]) - float(row)) > radius:
+			continue
+		if absf((float(e["x"]) + 0.4) - cx) > radius + 0.4:
+			continue
+		var mult: float = 1.0 if e == center_enemy else edge_mult
+		_apply_damage(e, damage * mult, tags)
+
+
+func _apply_control(enemy: Dictionary, pr: Dictionary) -> void:
+	## 镜像 board.py::_apply_control + balance.effective_speed_mult / knockback_distance
+	var slow: Dictionary = pr.get("slow", {})
+	if not slow.is_empty():
+		# 减速量按抵抗比例折减：1 - (1-factor)*(1-resist)，保留 4 位（与 Python 一致）
+		var factor := float(slow.get("factor", 1.0))
+		var resist := float(enemy["slow_resist"])
+		var amount: float = maxf(0.0, 1.0 - factor)
+		enemy["slow_mult"] = snappedf(1.0 - amount * (1.0 - resist), 0.0001)
+		enemy["slow_until"] = now + float(slow.get("duration", 2.5))
+	var kb := float(pr.get("knockback_cells", 0.0))
+	if kb > 0.0 and not bool(enemy["kb_immune"]):
+		var dist: float = snappedf(kb / maxf(1.0, float(enemy["weight"])), 0.0001)
+		enemy["x"] = minf(COLS + 0.5, float(enemy["x"]) + dist)
+
+
+func _current_speed_mult(e: Dictionary) -> float:
+	return float(e["slow_mult"]) if now < float(e["slow_until"]) else 1.0
+
+
 # ---------------------------------------------------------------------- 敌人
 func _update_enemies() -> void:
 	for e in enemies:
@@ -232,7 +282,8 @@ func _update_enemies() -> void:
 				e["eating"] = -1
 		else:
 			e["eating"] = -1
-			e["x"] = float(e["x"]) - float(e["speed"]) * DT / CELL
+			# 减速乘子：slow_until 之前按 slow_mult，之后恢复 1.0
+			e["x"] = float(e["x"]) - float(e["speed"]) * _current_speed_mult(e) * DT / CELL
 			if float(e["x"]) <= TRIGGER_X:
 				_handle_breach(e)
 
