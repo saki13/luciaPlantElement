@@ -49,7 +49,7 @@ $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
 Run-Step "1/8 python unit tests" {
     & $py -m unittest tests.test_balance tests.test_engine tests.test_scenarios `
-        tests.test_replay tests.test_golden_sync tests.test_session tests.test_boss tests.test_endless tests.test_izombie tests.test_savegame tests.test_tower tests.test_trace
+        tests.test_replay tests.test_golden_sync tests.test_session tests.test_boss tests.test_endless tests.test_izombie tests.test_savegame tests.test_tower tests.test_trace tests.test_ui
 }
 
 Run-Step "2/8 sprite health check" {

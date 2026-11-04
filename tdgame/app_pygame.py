@@ -151,7 +151,7 @@ def _load_izombie_levels(directory: Path) -> dict:
 class GameApp:
     def __init__(self, data_dir: str | Path | None = None, use_sprites: bool = True,
                  level_key: str = "m1_01", seed: int = 1000, autoplay: bool = False,
-                 mode: str = "play") -> None:
+                 mode: str = "play", save_path: str | Path | None = None) -> None:
         pygame.init()
         self.mode = mode
         pygame.display.set_caption(
@@ -177,7 +177,7 @@ class GameApp:
         self.big_font, _ = _load_font(56)
         if self.cjk:
             self.lbl_plants, self.lbl_enemies = "植物", "僵尸"
-            self.lbl_restart = "R 重开    Q 退出"
+            self.lbl_restart = "R 重开  [ ] 换关  Q 退出"
             self.reason_text = {
                 "no_sun": "阳光不足", "recharging": "卡片冷却中",
                 "occupied": "这格已经有植物", "no_selection": "先选一张卡",
@@ -186,7 +186,7 @@ class GameApp:
             }
         else:
             self.lbl_plants, self.lbl_enemies = "plants", "zombies"
-            self.lbl_restart = "R restart    Q quit"
+            self.lbl_restart = "R restart  [ ] level  Q quit"
             self.reason_text = {
                 "no_sun": "not enough sun", "recharging": "recharging",
                 "occupied": "occupied", "no_selection": "pick a card first",
@@ -194,7 +194,8 @@ class GameApp:
                 "over": "round over",
             }
         # 存档：坏档不会炸游戏，load_from 兜底成新档 + 一条 warning
-        self.save_path = default_save_path()
+        # 允许注入存档路径：测试必须用临时目录，否则会污染玩家真实存档
+        self.save_path = Path(save_path) if save_path else default_save_path()
         self.progress, self.save_warning = load_from(self.save_path, self.levels)
         self._recorded = False
         self.sprites = SpriteLibrary(use_sprites)
@@ -232,6 +233,18 @@ class GameApp:
             save_to(self.save_path, self.progress)
         except Exception as exc:      # noqa: BLE001 - 存档失败不该影响玩
             self.save_warning = f"存档写入失败：{exc.__class__.__name__}"
+
+    def cycle_level(self, step: int) -> None:
+        """按 [ / ] 在当前模式的关卡列表里前后切换。"""
+        keys = sorted(self.levels)
+        if not keys:
+            return
+        try:
+            idx = keys.index(self.level_key)
+        except ValueError:
+            idx = 0
+        self.level_key = keys[(idx + step) % len(keys)]
+        self.new_game()
 
     # ------------------------------------------------------------------ 素材
     def _build_visual_resources(self) -> None:
@@ -292,6 +305,8 @@ class GameApp:
                 self.running = False
             elif ev.key == pygame.K_r:
                 self.new_game()
+            elif ev.key in (pygame.K_LEFTBRACKET, pygame.K_RIGHTBRACKET):
+                self.cycle_level(-1 if ev.key == pygame.K_LEFTBRACKET else 1)
             elif ev.key == pygame.K_x:
                 self.session.toggle_shovel()
             elif pygame.K_1 <= ev.key <= pygame.K_9:
@@ -399,9 +414,21 @@ class GameApp:
                 mask.fill((20, 30, 20, 140))
                 s.blit(mask, (rect.x, rect.y + rect.height - h))
 
-            txt = self.font.render(str(card["sun"]), True,
-                                   COL_TEXT if usable else COL_TEXT_DIM)
-            s.blit(txt, (rect.x + 4, rect.y + rect.height - 16))
+            # 价格标签：右下角胶囊底 + 数字，完全落在卡内
+            # （早先是直接 blit 在 (x+4, bottom-16)，数字会被卡框裁掉半截）
+            small, _ = _load_font(15)
+            txt = small.render(str(card["sun"]), True,
+                               COL_TEXT if usable else COL_TEXT_DIM)
+            pad_x, pad_y = 5, 1
+            pill_w = txt.get_width() + pad_x * 2
+            pill_h = txt.get_height() + pad_y * 2
+            pill = pygame.Rect(rect.right - pill_w - 3, rect.bottom - pill_h - 3,
+                               pill_w, pill_h)
+            badge = pygame.Surface((pill.width, pill.height), pygame.SRCALPHA)
+            badge.fill((250, 244, 222, 225) if usable else (208, 204, 192, 200))
+            s.blit(badge, pill.topleft)
+            pygame.draw.rect(s, COL_PANEL_EDGE, pill, 1, border_radius=6)
+            s.blit(txt, (pill.x + pad_x, pill.y + pad_y))
 
         if self.mode == "izombie":
             # 我是僵尸：植物是预置的，没有铲子这回事
@@ -521,6 +548,16 @@ class GameApp:
         if self.message:
             img = self.font.render(self.message, True, (170, 60, 40))
             s.blit(img, (WIN_W - img.get_width() - 120, cy - 7))
+
+        # 进度 HUD：已通关数 / 设计币 / 爬塔层数（来自存档）
+        if self.mode != "izombie":
+            cleared = len(self.progress.cleared)
+            total = len(self.levels)
+            hud = f"{cleared}/{total}  币 {self.progress.design_tokens}"
+            if getattr(self.progress, "tower_floor", 0) > 0:
+                hud += f"  塔 {self.progress.tower_floor}"
+            img = self.font.render(hud, True, (60, 76, 52))
+            s.blit(img, (WIN_W - img.get_width() - 130, cy - 7))
 
         for i in range(max(0, self.session.lives)):
             cx = WIN_W - 16 - i * 18
