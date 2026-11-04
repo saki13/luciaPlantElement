@@ -75,3 +75,76 @@ playback finished at t=129.5s  sun=50 lives=5
 
 如果 `_ready()` 报 `Script not found` 或场景打不开，最可能是 `Main.tscn` 的 `ext_resource`
 路径写法与你的 Godot 版本不匹配，在编辑器里重新挂一次脚本即可。
+
+---
+
+# 阶段 2 第一步：`resolve_hit` 一致性门禁
+
+阶段 2 要把运行时逻辑搬成 GDScript，但**两套实现必然漂移**，而漂移的代价是那套 100 局校准结论。
+所以先只搬最关键、最容易验证的那一个纯函数——`tdgame/balance.py::resolve_hit`（确定性伤害管线）——
+并用黄金用例把两者钉死。
+
+## 数据流
+
+```
+tdgame/balance.py  ──(唯一事实源)──►  scripts/gen_golden_hits.py
+                                              │
+                                              ▼
+                              godot/tests/golden_resolve_hit.json
+                                              │
+godot/scripts/BalanceHit.gd ──(候选实现)──►  godot/tests/run_conformance.gd ──► PASS / FAIL
+```
+
+Python 先生成「敌人初始状态 + 逐次伤害序列 → 每一步的明细和结算后血量」，
+GDScript 侧只复现输入、逐字段比对输出。**客户端零战斗逻辑**这条红线依然成立：
+GDScript 是被验证的候选实现，Python 才是权威。
+
+## 一条命令
+
+```powershell
+pwsh -File scripts\run_conformance.ps1
+```
+
+或用环境变量指定路径：
+
+```powershell
+$env:PVZ_PYTHON = "D:\ProgramData\anaconda3\python.exe"
+$env:PVZ_GODOT  = "D:\apps\Godot\Godot_v4.7.2-stable_win64.exe"
+pwsh -File scripts\run_conformance.ps1
+```
+
+## 覆盖范围（747 用例 / 827 次伤害）
+
+| 组 | 内容 |
+|---|---|
+| A | 8 种真实敌人 × 17 档伤害（含 0、负数、20.0001、33.3333、5000）× 4 种标签组合 |
+| B | 显式 `ap_mult` 扫 5 档（`None`/1.0/1.5/2.0/3.0），只作用于甲段 |
+| C | 边界：伤害恰好等于格挡值 / 等于格挡±1；恰好等于甲段可吸收上限 `armor_hp/ap`、及 ±0.5 |
+| D | 合成极端配置：`block_flat=1000`、`armor_hp=1`、`reduction=0.999`、`hp_body=0.1`、格挡+护甲叠加 |
+| E | 连续多段伤害（4 种序列 × 5 个敌人）：状态累积与每步 `round(...,6)` 的确定性 |
+
+## 当前状态
+
+**827/827 通过，`max_abs_diff = 0.0`——比特级一致。**
+
+门禁本身做过变异测试，证明它不是空转：
+
+| 操作 | fails | max_abs_diff | 退出码 |
+|---|---|---|---|
+| 正常 | 0 | 0.0 | 0 |
+| 把 `AP_MULT_DEFAULT` 从 2.0 改成 2.5 | 210 | 260.0 | 1 |
+| 还原 | 0 | 0.0 | 0 |
+
+## 防漂移
+
+`tests/test_golden_sync.py`（3 个用例）会在每次跑 Python 单测时重新生成一遍用例，
+与仓库里那份逐字段比对。如果有人改了 `balance.py` 却没重新生成黄金文件，测试立刻失败。
+修法就一句：`python scripts/gen_golden_hits.py`。
+
+## 落地时的两个坑（已踩过）
+
+1. **Python `round()` 是"平局取偶"，GDScript 的 `round()` 是"平局远离零"**。
+   `BalanceHit.gd` 用 `String.num(x, n).to_float()` 复刻 Python 语义，827 次伤害零偏差。
+2. **Windows PowerShell 5.1 读无 BOM 的 UTF-8 `.ps1` 会按 ANSI 解析**，中文注释直接把脚本解析崩。
+   所以 `scripts/run_conformance.ps1` 刻意写成纯 ASCII，中文说明只放在本文件里。
+
