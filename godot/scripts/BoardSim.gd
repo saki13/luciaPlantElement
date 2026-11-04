@@ -18,7 +18,11 @@ const CELL := 76.0
 const TRIGGER_X := -0.2
 const START_LIVES := 5
 const SPAWN_X := COLS + 0.5
-const AP_MULT_DEFAULT := 2.0   # 与 tdgame/config.py 的 AP_MULT_DEFAULT 对齐
+const AP_MULT_DEFAULT := 2.0
+const SKY_SUN_VALUE := 25
+const SKY_SUN_INTERVAL := 10.0
+const SUN_VALUE := 25
+const SUNFLOWER_INTERVAL := 8.0
 
 var now := 0.0
 var sun := 0
@@ -36,17 +40,25 @@ var schedule: Array = []
 var enemy_defs: Dictionary = {}
 var plant_defs: Dictionary = {}
 var _spawn_idx := 0
+var sky_sun_enabled := false
+var sky_timer := SKY_SUN_INTERVAL
 var _mowers: Dictionary = {0: true, 1: true, 2: true, 3: true, 4: true}
 
 
 func setup(scenario: Dictionary, defs: Dictionary, pdefs: Dictionary = {}) -> void:
 	enemy_defs = defs
 	plant_defs = pdefs
+	sky_sun_enabled = bool(scenario.get("sky_sun", false))
+	sky_timer = SKY_SUN_INTERVAL
+	sun = int(scenario.get("start_resource", 0))
 	for entry in scenario.get("plants", []):
 		var row: int = int(entry[0])
 		var col: int = int(entry[1])
 		var key: String = String(entry[2])
 		var d: Dictionary = plant_defs.get(key, {})
+		# 注意：GDScript 的 `or` 返回 bool（Python 返回操作数），
+		# 所以不能写 `(d.get("economy") or {})` —— 那会得到 true 然后 .get 报错。
+		var eco: Dictionary = d.get("economy", {})
 		plants.append({
 			"row": row, "col": col, "key": key,
 			"hp": float(d.get("hp", 100)),
@@ -54,6 +66,8 @@ func setup(scenario: Dictionary, defs: Dictionary, pdefs: Dictionary = {}) -> vo
 			"combat": d.get("combat", {}),
 			"atk_timer": 0.0,          # Python 侧 Plant.attack_timer 初值就是 0
 			"tags": d.get("tags", []),
+			"produce_timer": float(eco.get("first", 0.0)),
+			"economy": eco,
 			"dead": false,
 		})
 	schedule.clear()
@@ -69,12 +83,38 @@ func step() -> void:
 	# 注意：GDScript 的 round() 是**取整**，Python 的 round(x, 6) 是保留 6 位小数，
 	# 两者不能互换（写 round() 会把 now 直接归零）。用 snappedf 对齐语义。
 	now = snappedf(now + DT, 0.000001)
+	_update_economy()
 	_spawn_due()
 	_update_plants()
 	_update_projectiles()
 	_update_enemies()
 	_cleanup()
 	_check_end()
+
+
+func _add_sun(amount: int) -> void:
+	sun += amount
+
+
+func _update_economy() -> void:
+	# 天空阳光：每 SKY_SUN_INTERVAL 秒给一次（落点随机不影响 sun 数值）
+	if sky_sun_enabled:
+		sky_timer = sky_timer - DT
+		if sky_timer <= 0.0:
+			_add_sun(SKY_SUN_VALUE)
+			sky_timer += SKY_SUN_INTERVAL
+	# 植物产阳光
+	for p in plants:
+		if bool(p.get("dead", false)):
+			continue
+		var eco: Dictionary = p["economy"]
+		if eco.is_empty():
+			continue
+		p["produce_timer"] = float(p["produce_timer"]) - DT
+		if float(p["produce_timer"]) <= 0.0:
+			_add_sun(int(eco.get("produce", SUN_VALUE)))
+			p["produce_timer"] = float(p["produce_timer"]) + float(
+				eco.get("interval", SUNFLOWER_INTERVAL))
 
 
 func _spawn_due() -> void:

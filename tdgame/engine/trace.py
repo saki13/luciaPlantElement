@@ -54,6 +54,15 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
         "schedule": [[2.0, "shield_cadet", 4], [7.0, "shield_cadet", 4],
                      [13.0, "normal", 4]],
     },
+    "economy": {
+        "cn": "经济：天空阳光 + 向日葵产阳光（补 sun 恒为 0 的盲区）",
+        "seed": 1006,
+        "steps": 400,
+        "sky_sun": True,
+        "start_resource": 100,
+        "plants": [[0, 1, "sunbloom"], [2, 1, "sunbloom"]],
+        "schedule": [[30.0, "normal", 4]],
+    },
     "armor_only": {
         "cn": "纯护甲结算（无减速/无溅射，只测 armor + reduction）",
         "seed": 1005,
@@ -104,8 +113,11 @@ def run_scenario(name: str) -> Dict[str, Any]:
     """跑一个场景，返回逐步 digest 列表。"""
     spec = SCENARIOS[name]
     pool = sorted({p[2] for p in spec["plants"]})
-    sim = Simulation({}, {}, [], pool, seed=spec["seed"], start_resource=0,
-                     max_seconds=1e9, sky_sun=False)
+    # 默认关天空阳光（去掉与战斗无关的随机源）；经济场景显式打开
+    sky_sun = bool(spec.get("sky_sun", False))
+    sim = Simulation({}, {}, [], pool, seed=spec["seed"],
+                     start_resource=int(spec.get("start_resource", 0)),
+                     max_seconds=1e9, sky_sun=sky_sun)
     # 用真实注册表（plant_defs/enemy_defs 需要完整定义）
     from .loader import load_registry
     from pathlib import Path
@@ -142,6 +154,8 @@ def run_scenario(name: str) -> Dict[str, Any]:
         "scenario": name,
         "cn": spec["cn"],
         "seed": spec["seed"],
+        "sky_sun": sky_sun,
+        "start_resource": int(spec.get("start_resource", 0)),
         "plants": spec["plants"],
         "schedule": spec["schedule"],
         "steps": len(frames),
