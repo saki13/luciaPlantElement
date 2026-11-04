@@ -106,14 +106,21 @@ class ZombieSession:
         }
 
     def cards(self) -> List[Dict[str, Any]]:
-        """卡栏：与主线同结构，方便渲染层复用（sun 字段放的是"预算价"）。"""
+        """卡栏：与主线同结构，方便渲染层复用（sun 字段放的是"预算价"）。
+
+        渲染层会读 `affordable` / `ready` 来画变暗与冷却遮罩，所以这里也要给全；
+        我是僵尸没有卡片冷却，`ready` 恒为 True。
+        """
         out = []
         for k in self.allowed:
             d = self.reg.enemies.get(k) or {}
-            out.append({"key": k, "cn": d.get("cn", k), "sun": self.cost(k),
-                        "kind": "enemy"})
+            cost = self.cost(k)
+            out.append({"key": k, "cn": d.get("cn", k), "sun": cost,
+                        "kind": "enemy",
+                        "cd": 0.0, "cd_max": 1.0,
+                        "affordable": cost <= self.budget,
+                        "ready": True, "selected": False})
         return out
-
 
 class ZombieBot:
     """headless 用的投放策略。
@@ -154,6 +161,106 @@ class ZombieBot:
                 if s.can_place(key, row)[0]:
                     s.place_zombie(key, row)
                     return
+
+
+class ZombiePlaySession:
+    """把 `ZombieSession` 适配成 `GameApp` 期待的 `PlaySession` 形状。
+
+    渲染层只认这几个成员（pool / cards / select / click_cell / entities /
+    status / tick / sun / lives / over / won / selected），所以这里做一层薄适配，
+    而不是让渲染层去分辨两种模式 —— 这样 `app_pygame` 的绘制代码一行都不用改。
+    """
+
+    def __init__(self, level: Dict[str, Any], reg, seed: int = 0):
+        self.core = ZombieSession(level, reg, seed=seed)
+        self.sim = self.core.sim
+        self.level = level
+        self.selected: Optional[str] = None
+        self.pool: List[str] = list(self.core.allowed)
+        self.message = ""
+
+    # ---------------------------------------------------------------- 只读属性
+    @property
+    def over(self) -> bool:
+        return self.sim.over
+
+    @property
+    def won(self) -> bool:
+        return self.sim.won
+
+    @property
+    def sun(self) -> int:
+        """顶部面板显示阳光的位置，这里显示剩余预算。"""
+        return self.core.budget
+
+    @property
+    def lives(self) -> int:
+        """我是僵尸没有"命"的概念，返回 0 让渲染层不画小车。"""
+        return 0
+
+    # ---------------------------------------------------------------- 交互
+    def cards(self) -> List[Dict[str, Any]]:
+        return self.core.cards()
+
+    def cards(self) -> List[Dict[str, Any]]:
+        """渲染层还要读 `selected` 来画高亮，它属于会话层而不是核心层。"""
+        cards = self.core.cards()
+        for c in cards:
+            c["selected"] = (c["key"] == self.selected)
+        return cards
+
+    def select(self, key: str) -> bool:
+        if key not in self.core.allowed:
+            return False
+        self.selected = key
+        return True
+
+    def toggle_shovel(self) -> None:
+        """该模式没有铲子（植物是关卡预置的）。"""
+        return None
+
+    def click_cell(self, row: int, col: int) -> Tuple[bool, str]:
+        if self.over:
+            return False, "over"
+        if self.selected is None:
+            return False, "no_selection"
+        ok, why = self.core.can_place(self.selected, row)
+        if not ok:
+            return False, why
+        self.core.place_zombie(self.selected, row)
+        return True, "ok"
+
+    # ---------------------------------------------------------------- 帧
+    def tick(self, dt_seconds: float) -> None:
+        self.core.tick(dt_seconds)
+
+    def entities(self) -> Dict[str, List[Dict[str, Any]]]:
+        plants = [
+            {"key": p.key, "row": p.row, "col": p.col,
+             "hp_ratio": max(0.0, p.hp / p.hp_max) if p.hp_max else 0.0}
+            for p in self.sim.plants
+        ]
+        enemies = [
+            {"key": e.key, "row": e.row, "x": e.x,
+             "hp_ratio": max(0.0, e.hp_body / e.hp_body_max) if e.hp_body_max else 0.0,
+             "eating": e.eating is not None}
+            for e in self.sim.enemies
+        ]
+        projectiles = [
+            {"row": p.row, "x": p.x, "key": str(p.spec.get("key", p.owner_key))}
+            for p in self.sim.projectiles
+        ]
+        return {"plants": plants, "enemies": enemies, "projectiles": projectiles}
+
+    def status(self) -> Dict[str, Any]:
+        st = self.core.status()
+        st["selected"] = self.selected
+        st["message"] = self.message
+        st["level"] = st.get("key", "?")
+        # 渲染层的历史字段名（PlaySession.status 用的就是这两个）
+        st["plants"] = st.get("plants_left", 0)
+        st["enemies"] = st.get("zombies_alive", 0)
+        return st
 
 
 def run_level(level: Dict[str, Any], reg, seed: int = 1000,

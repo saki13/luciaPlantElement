@@ -27,6 +27,7 @@ from . import config as C
 from .engine.loader import load_registry
 from .engine.bot import RuleBot
 from .engine.session import SHOVEL, PlaySession
+from .scenarios.i_zombie import ZombieBot, ZombiePlaySession
 from .scenarios.level_run import load_levels
 
 # ---- 配色 ----
@@ -130,19 +131,45 @@ class SpriteLibrary:
         return sum(1 for v in self._cache.values() if v is not None)
 
 
+def _load_izombie_levels(directory: Path) -> dict:
+    """读 M5 我是僵尸关卡（结构与主线关卡不同，单独一个加载器）。"""
+    import json
+    out = {}
+    if not directory.is_dir():
+        return out
+    for f in sorted(directory.glob("*.json")):
+        try:
+            d = json.loads(f.read_text(encoding="utf-8"))
+        except Exception as exc:      # noqa: BLE001
+            print(f"[izombie] 跳过 {f.name}: {exc}")
+            continue
+        out[d.get("key", f.stem)] = d
+    return out
+
+
 class GameApp:
     def __init__(self, data_dir: str | Path | None = None, use_sprites: bool = True,
-                 level_key: str = "m1_01", seed: int = 1000, autoplay: bool = False) -> None:
+                 level_key: str = "m1_01", seed: int = 1000, autoplay: bool = False,
+                 mode: str = "play") -> None:
         pygame.init()
-        pygame.display.set_caption("PVZ-like 可玩版（M1）")
+        self.mode = mode
+        pygame.display.set_caption(
+            "PVZ-like 可玩版（M5 我是僵尸）" if mode == "izombie"
+            else "PVZ-like 可玩版（M1）")
         self.screen = pygame.display.set_mode((WIN_W, WIN_H))
         self.clock = pygame.time.Clock()
         data_dir = Path(data_dir) if data_dir else Path(__file__).parent / "data"
         self.registry = load_registry(data_dir)
-        self.levels = load_levels(data_dir / "levels")
+        if mode == "izombie":
+            self.levels = _load_izombie_levels(data_dir / "izombie")
+            default_key = "zombie_01"
+        else:
+            self.levels = load_levels(data_dir / "levels")
+            default_key = "m1_01"
         if not self.levels:
-            raise SystemExit(f"没有读到关卡：{data_dir / 'levels'}")
-        self.level_key = level_key if level_key in self.levels else sorted(self.levels)[0]
+            raise SystemExit(f"没有读到关卡：{data_dir}")
+        self.level_key = level_key if level_key in self.levels else (
+            default_key if default_key in self.levels else sorted(self.levels)[0])
         self.seed = seed
         self.autoplay = autoplay
         self.font, self.cjk = _load_font(18)
@@ -177,11 +204,15 @@ class GameApp:
     # ------------------------------------------------------------------ 局
     def new_game(self) -> None:
         self.level = self.levels[self.level_key]
-        self.session = PlaySession(self.level, self.registry, seed=self.seed)
+        if self.mode == "izombie":
+            self.session = ZombiePlaySession(self.level, self.registry, seed=self.seed)
+            self.bot = ZombieBot() if self.autoplay else None
+        else:
+            self.session = PlaySession(self.level, self.registry, seed=self.seed)
+            self.bot = RuleBot(self.session.pool, smart=True) if self.autoplay else None
         self.views: dict[int, object] = {}
         self.message = ""
         self.message_t = 0.0
-        self.bot = RuleBot(self.session.pool, smart=True) if self.autoplay else None
 
     # ------------------------------------------------------------------ 素材
     def _build_visual_resources(self) -> None:
@@ -271,7 +302,8 @@ class GameApp:
     # ------------------------------------------------------------------ 主循环
     def advance(self, dt_seconds: float) -> None:
         if self.bot is not None and not self.session.over:
-            self.bot.think(self.session.sim)
+            target = self.session.core if self.mode == "izombie" else self.session.sim
+            self.bot.think(target)
         self.session.tick(dt_seconds)
         if self.message_t > 0:
             self.message_t -= dt_seconds
@@ -325,7 +357,8 @@ class GameApp:
             pygame.draw.rect(s, (60, 60, 50) if card["selected"] else COL_PANEL_EDGE,
                              rect, 3 if card["selected"] else 1, border_radius=6)
 
-            sheet = self.sprites.sheet(card["key"], "plant")
+            icon_kind = "enemy" if self.mode == "izombie" else "plant"
+            sheet = self.sprites.sheet(card["key"], icon_kind)
             icon_size = max(8, int(card_w - 10))
             if sheet is not None:
                 frame = sheet.frames["idle"][0]
@@ -350,6 +383,10 @@ class GameApp:
                                    COL_TEXT if usable else COL_TEXT_DIM)
             s.blit(txt, (rect.x + 4, rect.y + rect.height - 16))
 
+        if self.mode == "izombie":
+            # 我是僵尸：植物是预置的，没有铲子这回事
+            self.shovel_rect = pygame.Rect(0, 0, 0, 0)
+            return
         self.shovel_rect = pygame.Rect(int(x0 + total + 8), 10, 40, int(card_h))
         sel = self.session.selected == SHOVEL
         pygame.draw.rect(s, (240, 226, 196) if sel else COL_CARD, self.shovel_rect,
@@ -504,6 +541,8 @@ def main(argv=None) -> int:
     ap.add_argument("--no-sprites", action="store_true", help="强制色块占位（对照回归用）")
     ap.add_argument("--autoplay", action="store_true", help="用 RuleBot 自动对局（截图/演示用）")
     ap.add_argument("--warmup", type=float, default=0.5, help="截图前先推进几秒")
+    ap.add_argument("--mode", default="play", choices=("play", "izombie"),
+                    help="play=主线守关；izombie=M5 我是僵尸（攻防反转）")
     args = ap.parse_args(argv)
 
     if args.smoke:
@@ -511,7 +550,7 @@ def main(argv=None) -> int:
         os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
 
     app = GameApp(use_sprites=not args.no_sprites, level_key=args.level, seed=args.seed,
-                  autoplay=args.autoplay)
+                  autoplay=args.autoplay, mode=args.mode)
     lib = app.sprites
     print(f"level={app.level_key} sprites_enabled={lib.enabled} loaded={lib.loaded_count()} "
           f"missing={len(lib.missing)} failed={len(lib.failed)}")

@@ -47,24 +47,24 @@ function Run-Step([string]$title, [scriptblock]$body) {
 Push-Location $root
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
-Run-Step "1/6 python unit tests" {
+Run-Step "1/7 python unit tests" {
     & $py -m unittest tests.test_balance tests.test_engine tests.test_scenarios `
         tests.test_replay tests.test_golden_sync tests.test_session tests.test_boss tests.test_endless tests.test_izombie
 }
 
-Run-Step "2/6 sprite health check" {
+Run-Step "2/7 sprite health check" {
     & $py scripts\check_sprites.py
 }
 
-Run-Step "3/6 calibration baseline" {
+Run-Step "3/7 calibration baseline" {
     & $py scripts\check_calibration.py
 }
 
-Run-Step "4/6 level regression" {
+Run-Step "4/7 level regression" {
     & $py scripts\check_levels.py
 }
 
-Run-Step "5/6 render assertions" {
+Run-Step "5/7 render assertions" {
     $dir = $env:PVZ_SHOT_DIR
     if (-not $dir) { $dir = Join-Path $root "logs" }
     if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
@@ -73,11 +73,15 @@ Run-Step "5/6 render assertions" {
 
 if ($SkipGodot) {
     Write-Host ""
-    Write-Host "== 6/6 conformance gate == SKIPPED (-SkipGodot)"
+    Write-Host "== 6/7 conformance gate == SKIPPED (-SkipGodot)"
 } else {
-    Run-Step "6/6 resolve_hit conformance gate" {
+    Run-Step "6/7 resolve_hit conformance gate" {
         & (Join-Path $PSScriptRoot "run_conformance.ps1")
     }
+}
+
+Run-Step "7/7 izombie mode gate" {
+    & \D:\ProgramDatanaconda3\python.exe scripts\check_izombie.py
 }
 
 Pop-Location
