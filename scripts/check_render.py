@@ -20,8 +20,17 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "libs"))
 sys.path.insert(0, str(ROOT))
+
+# pygame 的来源因平台而异：
+#   Windows 本机 -> 项目自带的 libs/（那是 win_amd64 的 .pyd）
+#   CI (Linux)   -> pip 安装的 pygame
+# 所以**不能**无条件把 libs 插到 sys.path 最前面，否则 Linux 上会优先加载
+# Windows 二进制并直接 ImportError（CI 的 "Render assertions" 就是这么红的）。
+try:
+    import pygame  # noqa: F401
+except ImportError:  # 本机没有全局 pygame，退回项目自带的 libs/
+    sys.path.insert(0, str(ROOT / "libs"))
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
 os.environ.setdefault("SDL_AUDIODRIVER", "dummy")

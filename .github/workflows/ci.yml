@@ -69,10 +69,15 @@ jobs:
         run: |
           set -euo pipefail
           URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
-          echo "fetching $URL"
-          curl -fsSL -o godot.zip "$URL"
-          unzip -q godot.zip
-          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+          echo "URL=$URL"
+          curl -fsSL --retry 3 --retry-delay 2 -o godot.zip "$URL"
+          ls -l godot.zip
+          unzip -o -q godot.zip
+          ls -l
+          # 不硬编码解压出来的文件名，避免 release 命名变化时抓瞎
+          BIN="$(ls Godot_v*_linux.x86_64 | head -n1)"
+          echo "BIN=$BIN"
+          mv "$BIN" godot
           chmod +x godot
           ./godot --version
 
