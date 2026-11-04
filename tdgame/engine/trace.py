@@ -54,6 +54,13 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
         "schedule": [[2.0, "shield_cadet", 4], [7.0, "shield_cadet", 4],
                      [13.0, "normal", 4]],
     },
+    "armor_only": {
+        "cn": "纯护甲结算（无减速/无溅射，只测 armor + reduction）",
+        "seed": 1005,
+        "steps": 600,
+        "plants": [[1, 1, "peashooter"], [1, 3, "peashooter"]],
+        "schedule": [[2.0, "bucket", 1], [10.0, "bucket", 1], [18.0, "cone", 1]],
+    },
     "shoot_only": {
         "cn": "直射 + 弹道命中（弹道的最小闭环）",
         "seed": 1004,
@@ -81,7 +88,9 @@ def _digest(sim: Simulation) -> Dict[str, Any]:
         "lives": int(sim.lives),
         "plants": sorted([int(p.row), int(p.col), round(p.hp, 4)]
                          for p in sim.plants),
-        "enemies": sorted([int(e.row), round(e.x, 4), round(e.hp_body, 4)]
+        # 护甲值也纳入比对：E-01 的护甲/格挡增量靠这一列才验得出来
+        "enemies": sorted([int(e.row), round(e.x, 4), round(e.hp_body, 4),
+                           round(getattr(e, "armor_hp", 0.0), 4)]
                           for e in sim.enemies),
         "proj": sorted([int(p.row), round(p.x, 4)] for p in sim.projectiles),
         "kills": int(sum(sim.kills.values())),

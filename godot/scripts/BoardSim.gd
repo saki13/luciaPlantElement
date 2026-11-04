@@ -18,6 +18,7 @@ const CELL := 76.0
 const TRIGGER_X := -0.2
 const START_LIVES := 5
 const SPAWN_X := COLS + 0.5
+const AP_MULT_DEFAULT := 2.0   # 与 tdgame/config.py 的 AP_MULT_DEFAULT 对齐
 
 var now := 0.0
 var sun := 0
@@ -52,6 +53,7 @@ func setup(scenario: Dictionary, defs: Dictionary, pdefs: Dictionary = {}) -> vo
 			"cx": float(col) + 0.5,
 			"combat": d.get("combat", {}),
 			"atk_timer": 0.0,          # Python 侧 Plant.attack_timer 初值就是 0
+			"tags": d.get("tags", []),
 			"dead": false,
 		})
 	schedule.clear()
@@ -85,6 +87,9 @@ func _spawn_due() -> void:
 			"hp": float(d.get("hp_body", 100)),
 			"bite": float(d.get("bite_dps", 0)),
 			"speed": float(d.get("speed", 0)),
+			"armor": float(d.get("armor", {}).get("hp", 0)),
+			"armor_red": float(d.get("armor", {}).get("reduction", 0)),
+			"block": float(d.get("block_flat", 0)),
 			"dead": false, "eating": -1,
 		})
 		_spawn_idx += 1
@@ -119,6 +124,7 @@ func _plant_attack(p: Dictionary, combat: Dictionary) -> bool:
 		"speed": float(proj["speed"]) / CELL,   # Python: Projectile 把像素速度除以 CELL
 		"damage": float(combat["damage"]),
 		"hit_left": 1,                           # pierce 计数，本块恒为 1
+		"tags": p["tags"],
 		"dead": false,
 		"hit": String(proj.get("hit", "single")),
 	})
@@ -170,11 +176,44 @@ func _projectile_find_target(pr: Dictionary) -> int:
 
 
 func _resolve_projectile_hit(pr: Dictionary, enemy: Dictionary) -> void:
-	# 本块只做直击单体伤害；护甲/格挡/AoE/控制留给下一个增量
-	enemy["hp"] = snappedf(float(enemy["hp"]) - float(pr["damage"]), 0.000001)
+	# 直击伤害走统一入口；AoE/溅射/控制留给后续增量
+	_apply_damage(enemy, float(pr["damage"]), pr["tags"])
 	pr["hit_left"] = int(pr["hit_left"]) - 1
 	if int(pr["hit_left"]) <= 0 or not String(pr["hit"]).begins_with("pierce:"):
 		pr["dead"] = true
+
+
+# ---------------------------------------------------------------------- 伤害结算
+func _apply_damage(enemy: Dictionary, raw: float, tags) -> void:
+	## 镜像 tdgame/balance.py::resolve_hit，顺序：格挡 -> 归零短路 -> 护甲段 -> 本体。
+	var tag_set := {}
+	for t in tags:
+		tag_set[String(t)] = true
+
+	var dmg: float = raw
+	var block: float = float(enemy["block"])
+	if block > 0.0 and not tag_set.has("shield_break"):
+		dmg = maxf(0.0, dmg - block)
+
+	# 归零短路：不破甲、不打本体
+	if dmg <= 0.0:
+		return
+
+	var armor: float = float(enemy["armor"])
+	if armor > 0.0:
+		var ap: float = AP_MULT_DEFAULT if tag_set.has("armor_pierce") else 1.0
+		var reduction: float = float(enemy["armor_red"])
+		var capacity_raw: float = armor / ap          # 甲段还能吸收的原始伤害当量
+		if dmg <= capacity_raw:
+			enemy["armor"] = snappedf(armor - dmg * ap, 0.000001)
+		else:
+			enemy["armor"] = 0.0
+			var overflow_raw: float = dmg - capacity_raw
+			var body: float = overflow_raw * (1.0 - reduction)   # 溢出折减后打本体
+			enemy["hp"] = snappedf(float(enemy["hp"]) - body, 0.000001)
+	else:
+		# 穿甲倍率不作用于裸本体
+		enemy["hp"] = snappedf(float(enemy["hp"]) - dmg, 0.000001)
 
 
 # ---------------------------------------------------------------------- 敌人
@@ -274,7 +313,7 @@ func digest() -> Dictionary:
 	var e_arr := []
 	for e in enemies:
 		e_arr.append([int(e["row"]), snappedf(float(e["x"]), 0.0001),
-			snappedf(float(e["hp"]), 0.0001)])
+			snappedf(float(e["hp"]), 0.0001), snappedf(float(e["armor"]), 0.0001)])
 	e_arr.sort_custom(func(a, b): return _lt(a, b))
 	var pr_arr := []
 	for pr in projectiles:
