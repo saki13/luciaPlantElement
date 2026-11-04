@@ -230,3 +230,96 @@
 5. 引擎 grep `summon|phase|remove_plant` → 确认 Boss 召唤与铲种均未实现
 6. 植物 tags 汇总 → 确认无 `armor_pierce`
 7. 仓库元文件检查 → LICENSE / requirements / .gitattributes 全缺
+
+---
+
+## 批次 ⑤⑥ 进度（2026-11-05 追加）
+
+> 上一节（批次 ④）完成于 11-04；本节记录之后的工作，按"能验证的证据"写，
+> 没做到的明确标 ⏳ 或 ❌。
+
+### ⑤ M5「我是僵尸」—— 已完成
+
+| 项 | 状态 | 证据 |
+|---|---|---|
+| 引擎反转（`objective="devour"`） | ✅ | `board.py` 增加 objective 分支；`can_place` 在 devour 模式拒绝种植；`setup_plant` / `spawn_enemy` 新 API |
+| 会话层 | ✅ | `tdgame/scenarios/i_zombie.py`：`ZombieSession` + `ZombieBot` + 适配器 `ZombiePlaySession` |
+| 关卡 | ✅ | `tdgame/data/izombie/` 3 关（预算 20 / 34 / 100），独立目录不干扰主线关卡回归 |
+| headless 测试 | ✅ | `tests/test_izombie.py` 14 个 |
+| 可玩集成 | ✅ | `python -m tdgame.app_pygame --mode izombie`；闸门 `scripts/check_izombie.py` 17 项 |
+| 关卡可解性 | ✅ | 3 关 headless 均 3/3 通关；预算砍到 1/3 后 0/3（证明预算是真约束） |
+
+**调试中确认的两个反直觉事实**（都写进了代码注释）：
+1. 豌豆射手射程覆盖整行、20dps 5 秒杀 100 血普通僵尸，而走完全程要 14.5 秒 ——
+   普通/快速僵尸**永远摸不到豌豆**，买了就是浪费预算。所以 Bot 必须"强度优先"。
+2. Bot 不能只盯植物最多的行：早期版本 30 只僵尸全堆一行，清完集体撞死在
+   最左侧割草机，别的行一株没碰，预算烧光必输。
+
+### ⑤ 爬塔 —— 已完成
+
+| 项 | 状态 | 证据 |
+|---|---|---|
+| 显式层数 + 缩放 | ✅ | `tdgame/scenarios/tower.py`；第 N 层用 `build_round_schedule(N-1)`，波数单调不减（有测试） |
+| Boss 层 | ⚠️ 用 giant 替代 boss_50 | 见下方 D-11：boss_50 当前打不死，塔里放 0% 通过率的墙没意义。修好 D-11 后改 `BOSS_KEY` 一行即可 |
+| 进度入档 | ✅ | `PlayerProgress.tower_floor` + savegame 往返（负数钳 0、类型错归零、缺字段老档可读） |
+| 难度曲线 | ✅ | late 卡池死在 10~14 层、basic 9~13 层；测试守"不该前 5 层就死"和"不该全部轻松登顶" |
+
+### ⑤ 发布准备
+
+| 项 | 状态 | 说明 |
+|---|---|---|
+| `requirements.txt` | ✅ | 区分运行时 / 渲染 / 美术管线依赖，说明 Windows 可用自带 `libs/` |
+| `.gitattributes` | ✅ | 统一 LF、二进制不做行尾归一化、生成物折叠 diff |
+| 存档持久化 | ✅ | `tdgame/scenarios/savegame.py`；`unlocked` 不落盘、从 `cleared` 重新推导（防手改）；坏档降级；原子写入；端到端验证通关后确实落盘 |
+| **LICENSE** | ❌ **未做** | 这是**法律决定，必须由项目所有者拍板**，我不代为选择。建议 MIT，但需明确授权后再加 |
+| 文档 | ✅/⏳ | `CONTRIBUTING.md` 已补 CI 章节与本项目踩过的坑；本节即为 BACKLOG 补记。README 的 ⑤⑥ 部分待补 |
+
+### ⑥ Godot 化
+
+| 项 | 状态 | 证据 |
+|---|---|---|
+| **E-02** `board.step` 逐步一致性门禁 | ✅ | `tdgame/engine/trace.py` + `scripts/check_board_trace.py` + `reports/board_trace_baseline.json`；已接为 `check_all` 第 8 关 |
+| **E-01** 运行时 GDScript 移植 | ✅ 核心路径 | `godot/scripts/BoardSim.gd`，7 场景 / 2107 步与 Python **逐步逐字段一致** |
+| **E-03** 移植后重新校准 | ⏳ 不需要做 | 见下 |
+
+**E-02 为什么重要**：原有基线（校准/关卡）比的是聚合指标（胜率、时长、破线数），
+抓不到"某一步算错但最后结果碰巧一样"的 bug。trace 把每一步的行/坐标/血量/护甲/
+弹道/阳光都记下来逐字段比对，报第一个分歧的步号。
+
+**E-01 已覆盖**：移动、啃食、割草机、破线、远程射击、弹道飞行、命中、
+护甲结算（含穿甲倍率与溢出折减）、格挡、减速、击退、AoE 溅射、经济（天空阳光 + 向日葵）。
+
+**E-01 未覆盖**（对应 trace 场景尚未加入）：召唤、Boss 二阶段、一次性植物（爆栗）、
+碎片/穿透计数、植物被动（坚果类）。
+
+**E-03 为什么不需要做**：该任务的原始假设是"移植后会引入偏差，需要重新校准"。
+实际上移植是按 trace 逐步对齐的，**行为与 Python 完全相同**（7 场景 2107 步零差异），
+所以 Python 侧的 `calibration_baseline` / `levels_baseline` 无需重算。
+真正的结论是：**当前 GDScript 侧还只是个引擎，没有 Bot、没有出怪调度，
+不能独立跑一局完整对局**，所以它还没有"自己的"校准数据可言。
+
+### 移植过程中发现的语言/工具陷阱（都会复发，记在这里）
+
+1. **GDScript 的 `round()` 是取整**，Python 的 `round(x, 6)` 是保留 6 位小数。
+   写 `now = round(now + DT)` 会让时间归零。用 `snappedf(x, 0.000001)`。
+2. **GDScript 的 `or` 返回 bool**，Python 返回操作数。
+   `(d.get("x") or {})` 在 GDScript 里得到 `true`，随后 `.get` 直接崩。
+3. **`Projectile.speed` 是"每秒格数"**（像素速度 ÷ CELL，320 → 4.21）。
+   照抄 320 会让子弹一帧飞穿整屏。
+4. **门禁只验它被要求验的场景**。加 trace 场景时，`godot/tests/run_board_trace.gd`
+   的 `ONLY` 列表必须同步改，否则门禁会"通过"但没比对新场景。
+5. **PowerShell 的 `Set-Content -Encoding UTF8` 会写 BOM**，`json.loads` 会直接报
+   `Unexpected UTF-8 BOM`。还原被改过的 JSON 用 `git checkout`，不要用 Set-Content。
+6. **不要用 `python -c` 配 PowerShell here-string 改脚本**：`$` 和引号会被 PowerShell
+   先行展开/吞掉，多次把 `.ps1`/脚本写坏。改脚本一律走独立 `.py` 文件。
+7. **测试不要写玩家真实存档**。`GameApp` 的 `save_path` 已支持注入，测试用临时目录。
+
+### 仍未完成的（诚实清单）
+
+- **LICENSE**：等所有者决定。
+- **⑤ 文档**：README 的批次⑤⑥说明待补；本节只覆盖 BACKLOG。
+- **E-01 剩余机制**：召唤 / Boss 二阶段 / 一次性植物 / 碎片穿透 / 植物被动。
+- **⑥ 的"可独立运行"**：GDScript 侧没有 Bot 与出怪调度，不能脱离 Python 跑完整对局。
+  这是"全量 Godot 化"真正的大头，BACKLOG 原估 8–12 人日。
+- **D-11 Boss 数值重做**：仍未做，是 M3 门槛与塔 Boss 层的共同阻塞。
+- **T5–T10 僵尸**：设计与美术已交给子 Agent 生成中，尚未验收集成。
