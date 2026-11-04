@@ -40,10 +40,20 @@ class TraceTests(unittest.TestCase):
         tr = run_scenario("core_shoot_bite")
         full = {}
         for f in tr["frames"]:
-            for row, x, hp in f["enemies"]:
+            for row, x, hp, *_armor in f["enemies"]:
                 full.setdefault((row, round(x, 1)), set()).add(hp)
         self.assertTrue(any(len(v) > 1 for v in full.values()),
                         "没有任何敌人的血量变化过")
+
+    def test_digest_includes_armor(self):
+        """护甲值必须进 digest，否则护甲段的移植等于没测。"""
+        tr = run_scenario("armor_only")
+        seen = set()
+        for f in tr["frames"]:
+            for entry in f["enemies"]:
+                self.assertEqual(len(entry), 4, "敌人条目应为 (row, x, hp, armor)")
+                seen.add(entry[3])
+        self.assertTrue(len(seen) > 1, f"护甲值应当变化过，实际只有 {seen}")
 
     def test_trace_covers_distinct_mechanics(self):
         """每个场景对应一类机制，名字里要能看出来，否则以后没人知道覆盖了什么。"""
