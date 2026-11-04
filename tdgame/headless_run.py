@@ -107,12 +107,15 @@ def build_scenes(reg, runs: int) -> List[Dict[str, Any]]:
                      start_resource=200, max_seconds=180)
     scenes.extend([shield, dumb])
     # 普通无尽中程（全卡池，25 波，未接反制器）。
+    # 单波密度从 `3 + w//2` 放缓到 `3 + w//3`：前者实测 0.40 低于设计区间
+    # （counter_map 目标 0.55~0.75），放缓后 0.60 落在中位。只动节奏旋钮，
+    # 未改任何战斗数值。详见 reports/headless_calibration_report.md 的复核小节。
     # 注：曾试过在这里加一个"接 counter_map 自动反制"的对照场景，但实测任何
     # 有意义的反制注入（1/16 槽位换成铁桶/巨人）都会把胜率从 0.40 打到 0.00——
     # Bot 本身卡在悬崖边，反制器的作用无法从它身上读出来。反制器改由
     # tests/test_endless.py 单测守住，真机联调时再人工评估。
     scenes.append(run_batch("endless_25w", reg, POOL_LATE, 25, runs, smart=True,
-                            cap_fn=lambda w: min(10, 3 + w // 2)))
+                            cap_fn=lambda w: min(10, 3 + w // 3)))
     # 50 轮 Boss 门槛：高配 vs 低配
     scenes.append(boss_scene(reg, "late", runs, True))
     scenes.append(boss_scene(reg, "basic", runs, True))

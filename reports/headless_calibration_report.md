@@ -51,8 +51,11 @@
 
 ```powershell
 $py = "D:\ProgramData\anaconda3\python.exe"
-# 全量单元测试（39 个）
-& $py -m unittest tests.test_balance tests.test_engine tests.test_scenarios
+# 全量单元测试
+& $py -m unittest tests.test_balance tests.test_engine tests.test_scenarios `
+    tests.test_replay tests.test_golden_sync tests.test_session tests.test_boss tests.test_endless
+# 一键总检（六关：单测 / 精灵表 / 校准基线 / 关卡回归 / 渲染断言 / 一致性门禁）
+pwsh -File scripts\check_all.ps1
 # 100 局 headless 回归
 & $py -m tdgame.headless_run --runs 100
 # pygame 薄壳无显示冒烟 + 截图（pygame 在项目自包含 libs/）
@@ -60,3 +63,56 @@ $env:SDL_VIDEODRIVER="dummy"; $env:SDL_AUDIODRIVER="dummy"
 $env:PYTHONPATH="D:\lucia\rea\project\pvz\libs;D:\lucia\rea\project\pvz"
 & $py -m tdgame.app_pygame --smoke --frames 3 --shot logs\app_smoke.png
 ```
+
+---
+
+## 7. 2026-11-04 复核更新（接手后）
+
+本节记录接手方对本报告的复核与改动。**第 3 节的历史数字保留原样**，此处只写变化。
+
+### 7.1 无尽胜率收敛（原 0.30/0.40 → 0.60）
+
+原报告把无尽 0.30 归给 M4「等反制器接入」。复核后的实测链条：
+
+| 实验 | 25 波无尽胜率 |
+|---|---|
+| 原节奏（单波密度 `3 + w//2`） | 0.40 |
+| 1/16 槽位换成 `normal`/`fast`（**弱怪**对照） | 0.55 / 0.50（变容易，证明替换机制没坏） |
+| 1/32 槽位换成 `shield_cadet` | 0.05 |
+| 1/16 槽位换成 `shield_cadet` | 0.00 |
+| 1/16 槽位换成 `bucket`/`giant`（真反制） | 0.00 |
+
+即：**任何有意义的反制注入都会把 Bot 打到 0**——它本来就卡在悬崖边。
+根因与「Boss 打不死」同源：`block_flat` 与重甲相对卡池 DPS 过强。
+
+因此本轮**不靠反制器**，而是按本报告一贯的口径（只调节奏旋钮）把单波密度
+从 `3 + w//2` 放缓到 `3 + w//3`：
+
+| 场景 | win | clean | mower | sunL |
+|---|---|---|---|---|
+| endless_25w（新） | **0.60** | 0.50 | 1.20 | 1081 |
+
+0.60 落在 `counter_map.headless_targets` 的 0.55–0.75 区间内。**未改动任何战斗数值。**
+
+### 7.2 Boss 门槛的真相（重要）
+
+原报告第 3 节写 `boss50_late 0.79`、第 4 节称「品阶门槛分化成立」。复核发现：
+Boss 的 `block_flat = 30` 把**整个卡池的伤害归零**（豌豆/双发 20、荆棘 25 全部无效），
+唯一有效的 `custom_shieldbreaker` 只有 28.6 dps，打 5500 原始伤害要 193 秒，
+而战斗只有约 120 秒。实测 `boss_50` 击杀率恒为 0。
+
+**原 0.79 的胜率全部来自割草机清场**（Boss 走到最左被小车碾死，而它是最后一个敌人）。
+
+曾试 `mower_immune` 让 Boss 不被白嫖，结果直接变 0% 不可通关，已回退。
+这需要一次专门的 Boss 数值重做（降 `block_flat` 或给卡池补高单发），
+已登记为 `BACKLOG.md` 的 **D-11**，不在本轮范围内。
+
+### 7.3 关卡回归补建
+
+原报告只覆盖 6 个手搓场景，`data/levels/*.json` 从未被模拟（18 关里只有 2 关跑过）。
+本轮新增 `scripts/check_levels.py` + `reports/levels_baseline.json`，当前覆盖 **25 关**
+（M1×10 + M2×6 + M3×8 + Boss×1），5 seeds/关，逐字段比对基线。
+
+### 7.4 测试与门禁
+
+单测 39 → **92**；新增六道一键总检 `scripts/check_all.ps1`（全绿约 29s）。
