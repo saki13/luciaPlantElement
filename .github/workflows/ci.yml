@@ -35,7 +35,8 @@ jobs:
             tests.test_boss \
             tests.test_endless \
             tests.test_izombie \
-            tests.test_savegame
+            tests.test_savegame \
+            tests.test_tower
 
       - name: Sprite health check
         # 注：源帧在 .gitignore 里（体积原因），所以这一步在 CI 只跑

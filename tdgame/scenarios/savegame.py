@@ -27,6 +27,8 @@ def snapshot(progress: PlayerProgress) -> Dict[str, Any]:
         "format": FORMAT,
         "cleared": list(progress.cleared),
         "design_tokens": int(progress.design_tokens),
+        # 爬塔进度：下次从这一层继续。0 表示还没爬过。
+        "tower_floor": int(getattr(progress, "tower_floor", 0)),
     }
 
 
@@ -58,6 +60,12 @@ def restore(data: Any, levels: Optional[Dict[str, Dict]] = None) -> Tuple[Player
         warn = (warn + "；" if warn else "") + "design_tokens 字段类型不对，已归零"
         tokens = 0
     prog.design_tokens = max(0, int(tokens))
+
+    floor = data.get("tower_floor", 0)
+    if isinstance(floor, bool) or not isinstance(floor, int):
+        warn = (warn + "；" if warn else "") + "tower_floor 字段类型不对，已归零"
+        floor = 0
+    prog.tower_floor = max(0, int(floor))
 
     # 关键：解锁状态从已通关列表重新推导，绝不从文件读
     prog.unlocked = set(PHASES["P1"].unlocks)

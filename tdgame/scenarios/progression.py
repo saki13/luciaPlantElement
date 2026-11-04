@@ -72,6 +72,8 @@ class PlayerProgress:
         self.levels = levels
         self.cleared: List[str] = []
         self.design_tokens = 0
+        # 爬塔最高层（0 = 还没爬过），由 savegame 持久化
+        self.tower_floor = 0
         self.unlocked = set(PHASES["P1"].unlocks)
 
     def clear_level(self, level_key: str) -> int:
