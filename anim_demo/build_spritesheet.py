@@ -85,6 +85,47 @@ def place_cell(im, scale):
     return cell
 
 
+def count_content_bands(im, ink_thresh=40, min_gap_small=2, shrink=8, sig_ratio=0.10):
+    """按行投影统计"互不相连的内容条带"数，用于发现模型返回的多姿态拼图。
+
+    单角色应只有 1 个显著条带；4 个姿态竖排的拼图会得到 4~5 个。
+    为提速先缩小 shrink 倍再判断；面积不足最大条带 sig_ratio 的碎条带（例如分离的
+    脚下投影、frostbell 那种分段植物）不计入显著条带，减少误报。
+
+    返回 (显著条带数, 全部条带数)。
+    """
+    a = im.getchannel("A")
+    w, h = a.size
+    sw, sh = max(1, w // shrink), max(1, h // shrink)
+    small = a.resize((sw, sh), Image.BILINEAR)
+    px = small.load()
+    has_ink = [any(px[x, y] > ink_thresh for x in range(sw)) for y in range(sh)]
+
+    bands = []
+    y = 0
+    while y < sh:
+        if not has_ink[y]:
+            y += 1
+            continue
+        y0 = y
+        gap = 0
+        while y < sh and gap <= min_gap_small:
+            gap = 0 if has_ink[y] else gap + 1
+            y += 1
+        # y - gap 指向最后一个有墨迹行的下一行，减 1 才是闭区间末端；再夹到图内
+        bands.append((y0, min(max(y0, y - gap - 1), sh - 1)))
+    if not bands:
+        return 0, 0
+
+    mask = small.point(lambda v: 255 if v > ink_thresh else 0)
+    mp = mask.load()
+    areas = [sum(1 for yy in range(b0, b1 + 1) for xx in range(sw) if mp[xx, yy])
+             for b0, b1 in bands]
+    biggest = max(areas) or 1
+    sig = sum(1 for area in areas if area >= biggest * sig_ratio)
+    return sig, len(bands)
+
+
 def build_dir(src_dir, dst):
     fallback = os.path.join(src_dir, "idle_0.png")
     if not os.path.exists(fallback):
@@ -106,6 +147,19 @@ def build_dir(src_dir, dst):
             cr = crop_asset(p)
             crops[p] = cr
             scale = min(scale, MAX_W / cr.width, MAX_H / cr.height)
+    # 2.5) 多角色帧自检：一帧里若存在多个面积相当的条带，说明模型返回了拼图，
+    #      而下面的全局 scale 会把整张表 11 格一起压扁（fast/giant 事故的成因）。
+    multi = []
+    for p, cr in crops.items():
+        sig, total = count_content_bands(cr)
+        if sig > 1:
+            multi.append((os.path.basename(p), total, sig))
+    if multi:
+        print(f"  [warn] 检测到 {len(multi)} 帧含多个角色（拼图），拼出的表会明显偏小/变形：")
+        for name, total, sig in multi[:6]:
+            print(f"          {name}: 内容条带 {total} 个，显著 {sig} 个")
+        print("  [warn] 请删除该单位的 base.png 与 frames/，换掉 base_desc 里的"
+              "相对比较措辞后重新生成")
     print(f"  global scale={scale:.4f} across {len(crops)} unique frames")
     # 3) 用同一缩放、同一底部锚点拼表，保证身体不跳尺寸、着地点一致
     sheet = Image.new("RGBA", (FRAME * COLS, FRAME * ROWS), (0, 0, 0, 0))

@@ -1,0 +1,68 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  # 改这里就能升级 Godot；Godot 版本变化不会影响 Python 侧
+  GODOT_VERSION: "4.7.2-stable"
+
+jobs:
+  python:
+    name: python checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install --quiet numpy pillow
+
+      - name: Unit tests
+        run: |
+          python -m unittest \
+            tests.test_balance \
+            tests.test_engine \
+            tests.test_scenarios \
+            tests.test_replay \
+            tests.test_golden_sync
+
+      - name: Sprite health check
+        # 注：源帧在 .gitignore 里（体积原因），所以这一步在 CI 只跑
+        # 表结构 + 宽高比；多角色帧判据在本地跑 scripts/check_all.ps1 时才完整。
+        run: python scripts/check_sprites.py
+
+  conformance:
+    name: resolve_hit conformance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install --quiet pillow
+
+      - name: Download Godot
+        run: |
+          set -euo pipefail
+          URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
+          echo "fetching $URL"
+          curl -fsSL -o godot.zip "$URL"
+          unzip -q godot.zip
+          mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
+          chmod +x godot
+          ./godot --version
+
+      - name: Regenerate golden cases from the Python oracle
+        run: python scripts/gen_golden_hits.py
+
+      - name: Conformance gate
+        run: ./godot --headless --path godot --script res://tests/run_conformance.gd
