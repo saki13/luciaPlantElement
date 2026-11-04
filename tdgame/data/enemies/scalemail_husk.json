@@ -1,0 +1,11 @@
+{
+  "key": "scalemail_husk", "cn": "鳞甲盾尸", "budget": 6,
+  "hp_body": 450, "armor": {"hp": 670, "reduction": 0.20}, "block_flat": 20, "regen": 0,
+  "speed": 24, "bite_dps": 25, "weight": 3, "slow_resist": 0.35, "kb_immune": false,
+  "tags": ["shield", "armored", "scalemail"],
+  "enemy_tier": 6,
+  "unlock_stage": "M4",
+  "recommended_round": 18,
+  "design_note": "格挡+护甲双轨：block_flat=20 逐实例减伤，20 及以下的单发（豌豆20/双发20/寒仙子15/飞针碎片12）每发归零；甲段 670，reduction 0.20 只作用于『甲段被这一发打穿』的溢出部分（见 balance.py:158-174，引擎不是全局减伤），所以真实防御来自 block 20 + 670 甲段。破法=shield_break（custom_shieldbreaker 20/0.7s，实测跳过格挡）或 ≥25 单发（牵牛花25→5、荆棘穿甲25→5）与 40/80 爆发。block 取 20（= 现有 shield_cadet 教学值），刻意不超过 25，见 MANIFEST 的 D-11 一节。",
+  "art_prompt": "Q版粗描边卡通手游怪物，原创小僵尸头顶暗银鳞片圆帽、胸前叠瓦状金属鳞甲、左前臂绑梯形厚铁盾，白底纯白背景，明快平涂，可爱不恐怖"
+}

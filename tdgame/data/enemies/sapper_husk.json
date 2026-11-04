@@ -1,0 +1,11 @@
+{
+  "key": "sapper_husk", "cn": "掘袭鼹尸", "budget": 5,
+  "hp_body": 700, "armor": {"hp": 180, "reduction": 0.10}, "block_flat": 0, "regen": 0,
+  "speed": 55, "bite_dps": 80, "weight": 2, "slow_resist": 0.10, "kb_immune": false,
+  "tags": ["rusher", "high_bite"],
+  "enemy_tier": 5,
+  "unlock_stage": "M4",
+  "recommended_round": 12,
+  "design_note": "抢节奏的薄甲突击手：全场最快速度(55)+最高非Boss啃咬(80)。经济株 100HP 只撑 1.25s，坚果 800HP 从 32s 缩到 10s。反制『先铺经济、前排只放薄墙』的阵容；自身只 880EHP 且无格挡，被任何成型的火力线处理掉。",
+  "art_prompt": "Q版粗描边卡通手游怪物，原创小僵尸戴深褐色皮革护目镜与暗红布巾、前臂绑短铁刺、上身前倾冲锋，白底纯白背景，明快平涂，可爱不恐怖"
+}

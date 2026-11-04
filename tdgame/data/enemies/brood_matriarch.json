@@ -1,0 +1,12 @@
+{
+  "key": "brood_matriarch", "cn": "孢母宿主", "budget": 7,
+  "hp_body": 1150, "armor": {"hp": 230, "reduction": 0.10}, "block_flat": 0, "regen": 0,
+  "speed": 22, "bite_dps": 30, "weight": 5, "slow_resist": 0.50, "kb_immune": false,
+  "tags": ["summon", "host"],
+  "enemy_tier": 7,
+  "unlock_stage": "M4",
+  "recommended_round": 24,
+  "summon": {"mob": "normal", "interval": 6.0, "max_alive": 3},
+  "design_note": "召唤型：每 6s 孵一只 normal（100HP），同父上限 3 只。逼单体狙击把火力分给 100HP 小兵（西瓜 80 单发对小兵是过量击杀），克『省弹式单体狙击 + 只清主线』的打法。引擎侧 board._update_summons 对任何带 summon 字段的敌人都生效，不是 Boss 专属。",
+  "art_prompt": "Q版粗描边卡通手游怪物，原创孢母僵尸头顶三只浅褐菌菇、腹部四个淡黄孢子囊、土黄与暗紫拼色围裙，白底纯白背景，明快平涂，可爱不恐怖"
+}

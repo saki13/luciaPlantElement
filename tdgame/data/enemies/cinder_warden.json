@@ -1,0 +1,11 @@
+{
+  "key": "cinder_warden", "cn": "灰烬守望", "budget": 9,
+  "hp_body": 1460, "armor": {"hp": 480, "reduction": 0.35}, "block_flat": 0, "regen": 10, "speed": 20,
+  "bite_dps": 40, "weight": 20, "slow_resist": 0.75, "kb_immune": true,
+  "tags": ["elite", "regen", "armored", "heavy"],
+  "enemy_tier": 9,
+  "unlock_stage": "M4",
+  "recommended_round": 36,
+  "design_note": "回复型肉盾：regen 10/s（引擎 board.py:399 每秒回 hp_body，不超上限，已实测 +10/s）。身份是『持续 DPS 撑不住的阵容永远打不死』：寒仙子(15/1.4s=10.7dps) 打 2069s、叶舞者(12.5dps) 打 616s、豌豆(20dps) 打 169s，都远超它 34.2s 的穿场时间；牵牛花/双发(28.6dps)、西瓜(53.3)、竹子(53) 才推得动。armor.reduction 0.35 不是全局减伤（只在甲段被打穿那一发生效，见 balance.py:158-174），真实价值来自 480 甲段 + regen + kb_immune + slow_resist0.75。注意 regen 在 counter_map 里仍标 enabled:false（引擎已实现），集成前需主 Agent 决定是否开闸。",
+  "art_prompt": "Q版粗描边卡通手游怪物，原创灰烬僵尸穿烧焦褐袍、双肩暗红铸铁肩甲、右前臂铸铁护臂、腰缠铁链、胸口橙色发光裂缝，白底纯白背景，明快平涂，可爱不恐怖"
+}

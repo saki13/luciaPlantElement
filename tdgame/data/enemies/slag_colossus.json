@@ -1,0 +1,12 @@
+{
+  "key": "slag_colossus", "cn": "熔渣巨像", "budget": 10,
+  "hp_body": 1240, "armor": {"hp": 1000, "reduction": 0.30}, "block_flat": 0, "regen": 0,
+  "speed": 17, "bite_dps": 55, "weight": 99, "slow_resist": 0.85, "kb_immune": true,
+  "tags": ["elite", "giant", "armored", "heavy", "phase"],
+  "enemy_tier": 10,
+  "unlock_stage": "M4",
+  "recommended_round": 45,
+  "phase": {"hp_ratio": 0.5, "speed_mult": 1.8, "summon_interval_mult": 1.0},
+  "design_note": "两段形态：前半段是 1000 点甲段 + 30% 减伤的『铁墙』（reduction 只在甲段被打穿那一发生效，甲段清零后走无甲直扣，见 balance.py:158-178），半血后甲段已空、速度 ×1.8（17→30.6，已实测）变成冲锋收线，逼玩家把爆发留给第二形态而不是慢慢磨。与 giant(1600EHP/无甲/无phase) 和 boss_50(4400EHP/带召唤) 机制不重叠。",
+  "art_prompt": "Q版粗描边卡通手游怪物，原创熔渣铁甲巨像，暗铁甲片与暗红熔渣块叠层、甲缝透橙黄余烬微光、橙色小眼睛，白底纯白背景，明快平涂，可爱不恐怖"
+}
