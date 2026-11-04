@@ -67,12 +67,19 @@ jobs:
 
       - name: Install Godot runtime libs
         # 官方 Linux 编辑器二进制即使只跑 --version 也要动态链接这些库，
-        # runner 上默认没有，缺了就会在 `./godot --version` 那步直接崩。
+        # runner 上默认没有。
+        #
+        # 注意 apt-get 失败会返回 exit 100 直接把 job 打红；而 Ubuntu 24.04+
+        # 把 libasound2 改名成了 libasound2t64，硬写包名会整步失败。
+        # 所以这里逐个尝试、失败即跳过（缺的那几个装不上也不影响 --version）。
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends \
-            libx11-6 libxcursor1 libxinerama1 libxi6 libxrandr2 \
-            libgl1 libasound2 libpulse0
+          sudo apt-get update -qq || true
+          for p in libx11-6 libxcursor1 libxinerama1 libxi6 libxrandr2 \
+                   libgl1 libgl1-mesa-glx libasound2 libasound2t64 libpulse0; do
+            echo "--- $p"
+            sudo apt-get install -y -qq --no-install-recommends "$p" >/dev/null 2>&1 \
+              && echo "    installed" || echo "    skipped (not available)"
+          done
 
       - name: Download Godot
         run: |
