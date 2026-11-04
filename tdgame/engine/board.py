@@ -17,7 +17,8 @@ class Simulation:
     def __init__(self, plant_defs: Dict[str, Dict[str, Any]], enemy_defs: Dict[str, Dict[str, Any]],
                  spawn_schedule: Sequence[Tuple[float, str, Optional[int]]], card_pool: Sequence[str],
                  seed: int = 0, start_resource: int = C.START_RESOURCE,
-                 max_seconds: float = 600.0, sky_sun: bool = True):
+                 max_seconds: float = 600.0, sky_sun: bool = True,
+                 objective: str = "survive"):
         self.plant_defs = plant_defs
         self.enemy_defs = enemy_defs
         self.schedule = sorted(spawn_schedule, key=lambda z: z[0])
@@ -26,6 +27,8 @@ class Simulation:
         self._rand_state = seed
         self.max_seconds = max_seconds
         self.sky_sun_enabled = sky_sun
+        # "survive"（默认，主线：守住 N 波）或 "devour"（M5 我是僵尸：把场上植物啃光）
+        self.objective = objective
 
         self.reset(start_resource)
 
@@ -63,6 +66,8 @@ class Simulation:
         return None
 
     def can_place(self, key: str, row: int, col: int) -> Tuple[bool, str]:
+        if self.objective == "devour":
+            return False, "devour_mode"      # 我是僵尸：植物是关卡预置的，玩家不能种
         if key not in self.card_pool or key not in self.plant_defs:
             return False, "not_in_pool"
         if not (0 <= row < C.ROWS and 0 <= col < C.COLS):
@@ -86,6 +91,26 @@ class Simulation:
         self.plants.append(Plant(key, row, col, d, self.now))
         self.plants_placed += 1
         return True
+
+    def setup_plant(self, key: str, row: int, col: int) -> bool:
+        """关卡预置植物：不走阳光/冷却，也不受 card_pool 限制（M5 我是僵尸用）。"""
+        if key not in self.plant_defs:
+            return False
+        if not (0 <= row < C.ROWS and 0 <= col < C.COLS):
+            return False
+        if self.plant_at(row, col) is not None:
+            return False
+        self.plants.append(Plant(key, row, col, self.plant_defs[key], self.now))
+        return True
+
+    def spawn_enemy(self, key: str, row: int, x: Optional[float] = None) -> Optional[Enemy]:
+        """按需在场上放一只敌人（M5 我是僵尸的"出怪"由玩家决定）。"""
+        d = self.enemy_defs.get(key)
+        if d is None or not (0 <= row < C.ROWS):
+            return None
+        e = Enemy(key, row, d, C.COLS + 0.5 if x is None else x)
+        self.enemies.append(e)
+        return e
 
     def remove_plant(self, row: int, col: int) -> bool:
         """铲掉指定格的植物（不返还阳光，与 PVZ 一致）。
@@ -434,6 +459,16 @@ class Simulation:
 
     def _check_end(self) -> None:
         if self.over:                    # 已有结论（例如 Boss 破线判负）就别覆盖
+            return
+        if self.objective == "devour":
+            # M5 我是僵尸：把场上植物全部啃光算通关，超时算失败。
+            # 注意这里**不能**走下面"出怪表跑完且场上无敌人"的判定 ——
+            # 该模式的敌人是玩家按需放的，开局场上一只都没有。
+            if not self.plants:
+                self.over, self.won = True, True
+                return
+            if self.now >= self.max_seconds:
+                self.over, self.won = True, False
             return
         if self.lives <= 0:
             self.over, self.won = True, False

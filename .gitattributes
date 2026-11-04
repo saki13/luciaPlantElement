@@ -1,0 +1,17 @@
+# 统一行尾：仓库内一律 LF，检出时不做 CRLF 转换。
+# 之前 core.autocrlf=true 会让每次 git add 刷出几十行 "LF will be replaced by CRLF" 噪音，
+# 而且 Windows/Linux 混跑时 diff 会假性全变。
+* text=auto eol=lf
+
+# 二进制资源：不要做行尾归一化，也不要尝试 diff
+*.png binary
+*.jpg binary
+*.zip binary
+*.ttc binary
+*.pyd binary
+*.dll binary
+*.so binary
+
+# 生成/派生产物：折叠 diff，避免刷屏
+reports/*.json linguist-generated=true
+godot/tests/golden_resolve_hit.json linguist-generated=true

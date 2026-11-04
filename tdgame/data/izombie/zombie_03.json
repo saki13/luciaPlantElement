@@ -1,0 +1,12 @@
+{
+  "key": "zombie_03", "phase": "M5", "cn": "我是僵尸·西瓜阵",
+  "budget": 100, "max_sec": 180,
+  "allowed": ["normal", "fast", "cone", "bucket", "shield_cadet", "giant"],
+  "plants": [
+    [0, 1, "melonpult"], [0, 4, "wallnut"],
+    [2, 2, "repeater"], [2, 3, "repeater"],
+    [4, 2, "frostbell"]
+  ],
+  "brief": "终局关：西瓜炮 + 双发 + 寒冰的交叉火力。预算给得足，但分批送只会被逐个点名。",
+  "reward": 200
+}

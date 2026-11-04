@@ -1,0 +1,10 @@
+# 核心：纯 headless 引擎与单测只需要标准库 + 这两个（Anaconda 自带）
+numpy>=1.24
+pillow>=10.0
+
+# 仅在跑渲染层 / 美术管线时需要。Windows 本机也可以用项目自带的 libs/（见 CONTRIBUTING）。
+# CI 上走 pip 安装（Linux 没有 libs/ 里的 win_amd64 二进制）。
+pygame>=2.6
+
+# 可选：只在重新生成角色美术时需要（魔搭千问），日常开发不需要
+# requests>=2.31

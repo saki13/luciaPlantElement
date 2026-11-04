@@ -1,0 +1,12 @@
+{
+  "key": "zombie_02", "phase": "M5", "cn": "我是僵尸·第二课",
+  "budget": 34, "max_sec": 150,
+  "allowed": ["normal", "fast", "cone", "bucket"],
+  "plants": [
+    [1, 2, "repeater"], [1, 5, "wallnut"],
+    [2, 2, "repeater"], [2, 5, "wallnut"],
+    [3, 2, "frostbell"], [3, 4, "peashooter"]
+  ],
+  "brief": "双发+寒冰的混合防线。铁桶能扛住减速硬啃，但预算只够挑几行下手。",
+  "reward": 120
+}

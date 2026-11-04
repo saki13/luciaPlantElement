@@ -1,0 +1,12 @@
+{
+  "key": "zombie_01", "phase": "M5", "cn": "我是僵尸·第一课",
+  "budget": 20, "max_sec": 120,
+  "allowed": ["normal", "fast", "cone"],
+  "plants": [
+    [0, 2, "peashooter"], [0, 5, "wallnut"],
+    [2, 2, "peashooter"],
+    [3, 4, "wallnut"]
+  ],
+  "brief": "两株豌豆 + 两堵坚果。普通僵尸会被豌豆打死在半路，得算准血量再上。",
+  "reward": 80
+}
