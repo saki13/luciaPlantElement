@@ -85,7 +85,11 @@ Run-Step "7/8 izombie mode gate" {
 }
 
 Run-Step "8/8 board.step trace gate" {
-    & \D:\ProgramDatanaconda3\python.exe scripts\check_board_trace.py
+    # 有 Godot 就顺带跑 GDScript 侧的逐步比对（E-01 移植校验）
+    if (\) {
+        & \D:\ProgramDatanaconda3\python.exe scripts\check_board_trace.py --godot-exe \n    } else {
+        & \D:\ProgramDatanaconda3\python.exe scripts\check_board_trace.py
+    }
 }
 
 Pop-Location

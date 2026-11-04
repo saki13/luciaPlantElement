@@ -35,6 +35,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--update", action="store_true", help="重新生成基线")
     ap.add_argument("--baseline", default=str(DEFAULT_BASELINE))
+    ap.add_argument("--godot-exe", default="",
+                    help="给了就同时跑 GDScript 侧的逐步比对")
     args = ap.parse_args(argv)
 
     baseline_path = Path(args.baseline)
@@ -83,7 +85,36 @@ def main(argv=None) -> int:
             print(f"  - {f}")
         return 1
     print(f"RESULT: PASS（{len(cur_sc)} 场景 / {total} 步逐步一致）")
+
+    if args.godot_exe:
+        return _run_godot(args.godot_exe, total)
     return 0
+
+
+def _run_godot(exe: str, total: int) -> int:
+    """把 trace 同步给 Godot 项目，再跑 GDScript 侧的逐步比对。"""
+    import shutil
+    import subprocess
+
+    exe_path = Path(exe)
+    if not exe_path.exists():
+        print(f"RESULT: SKIP（找不到 Godot：{exe}）")
+        return 0
+    dst = ROOT / "godot" / "tests" / "golden_board_trace.json"
+    shutil.copyfile(DEFAULT_BASELINE, dst)
+    proc = subprocess.run(
+        [str(exe_path), "--headless", "--path", str(ROOT / "godot"),
+         "--script", "res://tests/run_board_trace.gd"],
+        capture_output=True, text=True, timeout=300,
+        encoding="utf-8", errors="replace")
+    tail = [ln for ln in (proc.stdout or "").splitlines() if ln.strip()][-6:]
+    for ln in tail:
+        print(f"  [godot] {ln}")
+    if proc.returncode == 0:
+        print(f"GODOT_PORT: PASS（GDScript 侧与 {total} 步 Python trace 逐步一致）")
+        return 0
+    print("GODOT_PORT: FAIL")
+    return 1
 
 
 if __name__ == "__main__":

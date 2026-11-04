@@ -54,6 +54,14 @@ SCENARIOS: Dict[str, Dict[str, Any]] = {
         "schedule": [[2.0, "shield_cadet", 4], [7.0, "shield_cadet", 4],
                      [13.0, "normal", 4]],
     },
+    "move_bite": {
+        "cn": "移动 + 啃食（GDScript 移植的第一块，无弹道无特殊机制）",
+        "seed": 1003,
+        "steps": 400,
+        "plants": [[1, 1, "wallnut"], [3, 4, "wallnut"]],
+        "schedule": [[2.0, "normal", 1], [4.0, "normal", 3],
+                     [7.0, "cone", 1], [12.0, "normal", 3]],
+    },
 }
 
 
@@ -106,8 +114,14 @@ def run_scenario(name: str) -> Dict[str, Any]:
         sim.step(C.DT)
         frames.append(_digest(sim))
 
+    # 把本场景用到的角色定义一并塞进 trace：GDScript 侧不需要能访问仓库外的
+    # tdgame/data（res:// 走不出项目目录），trace 因此是自包含的。
+    used_plants = {k: reg.plants[k] for _r, _c, k in spec["plants"] if k in reg.plants}
+    used_enemies = {k: reg.enemies[k] for _t, k, _r in spec["schedule"] if k in reg.enemies}
+
     return {
         "format": TRACE_FORMAT,
+        "defs": {"plants": used_plants, "enemies": used_enemies},
         "scenario": name,
         "cn": spec["cn"],
         "seed": spec["seed"],

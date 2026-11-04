@@ -45,11 +45,14 @@ class TraceTests(unittest.TestCase):
         self.assertTrue(any(len(v) > 1 for v in full.values()),
                         "没有任何敌人的血量变化过")
 
-    def test_trace_covers_three_distinct_mechanics(self):
-        self.assertEqual(len(SCENARIOS), 3)
+    def test_trace_covers_distinct_mechanics(self):
+        """每个场景对应一类机制，名字里要能看出来，否则以后没人知道覆盖了什么。"""
+        self.assertGreaterEqual(len(SCENARIOS), 4)
         names = " ".join(SCENARIOS)
-        for kw in ("shoot", "armor", "block"):
+        for kw in ("shoot", "armor", "block", "move"):
             self.assertIn(kw, names)
+        # move_bite 是 GDScript 第一个移植块的对照场景，必须存在
+        self.assertIn("move_bite", SCENARIOS)
 
 
 if __name__ == "__main__":
