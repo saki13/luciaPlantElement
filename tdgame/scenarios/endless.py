@@ -107,6 +107,49 @@ def build_round_schedule(enemy_defs: Dict[str, Dict[str, Any]], round_idx: int, 
                           wave_cap_fn=lambda w, _cap=cap: _cap)
 
 
+def build_counter_schedule(enemy_defs: Dict[str, Dict[str, Any]], waves: int, seed: int,
+                           card_keys: Sequence[str],
+                           plant_defs: Dict[str, Dict[str, Any]],
+                           round_idx: int = 12, counter_ratio: float = 0.125,
+                           max_counter_kinds: int = 2) -> List:
+    """**自动反制**版出怪表（M4）。
+
+    设计意图是"同威胁点预算内，把点数投到玩家最薄弱的轴"，所以这里：
+
+    - 只取 `pick_counter_enemies` 的**前 2 种**（最该针对的那两个轴），
+      不是把整个挑选结果轮着用——否则重甲会瞬间把预算吃掉；
+    - **按比例替换**而不是整池加权：每 1/counter_ratio 只里换一只，
+      节奏与总预算不变，只是"成分"变得更针对。
+
+    实测：替换比例 25% 会把 25 波无尽的胜率从 0.40 打到 0.00；
+    1/8 才是"明显更难但打得过"的量级。
+    """
+    allowed = allowed_for_round(round_idx)
+    base = build_schedule(enemy_defs, waves=waves, seed=seed, allowed=allowed,
+                          wave_cap_fn=lambda w: min(10, 3 + w // 2))
+    profile = profile_cards(card_keys, plant_defs)
+    counters = [k for k in pick_counter_enemies(profile) if k in enemy_defs]
+
+    # `pick_counter_enemies` 的规则6 产出的是"稀释怪"（少量盾兵 + 无盾杂兵），语义是
+    # 在玩家已有破盾能力时保持主体无盾，**不是**用来针对的。把它们当反制注入会出事：
+    # shield_cadet 的 block_flat=20 会把豌豆/双发/牵牛花的伤害完全归零，
+    # 实测只要 1/16 的槽位换成盾兵，25 波无尽胜率就从 0.40 掉到 0.00。
+    if "shield_break" in profile.get("tags", set()):
+        counters = [k for k in counters if k not in ("shield_cadet", "normal", "fast")]
+    counters = counters[:max(1, max_counter_kinds)]
+    if not counters or counter_ratio <= 0:
+        return base
+
+    step = max(1, int(round(1.0 / counter_ratio)))
+    out = list(base)
+    ci = 0
+    for i in range(step - 1, len(out), step):
+        t, _old_key, row = out[i]
+        out[i] = (t, counters[ci % len(counters)], row)
+        ci += 1
+    return out
+
+
 # solver 回调签名：(schedule, card_keys, seed) -> 胜率 float；None 表示暂不做可解性回归
 Solver = Callable[[List, Sequence[str], int], float]
 

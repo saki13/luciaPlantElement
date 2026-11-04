@@ -138,10 +138,14 @@ class LevelRunTests(unittest.TestCase):
         self.reg = load_registry(DATA)
         self.levels = level_run.load_levels(DATA / "levels")
 
-    def test_all_18_levels_loaded(self):
-        self.assertEqual(len(self.levels), 18)
+    def test_all_levels_loaded(self):
+        # M1x10 + M2x6 + M3x8 + m3_boss = 25
+        self.assertEqual(len(self.levels), 25)
         self.assertIn("m1_01", self.levels)
         self.assertIn("m3_boss", self.levels)
+        self.assertIn("m3_08", self.levels, "M3 进阶主线应补齐到 8 关")
+        phases = {lv["phase"] for lv in self.levels.values()}
+        self.assertEqual(phases, {"M1", "M2", "M3"})
 
     def test_m1_first_level_winnable(self):
         _, m = level_run.run_level(self.levels["m1_01"], self.reg, seed=1000)

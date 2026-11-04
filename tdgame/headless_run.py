@@ -19,6 +19,7 @@ from . import config as C
 from .engine.loader import load_registry
 from .engine.board import Simulation
 from .engine.wavegen import build_schedule, fixed_schedule
+from .scenarios.endless import build_counter_schedule
 from .engine.bot import RuleBot
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,11 +40,16 @@ def run_batch(name: str, reg, pool: Sequence[str], waves: int, runs: int,
               smart: bool = True, extra_pool: Sequence[str] = (),
               start_resource: int = C.START_RESOURCE, max_seconds: float = 400.0,
               fixed: List = None, cap_fn=None, allowed: Sequence[str] = None,
-              fixed_rows: List = None) -> Dict[str, Any]:
+              fixed_rows: List = None, schedule: List = None,
+              schedule_fn=None) -> Dict[str, Any]:
     runs_metrics = []
     for i in range(runs):
         seed = 1000 + i
-        if fixed:
+        if schedule_fn is not None:
+            sched = schedule_fn(seed)
+        elif schedule is not None:
+            sched = schedule
+        elif fixed:
             sched = fixed_schedule(fixed, fixed_rows)
         else:
             sched = build_schedule(reg.enemies, waves, seed, extra_pool=list(extra_pool),
@@ -100,7 +106,11 @@ def build_scenes(reg, runs: int) -> List[Dict[str, Any]]:
                      fixed=M2_ENTRIES, fixed_rows=M2_ROWS,
                      start_resource=200, max_seconds=180)
     scenes.extend([shield, dumb])
-    # 普通无尽中程（全卡池，25 波）
+    # 普通无尽中程（全卡池，25 波，未接反制器）。
+    # 注：曾试过在这里加一个"接 counter_map 自动反制"的对照场景，但实测任何
+    # 有意义的反制注入（1/16 槽位换成铁桶/巨人）都会把胜率从 0.40 打到 0.00——
+    # Bot 本身卡在悬崖边，反制器的作用无法从它身上读出来。反制器改由
+    # tests/test_endless.py 单测守住，真机联调时再人工评估。
     scenes.append(run_batch("endless_25w", reg, POOL_LATE, 25, runs, smart=True,
                             cap_fn=lambda w: min(10, 3 + w // 2)))
     # 50 轮 Boss 门槛：高配 vs 低配

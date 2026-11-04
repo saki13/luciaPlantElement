@@ -2,7 +2,7 @@
   "format": "pvz-levels-baseline/1",
   "seeds_per_level": 5,
   "seed_base": 1000,
-  "generated_at": "2026-11-04 22:23:47",
+  "generated_at": "2026-11-04 22:27:44",
   "note": "智能 Bot 全卡池，固定 seed 子集；结果确定，改动后需显式 --update",
   "levels": {
     "m1_01": {
@@ -191,6 +191,83 @@
       "avg_lives_left": 5.0,
       "avg_sun_left": 40.0,
       "avg_duration": 117.68
+    },
+    "m3_02": {
+      "phase": "M3",
+      "spawn_mode": "budget",
+      "win_rate": 1.0,
+      "clean_win_rate": 1.0,
+      "avg_mowers_used": 0.0,
+      "avg_breaches": 0.0,
+      "avg_lives_left": 5.0,
+      "avg_sun_left": 25.0,
+      "avg_duration": 126.92
+    },
+    "m3_03": {
+      "phase": "M3",
+      "spawn_mode": "budget",
+      "win_rate": 1.0,
+      "clean_win_rate": 1.0,
+      "avg_mowers_used": 0.0,
+      "avg_breaches": 0.0,
+      "avg_lives_left": 5.0,
+      "avg_sun_left": 60.0,
+      "avg_duration": 137.32
+    },
+    "m3_04": {
+      "phase": "M3",
+      "spawn_mode": "budget",
+      "win_rate": 1.0,
+      "clean_win_rate": 0.6,
+      "avg_mowers_used": 0.6,
+      "avg_breaches": 0.0,
+      "avg_lives_left": 5.0,
+      "avg_sun_left": 45.0,
+      "avg_duration": 178.02
+    },
+    "m3_05": {
+      "phase": "M3",
+      "spawn_mode": "budget",
+      "win_rate": 1.0,
+      "clean_win_rate": 0.4,
+      "avg_mowers_used": 1.0,
+      "avg_breaches": 0.8,
+      "avg_lives_left": 4.2,
+      "avg_sun_left": 65.0,
+      "avg_duration": 193.04
+    },
+    "m3_06": {
+      "phase": "M3",
+      "spawn_mode": "budget",
+      "win_rate": 0.8,
+      "clean_win_rate": 0.2,
+      "avg_mowers_used": 1.0,
+      "avg_breaches": 1.0,
+      "avg_lives_left": 4.0,
+      "avg_sun_left": 85.0,
+      "avg_duration": 225.8
+    },
+    "m3_07": {
+      "phase": "M3",
+      "spawn_mode": "budget",
+      "win_rate": 0.8,
+      "clean_win_rate": 0.6,
+      "avg_mowers_used": 0.6,
+      "avg_breaches": 1.0,
+      "avg_lives_left": 4.0,
+      "avg_sun_left": 90.0,
+      "avg_duration": 225.34
+    },
+    "m3_08": {
+      "phase": "M3",
+      "spawn_mode": "budget",
+      "win_rate": 0.6,
+      "clean_win_rate": 0.4,
+      "avg_mowers_used": 1.8,
+      "avg_breaches": 2.6,
+      "avg_lives_left": 2.4,
+      "avg_sun_left": 200.0,
+      "avg_duration": 228.42
     },
     "m3_boss": {
       "phase": "M3",

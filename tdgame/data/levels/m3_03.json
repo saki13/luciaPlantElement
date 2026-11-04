@@ -1,0 +1,39 @@
+{
+  "key": "m3_03",
+  "phase": "M3",
+  "name": "m3_03",
+  "cn": "进阶主线 第3关",
+  "start_resource": 175,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "repeater",
+    "morningglory",
+    "wallnut",
+    "custom_shieldbreaker",
+    "frostbell",
+    "bombberry",
+    "melonpult"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 10,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner",
+      "cone",
+      "shield_cadet",
+      "bucket"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 2,
+    "cap_grow": 1,
+    "cap_max": 7
+  },
+  "reward": {
+    "design_tokens": 0,
+    "unlock": []
+  }
+}

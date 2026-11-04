@@ -14,12 +14,7 @@
     "custom_shieldbreaker",
     "frostbell",
     "bombberry",
-    "leafdancer",
-    "pine_needler",
-    "melonpult",
-    "winter_melon",
-    "bamboo",
-    "thorn_piercer"
+    "melonpult"
   ],
   "spawn": {
     "mode": "budget",

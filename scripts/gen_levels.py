@@ -111,10 +111,29 @@ def main() -> None:
     levels.append(fixed_level("m2_weight", "M2", "重量免控考场", weight_entries, weight_rows,
                               LATE_POOL, start=250, reward=140, max_sec=260))
 
-    # ---- M3 进阶 10 关骨架（先落首关占位）+ 阶段 Boss 固定表 ----
-    levels.append(budget_level("m3_01", "M3", "进阶主线 第1关", 8,
-                               ["normal", "fast", "banner", "cone", "shield_cadet", "bucket"],
-                               LATE_POOL, start=150))
+    # ---- M3 进阶主线 8 关 + 阶段 Boss ----
+    # 规划原为"约 10 关"，落地 8 关推进 + 1 关 Boss。卡池分两段：
+    # 前 4 关只给到西瓜/寒仙子，后 4 关放开双发进阶与荆棘穿甲株。
+    M3_POOL_EARLY = ["sunbloom", "peashooter", "repeater", "morningglory", "wallnut",
+                     "custom_shieldbreaker", "frostbell", "bombberry", "melonpult"]
+    # 进阶段逐关加码：波数、单波上限、允许的敌人集合都在涨
+    m3_plan = [
+        # (waves, allowed, cap_base, cap_max, start, use_full_pool)
+        (8,  ["normal", "fast", "banner", "cone", "shield_cadet", "bucket"], 2, 6, 150, False),
+        (9,  ["normal", "fast", "banner", "cone", "shield_cadet", "bucket"], 2, 7, 150, False),
+        (10, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket"], 2, 7, 175, False),
+        (11, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 3, 8, 175, False),
+        (12, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 3, 8, 200, True),
+        (13, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 3, 9, 200, True),
+        (14, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 3, 9, 225, True),
+        (15, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 4, 10, 225, True),
+    ]
+    for i, (waves, allowed, cap_base, cap_max, start, full) in enumerate(m3_plan, start=1):
+        levels.append(budget_level(
+            f"m3_{i:02d}", "M3", f"进阶主线 第{i}关", waves, allowed,
+            LATE_POOL if full else M3_POOL_EARLY,
+            start=start, cap_base=cap_base, cap_max=cap_max))
+
     boss_entries = [[8, "normal"], [14, "cone"], [20, "bucket"], [28, "boss_50"],
                     [46, "cone"], [60, "bucket"]]
     levels.append(fixed_level("m3_boss", "M3", "阶段Boss·五十轮门槛", boss_entries,
