@@ -4,7 +4,7 @@
   "name": "m2_armor",
   "cn": "护甲教学考场",
   "start_resource": 200,
-  "max_seconds": 400,
+  "max_seconds": 200,
   "card_pool": [
     "sunbloom",
     "peashooter",
@@ -18,22 +18,65 @@
     "pine_needler",
     "melonpult",
     "winter_melon",
-    "bamboo"
+    "bamboo",
+    "thorn_piercer"
   ],
   "spawn": {
-    "mode": "budget",
-    "waves": 5,
-    "allowed": [
-      "normal",
-      "fast",
-      "banner",
-      "cone",
-      "bucket"
+    "mode": "fixed",
+    "entries": [
+      [
+        12,
+        "normal"
+      ],
+      [
+        20,
+        "cone"
+      ],
+      [
+        28,
+        "cone"
+      ],
+      [
+        36,
+        "bucket"
+      ],
+      [
+        46,
+        "normal"
+      ],
+      [
+        54,
+        "cone"
+      ],
+      [
+        62,
+        "bucket"
+      ],
+      [
+        72,
+        "bucket"
+      ],
+      [
+        82,
+        "cone"
+      ],
+      [
+        92,
+        "normal"
+      ]
     ],
-    "first_spawn_at": 12,
-    "cap_base": 2,
-    "cap_grow": 1,
-    "cap_max": 6
+    "rows": [
+      1,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      2,
+      1,
+      2
+    ]
   },
   "reward": {
     "design_tokens": 120,

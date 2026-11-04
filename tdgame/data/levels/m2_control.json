@@ -4,7 +4,7 @@
   "name": "m2_control",
   "cn": "控制教学考场",
   "start_resource": 200,
-  "max_seconds": 400,
+  "max_seconds": 180,
   "card_pool": [
     "sunbloom",
     "peashooter",
@@ -18,21 +18,65 @@
     "pine_needler",
     "melonpult",
     "winter_melon",
-    "bamboo"
+    "bamboo",
+    "thorn_piercer"
   ],
   "spawn": {
-    "mode": "budget",
-    "waves": 5,
-    "allowed": [
-      "normal",
-      "fast",
-      "banner",
-      "cone"
+    "mode": "fixed",
+    "entries": [
+      [
+        12,
+        "normal"
+      ],
+      [
+        20,
+        "fast"
+      ],
+      [
+        28,
+        "cone"
+      ],
+      [
+        36,
+        "fast"
+      ],
+      [
+        44,
+        "normal"
+      ],
+      [
+        52,
+        "fast"
+      ],
+      [
+        60,
+        "cone"
+      ],
+      [
+        68,
+        "fast"
+      ],
+      [
+        76,
+        "normal"
+      ],
+      [
+        84,
+        "fast"
+      ]
     ],
-    "first_spawn_at": 12,
-    "cap_base": 2,
-    "cap_grow": 1,
-    "cap_max": 6
+    "rows": [
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2
+    ]
   },
   "reward": {
     "design_tokens": 100,

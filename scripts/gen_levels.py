@@ -14,7 +14,7 @@ OUT = ROOT / "tdgame" / "data" / "levels"
 BASE_POOL = ["sunbloom", "peashooter", "wallnut", "morningglory", "repeater"]
 LATE_POOL = ["sunbloom", "peashooter", "repeater", "morningglory", "wallnut",
              "custom_shieldbreaker", "frostbell", "bombberry", "leafdancer",
-             "pine_needler", "melonpult", "winter_melon", "bamboo"]
+             "pine_needler", "melonpult", "winter_melon", "bamboo", "thorn_piercer"]
 
 
 def budget_level(key, phase, cn, waves, allowed, card_pool, *, start=100,
@@ -60,28 +60,56 @@ def main() -> None:
             f"m1_{i:02d}", "M1", f"新手白天 第{i}关", waves=i,
             allowed=allowed, card_pool=pool))
 
-    # ---- M2 六个能力挑战考场（首个格挡为固定聚焦表，其余为可跑预算骨架）----
+    # ---- M2 六个能力挑战考场：全部固定表，每个只教一种能力 ----
+    # 设计原则与格挡考场一致：两行聚焦、密度可控、敌人编排本身就是"考点"，
+    # 而不是让随机尸潮把机制淹掉。
     shield_entries = [[12, "normal"], [18, "normal"], [26, "fast"], [34, "shield_cadet"],
                       [42, "normal"], [50, "shield_cadet"], [58, "cone"], [66, "shield_cadet"],
                       [74, "normal"], [82, "shield_cadet"], [90, "fast"], [98, "normal"]]
     shield_rows = [1, 2, 1, 1, 2, 2, 1, 1, 2, 2, 1, 2]
     levels.append(fixed_level("m2_shield", "M2", "格挡教学考场", shield_entries, shield_rows,
                               LATE_POOL, start=200, reward=200))
-    levels.append(budget_level("m2_armor", "M2", "护甲教学考场", 5,
-                               ["normal", "fast", "banner", "cone", "bucket"], LATE_POOL,
-                               start=200, reward=120))
-    levels.append(budget_level("m2_speed", "M2", "高速教学考场", 4,
-                               ["normal", "fast", "banner"], LATE_POOL,
-                               start=200, cap_max=8, reward=100))
-    levels.append(budget_level("m2_swarm", "M2", "人海教学考场", 4,
-                               ["normal", "fast", "banner"], LATE_POOL,
-                               start=200, cap_base=4, cap_grow=2, cap_max=12, reward=120))
-    levels.append(budget_level("m2_control", "M2", "控制教学考场", 5,
-                               ["normal", "fast", "banner", "cone"], LATE_POOL,
-                               start=200, reward=100))
-    levels.append(budget_level("m2_weight", "M2", "重量免控考场", 6,
-                               ["normal", "cone", "bucket", "giant"], LATE_POOL,
-                               start=250, reward=140))
+
+    # 护甲考场：路障(280EHP) 打头，铁桶(650EHP) 压阵，考察"高甲该用爆发/穿甲而不是平推"
+    armor_entries = [[12, "normal"], [20, "cone"], [28, "cone"], [36, "bucket"],
+                     [46, "normal"], [54, "cone"], [62, "bucket"], [72, "bucket"],
+                     [82, "cone"], [92, "normal"]]
+    armor_rows = [1, 1, 2, 1, 2, 1, 2, 2, 1, 2]
+    levels.append(fixed_level("m2_armor", "M2", "护甲教学考场", armor_entries, armor_rows,
+                              LATE_POOL, start=200, reward=120, max_sec=200))
+
+    # 高速考场：开局长间隔就压快速僵尸，考察"早铺防线 / 用减速换时间"
+    speed_entries = [[10, "fast"], [16, "fast"], [22, "normal"], [28, "fast"],
+                     [36, "fast"], [44, "normal"], [50, "fast"], [58, "fast"],
+                     [66, "normal"], [74, "fast"], [82, "fast"]]
+    speed_rows = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1]
+    levels.append(fixed_level("m2_speed", "M2", "高速教学考场", speed_entries, speed_rows,
+                              LATE_POOL, start=200, reward=100, max_sec=180))
+
+    # 人海考场：同一时刻多只同波进场，考察"范围伤害"（西瓜/松针）而非单点
+    swarm_waves = [(14, 4), (30, 4), (46, 5), (62, 5), (78, 6)]
+    swarm_entries, swarm_rows = [], []
+    for t, n in swarm_waves:
+        for i in range(n):
+            swarm_entries.append([t, "normal"])
+            swarm_rows.append(1 if i % 2 == 0 else 2)
+    levels.append(fixed_level("m2_swarm", "M2", "人海教学考场", swarm_entries, swarm_rows,
+                              LATE_POOL, start=200, reward=120, max_sec=180))
+
+    # 控制考场：快慢混编、普通与路障交替，考察"减速/击退能不能换来输出窗口"
+    control_entries = [[12, "normal"], [20, "fast"], [28, "cone"], [36, "fast"],
+                       [44, "normal"], [52, "fast"], [60, "cone"], [68, "fast"],
+                       [76, "normal"], [84, "fast"]]
+    control_rows = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
+    levels.append(fixed_level("m2_control", "M2", "控制教学考场", control_entries, control_rows,
+                              LATE_POOL, start=200, reward=100, max_sec=180))
+
+    # 重量免控考场：巨人(weight 99 / 免控 / 1600HP) 为主，考察"硬控无效，只能堆伤与墙"
+    weight_entries = [[14, "cone"], [26, "giant"], [40, "bucket"], [56, "giant"],
+                      [72, "cone"], [88, "giant"], [104, "bucket"]]
+    weight_rows = [1, 1, 2, 2, 1, 2, 1]
+    levels.append(fixed_level("m2_weight", "M2", "重量免控考场", weight_entries, weight_rows,
+                              LATE_POOL, start=250, reward=140, max_sec=260))
 
     # ---- M3 进阶 10 关骨架（先落首关占位）+ 阶段 Boss 固定表 ----
     levels.append(budget_level("m3_01", "M3", "进阶主线 第1关", 8,

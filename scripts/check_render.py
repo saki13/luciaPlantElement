@@ -53,7 +53,7 @@ def main(argv=None) -> int:
 
     reg = load_registry(ROOT / "tdgame" / "data")
 
-    print("== 1. 21 张精灵表全部可加载 ==")
+    print("== 1. 全部精灵表可加载 ==")
     app = GameApp(use_sprites=True)
     lib = app.sprites
     check(lib.enabled, "animation 模块可用")
@@ -64,8 +64,9 @@ def main(argv=None) -> int:
     for key in reg.enemies:
         if lib.sheet(key, "enemy") is None:
             bad.append(f"enemy:{key}")
-    check(not bad, f"13 植物 + 8 敌人全部可加载（失败 {bad}）")
-    check(lib.loaded_count() == 21, f"loaded={lib.loaded_count()}/21")
+    expected = len(reg.plants) + len(reg.enemies)
+    check(not bad, f"{len(reg.plants)} 植物 + {len(reg.enemies)} 敌人全部可加载（失败 {bad}）")
+    check(lib.loaded_count() == expected, f"loaded={lib.loaded_count()}/{expected}")
 
     print("\n== 2. 会话与卡栏 ==")
     cards = app.session.cards()

@@ -1,0 +1,13 @@
+{
+  "key": "thorn_piercer", "cn": "荆棘穿甲株", "role": "ranged", "tier": 3,
+  "axes": {"fire": 2, "area": 2, "pierce": 1, "durability": 1, "control": 0},
+  "tags": ["armor_pierce"],
+  "sun": 150, "recharge": 7.5, "hp": 100,
+  "art_prompt": "一株原创远程植物「荆棘穿甲株」：底部一圈五片厚实圆润的深绿色叶子平铺张开；叶丛中央直立一根粗短的墨绿色带刺藤蔓主干，两侧各伸出两三枚向外倒勾的尖刺；主干顶端长着一根粗壮的钢灰色螺旋钻头形尖刺，冷银白金属高光、锥尖略朝前倾；主干上部有两只圆黑眼睛和小微笑嘴，表情呆萌；矮壮立柱轮廓、高约为宽 1.6 倍；Q 版圆润卡通、粗深色描边、明快绿色平涂、正面直立、纯白背景，画面中只有一个角色。",
+  "combat": {
+    "atk_interval": 1.2,
+    "damage": 25,
+    "range": {"type": "row", "cells": 9},
+    "projectile": {"key": "drill", "speed": 320, "hit": "single"}
+  }
+}

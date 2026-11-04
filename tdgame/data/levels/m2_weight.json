@@ -4,7 +4,7 @@
   "name": "m2_weight",
   "cn": "重量免控考场",
   "start_resource": 250,
-  "max_seconds": 400,
+  "max_seconds": 260,
   "card_pool": [
     "sunbloom",
     "peashooter",
@@ -18,21 +18,50 @@
     "pine_needler",
     "melonpult",
     "winter_melon",
-    "bamboo"
+    "bamboo",
+    "thorn_piercer"
   ],
   "spawn": {
-    "mode": "budget",
-    "waves": 6,
-    "allowed": [
-      "normal",
-      "cone",
-      "bucket",
-      "giant"
+    "mode": "fixed",
+    "entries": [
+      [
+        14,
+        "cone"
+      ],
+      [
+        26,
+        "giant"
+      ],
+      [
+        40,
+        "bucket"
+      ],
+      [
+        56,
+        "giant"
+      ],
+      [
+        72,
+        "cone"
+      ],
+      [
+        88,
+        "giant"
+      ],
+      [
+        104,
+        "bucket"
+      ]
     ],
-    "first_spawn_at": 12,
-    "cap_base": 2,
-    "cap_grow": 1,
-    "cap_max": 6
+    "rows": [
+      1,
+      1,
+      2,
+      2,
+      1,
+      2,
+      1
+    ]
   },
   "reward": {
     "design_tokens": 140,

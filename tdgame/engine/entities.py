@@ -50,6 +50,8 @@ class Enemy:
         self.weight = float(definition.get("weight", 1))
         self.slow_resist = float(definition.get("slow_resist", 0))
         self.kb_immune = bool(definition.get("kb_immune", False))
+        # Boss 级单位不吃割草机：否则它走到最左被小车一碾就白送一局
+        self.mower_immune = bool(definition.get("mower_immune", False))
         self.regen = float(definition.get("regen", 0) or 0)
         self.slow_until = -1.0
         self.slow_mult = 1.0
@@ -57,6 +59,21 @@ class Enemy:
         self.dead = False
         self.breached = False
         self.tags = set(definition.get("tags", []))
+
+        # ---- Boss 召唤（M3）：每 interval 秒召一只 mob，同父存活上限 max_alive ----
+        summon = definition.get("summon") or {}
+        self.summon_mob = str(summon.get("mob", "")) or None
+        self.summon_interval = float(summon.get("interval", 0) or 0)
+        self.summon_max = int(summon.get("max_alive", 0) or 0)
+        self.summon_timer = self.summon_interval if self.summon_mob else 0.0
+        self.summoned_by: Optional["Enemy"] = None
+
+        # ---- Boss 多阶段（M3）：本体血量跌破阈值进入二阶段 ----
+        phase = definition.get("phase") or {}
+        self.phase_hp_ratio = float(phase.get("hp_ratio", 0) or 0)
+        self.phase_speed_mult = float(phase.get("speed_mult", 1.0) or 1.0)
+        self.phase_summon_mult = float(phase.get("summon_interval_mult", 1.0) or 1.0)
+        self.phase = 1
 
     def current_speed_mult(self, now: float) -> float:
         return self.slow_mult if now < self.slow_until else 1.0

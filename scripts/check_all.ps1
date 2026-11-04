@@ -1,4 +1,4 @@
-# One-command quality gate.
+﻿# One-command quality gate.
 # NOTE: ASCII-only on purpose -- Windows PowerShell 5.1 parses BOM-less UTF-8
 #       .ps1 files as ANSI, which breaks on non-ASCII comments. It also turns a
 #       native command's stderr into a terminating NativeCommandError when
@@ -49,7 +49,7 @@ $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
 Run-Step "1/6 python unit tests" {
     & $py -m unittest tests.test_balance tests.test_engine tests.test_scenarios `
-        tests.test_replay tests.test_golden_sync tests.test_session
+        tests.test_replay tests.test_golden_sync tests.test_session tests.test_boss
 }
 
 Run-Step "2/6 sprite health check" {

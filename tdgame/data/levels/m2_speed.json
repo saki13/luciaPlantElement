@@ -4,7 +4,7 @@
   "name": "m2_speed",
   "cn": "高速教学考场",
   "start_resource": 200,
-  "max_seconds": 400,
+  "max_seconds": 180,
   "card_pool": [
     "sunbloom",
     "peashooter",
@@ -18,20 +18,70 @@
     "pine_needler",
     "melonpult",
     "winter_melon",
-    "bamboo"
+    "bamboo",
+    "thorn_piercer"
   ],
   "spawn": {
-    "mode": "budget",
-    "waves": 4,
-    "allowed": [
-      "normal",
-      "fast",
-      "banner"
+    "mode": "fixed",
+    "entries": [
+      [
+        10,
+        "fast"
+      ],
+      [
+        16,
+        "fast"
+      ],
+      [
+        22,
+        "normal"
+      ],
+      [
+        28,
+        "fast"
+      ],
+      [
+        36,
+        "fast"
+      ],
+      [
+        44,
+        "normal"
+      ],
+      [
+        50,
+        "fast"
+      ],
+      [
+        58,
+        "fast"
+      ],
+      [
+        66,
+        "normal"
+      ],
+      [
+        74,
+        "fast"
+      ],
+      [
+        82,
+        "fast"
+      ]
     ],
-    "first_spawn_at": 12,
-    "cap_base": 2,
-    "cap_grow": 1,
-    "cap_max": 8
+    "rows": [
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1
+    ]
   },
   "reward": {
     "design_tokens": 100,

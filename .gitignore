@@ -1,4 +1,4 @@
-# ---- 机密：绝不可入库 ----
+﻿# ---- 机密：绝不可入库 ----
 anim_demo/.ms_token
 *.token
 
@@ -29,7 +29,7 @@ godot/.godot/
 
 # ---- 本地过程产物（可随时重建） ----
 _work/
-_artfix/
+_artfix*/
 logs/
 reports/headless_*.json
 # 权限探测留下的空文件（可随手删除）

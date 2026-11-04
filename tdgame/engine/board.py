@@ -329,8 +329,45 @@ class Simulation:
             dist = balance.knockback_distance(float(kb), enemy.weight, enemy.kb_immune)
             enemy.x = min(C.COLS + 0.5, enemy.x + dist)
 
+    # ------------------------------------------------------------------ Boss 机制（M3）
+    def _update_boss_phases(self) -> None:
+        """本体血量跌破阈值 -> 进二阶段：提速、召唤更频繁。"""
+        for e in self.enemies:
+            if e.dead or e.phase != 1 or e.phase_hp_ratio <= 0:
+                continue
+            if e.hp_body_max <= 0:
+                continue
+            if (e.hp_body / e.hp_body_max) <= e.phase_hp_ratio:
+                e.phase = 2
+                e.base_speed *= e.phase_speed_mult
+                if e.summon_interval > 0:
+                    e.summon_interval *= e.phase_summon_mult
+                self.event_log.append(f"t={self.now:.1f} {e.key} phase2")
+
+    def _update_summons(self, dt: float) -> None:
+        """会召唤的敌人：每 interval 秒生一只 mob，同父存活数不超过 max_alive。"""
+        for e in list(self.enemies):
+            if e.dead or not e.summon_mob or e.summon_interval <= 0:
+                continue
+            e.summon_timer -= dt
+            if e.summon_timer > 0:
+                continue
+            e.summon_timer += e.summon_interval
+            alive = sum(1 for c in self.enemies if not c.dead and c.summoned_by is e)
+            if alive >= e.summon_max:
+                continue
+            mob_def = self.enemy_defs.get(e.summon_mob)
+            if not mob_def:
+                continue
+            child = Enemy(e.summon_mob, e.row, mob_def, min(C.COLS + 0.5, e.x + 0.8))
+            child.summoned_by = e
+            self.enemies.append(child)
+            self.event_log.append(f"t={self.now:.1f} {e.key} summon {e.summon_mob}")
+
     # ------------------------------------------------------------------ 敌人移动 / 啃食
     def _update_enemies(self, dt: float) -> None:
+        self._update_boss_phases()
+        self._update_summons(dt)
         for e in self.enemies:
             if e.dead:
                 continue
@@ -360,10 +397,13 @@ class Simulation:
         return target if e.x <= target.col + 1.0 + 1e-9 else None
 
     def _handle_breach(self, e: Enemy) -> None:
-        if self.mowers.get(e.row, False):
+        # mower_immune 的 Boss 级单位不吃割草机，直接算破线扣命
+        if self.mowers.get(e.row, False) and not e.mower_immune:
             self.mowers[e.row] = False
             self.mowers_used += 1
-            for other in [x for x in self.enemies if x.row == e.row and not x.dead]:
+            # 割草机清场，但碾不动 mower_immune 的 Boss 级单位
+            for other in [x for x in self.enemies
+                          if x.row == e.row and not x.dead and not x.mower_immune]:
                 other.dead = True
                 self.kills[other.key] = self.kills.get(other.key, 0) + 1
             self.event_log.append(f"t={self.now:.1f} row{e.row} mower")
@@ -373,6 +413,11 @@ class Simulation:
             self.breaches += 1
             self.lives -= 1
             self.event_log.append(f"t={self.now:.1f} row{e.row} breach lives={self.lives}")
+            # Boss 冲到家里 = 这一局彻底失败。不能把它从 enemies 里移除后
+            # 让 "出怪表跑完且场上无敌人" 误判成通关。
+            if e.mower_immune:
+                self.over, self.won = True, False
+                self.event_log.append(f"t={self.now:.1f} {e.key} breached -> defeat")
 
     # ------------------------------------------------------------------ 清理 / 结束
     def _cleanup(self) -> None:
@@ -388,6 +433,8 @@ class Simulation:
         self.projectiles = [p for p in self.projectiles if not p.dead]
 
     def _check_end(self) -> None:
+        if self.over:                    # 已有结论（例如 Boss 破线判负）就别覆盖
+            return
         if self.lives <= 0:
             self.over, self.won = True, False
             return

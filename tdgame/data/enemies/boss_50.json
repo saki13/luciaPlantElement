@@ -6,5 +6,6 @@
   "unlock_stage": "M4",
   "boss_abilities": ["block", "heavy_armor", "summon", "phase_immunity"],
   "summon": {"mob": "cone", "interval": 12.0, "max_alive": 3},
+  "phase": {"hp_ratio": 0.5, "speed_mult": 1.5, "summon_interval_mult": 0.6},
   "art_prompt": "Q版粗描边卡通手游Boss怪物，披金属重甲的巨型僵尸将军，胸甲有发光纹章，一手巨盾一手重锤，头顶小皇冠，暖橙护甲配深绿皮肤，白底纯白背景，明快平涂，威武但圆润不恐怖"
 }

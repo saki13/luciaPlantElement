@@ -4,7 +4,7 @@
   "name": "m2_swarm",
   "cn": "人海教学考场",
   "start_resource": 200,
-  "max_seconds": 400,
+  "max_seconds": 180,
   "card_pool": [
     "sunbloom",
     "peashooter",
@@ -18,20 +18,135 @@
     "pine_needler",
     "melonpult",
     "winter_melon",
-    "bamboo"
+    "bamboo",
+    "thorn_piercer"
   ],
   "spawn": {
-    "mode": "budget",
-    "waves": 4,
-    "allowed": [
-      "normal",
-      "fast",
-      "banner"
+    "mode": "fixed",
+    "entries": [
+      [
+        14,
+        "normal"
+      ],
+      [
+        14,
+        "normal"
+      ],
+      [
+        14,
+        "normal"
+      ],
+      [
+        14,
+        "normal"
+      ],
+      [
+        30,
+        "normal"
+      ],
+      [
+        30,
+        "normal"
+      ],
+      [
+        30,
+        "normal"
+      ],
+      [
+        30,
+        "normal"
+      ],
+      [
+        46,
+        "normal"
+      ],
+      [
+        46,
+        "normal"
+      ],
+      [
+        46,
+        "normal"
+      ],
+      [
+        46,
+        "normal"
+      ],
+      [
+        46,
+        "normal"
+      ],
+      [
+        62,
+        "normal"
+      ],
+      [
+        62,
+        "normal"
+      ],
+      [
+        62,
+        "normal"
+      ],
+      [
+        62,
+        "normal"
+      ],
+      [
+        62,
+        "normal"
+      ],
+      [
+        78,
+        "normal"
+      ],
+      [
+        78,
+        "normal"
+      ],
+      [
+        78,
+        "normal"
+      ],
+      [
+        78,
+        "normal"
+      ],
+      [
+        78,
+        "normal"
+      ],
+      [
+        78,
+        "normal"
+      ]
     ],
-    "first_spawn_at": 12,
-    "cap_base": 4,
-    "cap_grow": 2,
-    "cap_max": 12
+    "rows": [
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2,
+      1,
+      1,
+      2,
+      1,
+      2,
+      1,
+      1,
+      2,
+      1,
+      2,
+      1,
+      2
+    ]
   },
   "reward": {
     "design_tokens": 120,
