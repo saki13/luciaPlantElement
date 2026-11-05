@@ -1,4 +1,4 @@
-﻿extends RefCounted
+extends RefCounted
 
 ## `tdgame/balance.py::resolve_hit` 的 GDScript 复刻（阶段 2 一致性门禁的第一步）。
 ##

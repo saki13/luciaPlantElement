@@ -1,4 +1,4 @@
-﻿# One-command quality gate.
+# One-command quality gate.
 # NOTE: ASCII-only on purpose -- Windows PowerShell 5.1 parses BOM-less UTF-8
 #       .ps1 files as ANSI, which breaks on non-ASCII comments. It also turns a
 #       native command's stderr into a terminating NativeCommandError when
@@ -47,24 +47,24 @@ function Run-Step([string]$title, [scriptblock]$body) {
 Push-Location $root
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
-Run-Step "1/8 python unit tests" {
+Run-Step "1/9 python unit tests" {
     & $py -m unittest tests.test_balance tests.test_engine tests.test_scenarios `
         tests.test_replay tests.test_golden_sync tests.test_session tests.test_boss tests.test_endless tests.test_izombie tests.test_savegame tests.test_tower tests.test_trace tests.test_ui
 }
 
-Run-Step "2/8 sprite health check" {
+Run-Step "2/9 sprite health check" {
     & $py scripts\check_sprites.py
 }
 
-Run-Step "3/8 calibration baseline" {
+Run-Step "3/9 calibration baseline" {
     & $py scripts\check_calibration.py
 }
 
-Run-Step "4/8 level regression" {
+Run-Step "4/9 level regression" {
     & $py scripts\check_levels.py
 }
 
-Run-Step "5/8 render assertions" {
+Run-Step "5/9 render assertions" {
     $dir = $env:PVZ_SHOT_DIR
     if (-not $dir) { $dir = Join-Path $root "logs" }
     if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
@@ -73,24 +73,28 @@ Run-Step "5/8 render assertions" {
 
 if ($SkipGodot) {
     Write-Host ""
-    Write-Host "== 6/8 conformance gate == SKIPPED (-SkipGodot)"
+    Write-Host "== 6/9 conformance gate == SKIPPED (-SkipGodot)"
 } else {
-    Run-Step "6/8 resolve_hit conformance gate" {
+    Run-Step "6/9 resolve_hit conformance gate" {
         & (Join-Path $PSScriptRoot "run_conformance.ps1")
     }
 }
 
-Run-Step "7/8 izombie mode gate" {
+Run-Step "7/9 izombie mode gate" {
     & $py scripts\check_izombie.py
 }
 
-Run-Step "8/8 board.step trace gate" {
-    # 有 Godot 就顺带跑 GDScript 侧的逐步比对（E-01 移植校验）
+Run-Step "8/9 board.step trace gate" {
+    # also run the GDScript side-by-side trace check when Godot is available
     if ($env:PVZ_GODOT) {
         & $py scripts\check_board_trace.py --godot-exe $env:PVZ_GODOT
     } else {
         & $py scripts\check_board_trace.py
     }
+}
+
+Run-Step "9/9 repo hygiene" {
+    & $py scripts\check_hygiene.py
 }
 
 Pop-Location
