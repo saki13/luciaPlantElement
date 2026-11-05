@@ -59,7 +59,8 @@
     ]
   },
   "reward": {
-    "design_tokens": 300,
-    "unlock": []
+    "design_tokens": 620,
+    "unlock": [],
+    "unlock_tier": 8
   }
 }

@@ -29,6 +29,9 @@ def snapshot(progress: PlayerProgress) -> Dict[str, Any]:
         "design_tokens": int(progress.design_tokens),
         # 爬塔进度：下次从这一层继续。0 表示还没爬过。
         "tower_floor": int(getattr(progress, "tower_floor", 0)),
+        # 已解锁植物 + 可创造品阶权限（关卡奖励给的是"代币 + 权限"）
+        "unlocked_plants": list(getattr(progress, "unlocked_plants", [])),
+        "plant_tier_permission": int(getattr(progress, "plant_tier_permission", 0)),
     }
 
 
@@ -66,6 +69,24 @@ def restore(data: Any, levels: Optional[Dict[str, Dict]] = None) -> Tuple[Player
         warn = (warn + "；" if warn else "") + "tower_floor 字段类型不对，已归零"
         floor = 0
     prog.tower_floor = max(0, int(floor))
+
+    plants = data.get("unlocked_plants")
+    if isinstance(plants, list):
+        seen = set()
+        for k in plants:
+            if isinstance(k, str) and k and k not in seen:
+                seen.add(k)
+                prog.unlocked_plants.append(k)
+    elif plants is not None:
+        warn = (warn + "；" if warn else "") + "unlocked_plants 字段类型不对，已忽略"
+
+    perm = data.get("plant_tier_permission", 0)
+    if isinstance(perm, bool) or not isinstance(perm, int):
+        warn = (warn + "；" if warn else "") + "plant_tier_permission 字段类型不对，已归零"
+        perm = 0
+    # 品阶夹在 0..MAX_TIER，防止手改成 999
+    from .. import config as _C
+    prog.plant_tier_permission = max(0, min(int(perm), int(_C.MAX_TIER)))
 
     # 关键：解锁状态从已通关列表重新推导，绝不从文件读
     prog.unlocked = set(PHASES["P1"].unlocks)

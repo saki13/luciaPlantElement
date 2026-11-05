@@ -38,7 +38,8 @@ jobs:
             tests.test_savegame \
             tests.test_tower \
             tests.test_trace \
-            tests.test_ui
+            tests.test_ui \
+            tests.test_permission
 
       - name: Sprite health check
         # 注：源帧在 .gitignore 里（体积原因），所以这一步在 CI 只跑

@@ -10,7 +10,7 @@ P4 无尽/爬塔，每 50 轮一个 T10 门槛 Boss，通关 50 轮解锁僵尸�
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from .customizer import FIRST_CLEAR_TOKENS
 
@@ -47,7 +47,7 @@ def phase_of_level(level_key: str) -> Optional[str]:
 
 
 def reward_for_level(level_key: str, first_clear: bool = True,
-                     levels: Optional[Dict[str, Dict]] = None) -> Dict[str, int]:
+                     levels: Optional[Dict[str, Dict]] = None) -> Dict[str, Any]:
     """返回该关首通/重复通关的设计代币奖励。
 
     **奖励以关卡 JSON 为唯一来源**（`levels[key]["reward"]["design_tokens"]`）。
@@ -55,11 +55,15 @@ def reward_for_level(level_key: str, first_clear: bool = True,
     已删除。调用方必须传入 `levels`，否则一律按 0 处理。
     """
     if not first_clear:
-        return {"design_tokens": 0}
+        return {"design_tokens": 0, "unlock_tier": 0}
     if levels and level_key in levels:
         reward = (levels[level_key].get("reward") or {})
-        return {"design_tokens": int(reward.get("design_tokens", 0) or 0)}
-    return {"design_tokens": 0}
+        return {
+            "design_tokens": int(reward.get("design_tokens", 0) or 0),
+            # 关键关卡可把「可创造的最高品阶」抬到指定值（0 = 不改变）
+            "unlock_tier": int(reward.get("unlock_tier", 0) or 0),
+        }
+    return {"design_tokens": 0, "unlock_tier": 0}
 
 
 class PlayerProgress:
@@ -74,18 +78,43 @@ class PlayerProgress:
         self.design_tokens = 0
         # 爬塔最高层（0 = 还没爬过），由 savegame 持久化
         self.tower_floor = 0
+        # 已解锁的植物 key（关卡奖励给的是"代币 + 权限"，具体植物以这里为准）
+        self.unlocked_plants: List[str] = []
+        # 可创造的最高品阶（0 = 不覆盖，用阶段默认上限）
+        # 由关卡奖励的 reward.unlock_tier 抬高，只增不减
+        self.plant_tier_permission = 0
         self.unlocked = set(PHASES["P1"].unlocks)
 
     def clear_level(self, level_key: str) -> int:
         first = level_key not in self.cleared
-        reward = reward_for_level(level_key, first, self.levels)["design_tokens"]
+        info = reward_for_level(level_key, first, self.levels)
+        reward = int(info["design_tokens"])
         if first:
             self.cleared.append(level_key)
             self.design_tokens += reward
             phase = phase_of_level(level_key)
             if phase:
                 self.unlocked.update(PHASES[phase].unlocks)
+            # 权限只增不减：低关的奖励不能把已获得的权限顶掉
+            granted = int(info.get("unlock_tier", 0) or 0)
+            if granted > self.plant_tier_permission:
+                self.plant_tier_permission = granted
         return reward
+
+    def unlock_plant(self, key: str) -> bool:
+        """解锁一株植物（奖励发放 / 工坊造出后登记）。返回是否是新增。"""
+        if not key or key in self.unlocked_plants:
+            return False
+        self.unlocked_plants.append(key)
+        return True
+
+    def max_buildable_tier(self) -> int:
+        """当前可创造的最高品阶：阶段默认与关卡奖励权限取较大者。"""
+        from .customizer import PHASE_RULES
+
+        phase = self.reached_phase()
+        rule = PHASE_RULES.get(phase) or {}
+        return max(int(rule.get("max_tier", 0)), int(self.plant_tier_permission))
 
     def spend(self, amount: int) -> bool:
         if amount > self.design_tokens:
