@@ -271,7 +271,7 @@
 | `requirements.txt` | ✅ | 区分运行时 / 渲染 / 美术管线依赖，说明 Windows 可用自带 `libs/` |
 | `.gitattributes` | ✅ | 统一 LF、二进制不做行尾归一化、生成物折叠 diff |
 | 存档持久化 | ✅ | `tdgame/scenarios/savegame.py`；`unlocked` 不落盘、从 `cleared` 重新推导（防手改）；坏档降级；原子写入；端到端验证通关后确实落盘 |
-| **LICENSE** | ❌ **未做** | 这是**法律决定，必须由项目所有者拍板**，我不代为选择。建议 MIT，但需明确授权后再加 |
+| **LICENSE** | ✅ 已完成 | 项目所有者决定用 **MIT**，已加 `LICENSE` |
 | 文档 | ✅/⏳ | `CONTRIBUTING.md` 已补 CI 章节与本项目踩过的坑；本节即为 BACKLOG 补记。README 的 ⑤⑥ 部分待补 |
 
 ### ⑥ Godot 化

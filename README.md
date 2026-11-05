@@ -100,7 +100,7 @@ tests/                  153 个测试
 - **GDScript 侧还没有 Bot 与出怪调度**，不能脱离 Python 独立跑完整对局。
   这是"全量 Godot 化"真正的大头。
 - **移植未覆盖**：一次性植物（爆栗）、碎片/穿透计数、植物被动。
-- **LICENSE 尚未确定**（由项目所有者决定）。
+- ~~LICENSE 尚未确定~~ → **已采用 MIT**（见 `LICENSE`）。
 
 ## 七、合规边界
 
@@ -114,3 +114,4 @@ tests/                  153 个测试
 见 [CONTRIBUTING.md](CONTRIBUTING.md)（环境、六阶段流程、改什么要重新基线化、
 禁止提交清单、CI 章节与踩过的坑）与 [BACKLOG.md](BACKLOG.md)（任务清单与进度）。
 校准方法与历史数字见 [reports/headless_calibration_report.md](reports/headless_calibration_report.md)。
+内容扩展规划（品阶体系 / 植物解锁 / 新增关卡批次 / 爬塔曲线）见 [ROADMAP.md](ROADMAP.md)。
