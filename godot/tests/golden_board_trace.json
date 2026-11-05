@@ -25945,6 +25945,8 @@
       "weight": 99,
       "slow_resist": 0.6,
       "kb_immune": true,
+      "mower_immune": true,
+      "_note_mower": "割草机碾不动巨尸。依据 game_balance_design.md §10.3 数值门：玩家最高品阶 < T10 时 Boss 战胜率必须 < 10%；而碾压会让这个门槛白给（实测曾出现 0.79 胜率）。",
       "tags": [
        "boss",
        "shield",
@@ -26016,7 +26018,7 @@
      2
     ]
    ],
-   "steps": 447,
+   "steps": 500,
    "frames": [
     {
      "t": 0.1,
@@ -39776,12 +39778,1032 @@
      "sun": 0,
      "lives": 5,
      "plants": [],
-     "enemies": [],
+     "enemies": [
+      [
+       2,
+       1.4947,
+       2600.0,
+       1800.0
+      ]
+     ],
      "proj": [],
-     "kills": 4,
+     "kills": 3,
      "mowers": 1,
      "breaches": 0,
-     "over": true
+     "over": false
+    },
+    {
+     "t": 44.8,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.4711,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 44.9,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.4474,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 45.0,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.4237,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 45.1,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.4,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 45.2,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.3763,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 45.3,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.3526,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 45.4,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.3289,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 45.5,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.3053,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 45.6,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.2816,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 45.7,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.2579,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 45.8,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.2342,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 45.9,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.2105,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 46.0,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.1868,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 46.1,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.1632,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 46.2,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.1395,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 46.3,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.1158,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 46.4,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.0921,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 46.5,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.0684,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 46.6,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.0447,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 46.7,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       1.0211,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 46.8,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.9974,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 46.9,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.9737,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 47.0,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.95,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 47.1,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.9263,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 47.2,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.9026,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 47.3,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.8789,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 47.4,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.8553,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 47.5,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.8316,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 47.6,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.8079,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 47.7,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.7842,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 47.8,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.7605,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 47.9,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.7368,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 48.0,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.7132,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 48.1,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.6895,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 48.2,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.6658,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 48.3,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.6421,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 48.4,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.6184,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 48.5,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.5947,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 48.6,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.5711,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 48.7,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.5474,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 48.8,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.5237,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 48.9,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.5,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 49.0,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.4763,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 49.1,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.4526,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 49.2,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.4289,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 49.3,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.4053,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 49.4,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.3816,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 49.5,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.3579,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 49.6,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.3342,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 49.7,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.3105,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 49.8,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.2868,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 49.9,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.2632,
+       2600.0,
+       1800.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
+    },
+    {
+     "t": 50.0,
+     "sun": 0,
+     "lives": 5,
+     "plants": [],
+     "enemies": [
+      [
+       2,
+       0.2395,
+       2600.0,
+       1800.0
+      ],
+      [
+       2,
+       1.0237,
+       100.0,
+       180.0
+      ]
+     ],
+     "proj": [],
+     "kills": 3,
+     "mowers": 1,
+     "breaches": 0,
+     "over": false
     }
    ]
   },

@@ -2,6 +2,8 @@
   "key": "boss_50", "cn": "五十轮统领·壁垒巨尸", "budget": 0,
   "hp_body": 2600, "armor": {"hp": 1800, "reduction": 0.3}, "block_flat": 30, "regen": 0,
   "speed": 18, "bite_dps": 40, "weight": 99, "slow_resist": 0.6, "kb_immune": true,
+  "mower_immune": true,
+  "_note_mower": "割草机碾不动巨尸。依据 game_balance_design.md §10.3 数值门：玩家最高品阶 < T10 时 Boss 战胜率必须 < 10%；而碾压会让这个门槛白给（实测曾出现 0.79 胜率）。",
   "tags": ["boss", "shield", "armored", "heavy"],
   "unlock_stage": "M4",
   "boss_abilities": ["block", "heavy_armor", "summon", "phase_immunity"],

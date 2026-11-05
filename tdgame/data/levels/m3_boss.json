@@ -2,7 +2,7 @@
   "key": "m3_boss",
   "phase": "M3",
   "name": "m3_boss",
-  "cn": "阶段Boss·五十轮门槛",
+  "cn": "阶段Boss·巨人阵线（占位）",
   "start_resource": 800,
   "max_seconds": 320,
   "card_pool": [
@@ -38,7 +38,7 @@
       ],
       [
         28,
-        "boss_50"
+        "giant"
       ],
       [
         46,

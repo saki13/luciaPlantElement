@@ -134,8 +134,12 @@ def main() -> None:
             LATE_POOL if full else M3_POOL_EARLY,
             start=start, cap_base=cap_base, cap_max=cap_max))
 
-    boss_entries = [[8, "normal"], [14, "cone"], [20, "bucket"], [28, "boss_50"],
-                    [46, "cone"], [60, "bucket"]]
+    # 注：这里原本放的是 boss_50（T10 门槛 Boss），但按 game_balance_design.md
+    # §10.1，M3 玩家的品阶上限只到 T6，撞 T10 门槛 Boss 必然 0% 胜率。
+    # boss_50 已明确归给「无尽第 50 轮」。真正的 M3 阶段 Boss 待单独设计，
+    # 在那之前用精英波（双巨人）占位。
+    boss_entries = [[8, "normal"], [14, "cone"], [20, "bucket"], [28, "giant"],
+                    [46, "cone"], [60, "bucket"], [76, "giant"]]
     levels.append(fixed_level("m3_boss", "M3", "阶段Boss·五十轮门槛", boss_entries,
                               [2, 1, 3, 2, 1, 3], LATE_POOL, start=800, reward=300,
                               max_sec=320))

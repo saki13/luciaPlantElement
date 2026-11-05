@@ -1,7 +1,7 @@
 {
   "format": "pvz-calibration-baseline/1",
   "runs_per_scene": 20,
-  "generated_at": "2026-11-04 22:43:27",
+  "generated_at": "2026-11-05 17:54:10",
   "note": "固定 seed 1000..(1000+runs-1)，结果确定，改动后需显式 --update 重新基线化",
   "scenes": {
     "m1_day_10w": {
@@ -41,22 +41,22 @@
       "avg_duration": 306.625
     },
     "boss50_late": {
-      "win_rate": 0.95,
+      "win_rate": 0.0,
       "clean_win_rate": 0.0,
       "avg_mowers_used": 0.95,
-      "avg_breaches": 0.0,
-      "avg_lives_left": 5.0,
-      "avg_sun_left": 51.25,
-      "avg_duration": 114.515
+      "avg_breaches": 1.1,
+      "avg_lives_left": 3.9,
+      "avg_sun_left": 53.75,
+      "avg_duration": 119.79
     },
     "boss50_basic": {
-      "win_rate": 1.0,
+      "win_rate": 0.0,
       "clean_win_rate": 0.0,
       "avg_mowers_used": 1.0,
-      "avg_breaches": 0.0,
-      "avg_lives_left": 5.0,
-      "avg_sun_left": 48.75,
-      "avg_duration": 140.335
+      "avg_breaches": 1.05,
+      "avg_lives_left": 3.95,
+      "avg_sun_left": 41.25,
+      "avg_duration": 151.765
     }
   }
 }

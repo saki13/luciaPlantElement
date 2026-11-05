@@ -137,6 +137,7 @@ func _spawn_due() -> void:
 			"slow_resist": float(d.get("slow_resist", 0)),
 			"weight": float(d.get("weight", 1)),
 			"kb_immune": bool(d.get("kb_immune", false)),
+			"mower_immune": bool(d.get("mower_immune", false)),
 			"slow_mult": 1.0,
 			"slow_until": -1.0,
 			"summon_mob": String(summ.get("mob", "")),
@@ -371,6 +372,7 @@ func _update_summons() -> void:
 			"slow_resist": float(d.get("slow_resist", 0)),
 			"weight": float(d.get("weight", 1)),
 			"kb_immune": bool(d.get("kb_immune", false)),
+			"mower_immune": bool(d.get("mower_immune", false)),
 			"slow_mult": 1.0,
 			"slow_until": -1.0,
 			"summon_mob": String(summ2.get("mob", "")),
@@ -433,17 +435,24 @@ func _blocker_for(e: Dictionary) -> int:
 
 func _handle_breach(e: Dictionary) -> void:
 	var row: int = int(e["row"])
-	if bool(_mowers.get(row, false)):
+	# mower_immune 的 Boss 级单位不吃割草机，直接算破线扣命
+	if bool(_mowers.get(row, false)) and not bool(e["mower_immune"]):
 		_mowers[row] = false
 		mowers_used += 1
+		# 割草机清场，但碾不动 mower_immune 的单位
 		for other in enemies:
-			if int(other["row"]) == row and not bool(other["dead"]):
+			if int(other["row"]) == row and not bool(other["dead"]) \
+					and not bool(other["mower_immune"]):
 				other["dead"] = true
 				kills += 1
 	else:
 		e["dead"] = true
 		breaches += 1
 		lives -= 1
+		# Boss 冲到家里 = 这一局彻底失败，不能被"出怪跑完且无敌人"误判成通关
+		if bool(e["mower_immune"]):
+			over = true
+			won = false
 
 
 func _cleanup() -> void:
@@ -469,6 +478,8 @@ func _cleanup() -> void:
 
 
 func _check_end() -> void:
+	if over:                      # 已有结论（例如 Boss 破线判负）就别覆盖
+		return
 	if lives <= 0:
 		over = true
 		won = false
