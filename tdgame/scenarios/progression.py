@@ -66,6 +66,12 @@ def reward_for_level(level_key: str, first_clear: bool = True,
     return {"design_tokens": 0, "unlock_tier": 0}
 
 
+# Boss 首通奖励表（不是关卡，是 Boss 战的里程碑奖励）
+BOSS_REWARDS: Dict[str, str] = {
+    "boss_50": "thorn_queen",     # 荆棘女王：反弹光环的强化版
+}
+
+
 class PlayerProgress:
     """内存态玩家进度（持久化序列化为 JSON 的工作留给上层存档模块）。
 
@@ -80,6 +86,8 @@ class PlayerProgress:
         self.tower_floor = 0
         # 已解锁的植物 key（关卡奖励给的是"代币 + 权限"，具体植物以这里为准）
         self.unlocked_plants: List[str] = []
+        # 已击败过的 Boss（用于发放 Boss 里程碑奖励）
+        self.boss_clears: List[str] = []
         # 可创造的最高品阶（0 = 不覆盖，用阶段默认上限）
         # 由关卡奖励的 reward.unlock_tier 抬高，只增不减
         self.plant_tier_permission = 0
@@ -100,6 +108,17 @@ class PlayerProgress:
             if granted > self.plant_tier_permission:
                 self.plant_tier_permission = granted
         return reward
+
+    def record_boss_clear(self, boss_key: str) -> Optional[str]:
+        """记录一次 Boss 首通；返回因此解锁的植物 key（没有则 None）。"""
+        if boss_key in self.boss_clears:
+            return None
+        self.boss_clears.append(boss_key)
+        plant = BOSS_REWARDS.get(boss_key)
+        if plant:
+            self.unlock_plant(plant)
+            return plant
+        return None
 
     def unlock_plant(self, key: str) -> bool:
         """解锁一株植物（奖励发放 / 工坊造出后登记）。返回是否是新增。"""

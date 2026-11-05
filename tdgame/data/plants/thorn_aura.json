@@ -1,21 +1,25 @@
 {
   "key": "thorn_aura",
   "cn": "荆棘光环",
-  "role": "ranged",
+  "role": "support",
   "axes": {
     "fire": 0,
-    "area": 5,
+    "area": 3,
     "pierce": 0,
     "durability": 2,
     "control": 3
   },
   "tags": [
-    "aoe",
-    "control"
+    "aura",
+    "reflection"
   ],
   "sun": 325,
   "hp": 100,
-  "_note": "轴位由「目标品阶 + 身份轴下限」求解，代币成本取最省；combat 由轴位线性映射；tier/recharge 由 loader.derive_plant 派生。",
-  "_implemented": false,
-  "_blocked_reason": "需要「同排植物伤害加成」光环机制，引擎尚未实现（当前只会是一株火力0的废植物）"
+  "reflection": {
+    "ratio": 0.35,
+    "radius": 1
+  },
+  "art_prompt": "Q版粗描边卡通，一丛环形荆棘藤，中央有暗红光核，周围环绕细小尖刺，纯白背景，明快平涂，单个角色居中",
+  "_note": "把被啃食伤害按 ratio 反弹给攻击者，范围是以自身为中心的方形区域（radius=1 即 3x3）。§19.3 要求它占满品阶档位、不可叠其他能力。",
+  "_implemented": true
 }

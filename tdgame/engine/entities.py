@@ -13,6 +13,11 @@ class Plant:
         self.defn = definition
         self.hp = float(definition.get("hp", 100))
         self.hp_max = self.hp
+        # 护甲壳（南瓜类）：套在植物外层，先扣壳再扣本体
+        shell_def = definition.get("shell") or {}
+        self.shell_hp = float(shell_def.get("hp", 0) or 0)
+        self.shell_hp_max = self.shell_hp
+        self.shell_key = str(shell_def.get("key", "")) if self.shell_hp else ""
         self.placed_at = now
         self.attack_timer = 0.0          # 距下次攻击的倒计时
         self.shot_count = 0              # 已发射次数（every_n 技能用）

@@ -41,7 +41,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant_pending": "iron_pumpkin",
-    "plant_pending_reason": "肉盾（护甲壳）：机制未实现"
+    "plant": "iron_pumpkin",
+    "plant_reason": "肉盾（护甲壳）：可套在植物外层，机制已实现"
   }
 }

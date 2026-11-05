@@ -41,7 +41,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant_pending": "thorn_aura",
-    "plant_pending_reason": "辅助（反弹光环）：机制未实现，按 §19 应为 T11/M4"
+    "plant": "thorn_aura",
+    "plant_reason": "辅助（反弹光环）：周围方形区域反弹伤害，机制已实现"
   }
 }

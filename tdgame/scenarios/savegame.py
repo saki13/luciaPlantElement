@@ -32,6 +32,7 @@ def snapshot(progress: PlayerProgress) -> Dict[str, Any]:
         # 已解锁植物 + 可创造品阶权限（关卡奖励给的是"代币 + 权限"）
         "unlocked_plants": list(getattr(progress, "unlocked_plants", [])),
         "plant_tier_permission": int(getattr(progress, "plant_tier_permission", 0)),
+        "boss_clears": list(getattr(progress, "boss_clears", [])),
     }
 
 
@@ -87,6 +88,16 @@ def restore(data: Any, levels: Optional[Dict[str, Dict]] = None) -> Tuple[Player
     # 品阶夹在 0..MAX_TIER，防止手改成 999
     from .. import config as _C
     prog.plant_tier_permission = max(0, min(int(perm), int(_C.MAX_TIER)))
+
+    bosses = data.get("boss_clears")
+    if isinstance(bosses, list):
+        seen_b = set()
+        for b in bosses:
+            if isinstance(b, str) and b and b not in seen_b:
+                seen_b.add(b)
+                prog.boss_clears.append(b)
+    elif bosses is not None:
+        warn = (warn + "；" if warn else "") + "boss_clears 字段类型不对，已忽略"
 
     # 关键：解锁状态从已通关列表重新推导，绝不从文件读
     prog.unlocked = set(PHASES["P1"].unlocks)

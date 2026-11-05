@@ -72,7 +72,12 @@ class Simulation:
             return False, "not_in_pool"
         if not (0 <= row < C.ROWS and 0 <= col < C.COLS):
             return False, "out_of_board"
-        if self.plant_at(row, col) is not None:
+        host = self.plant_at(row, col)
+        if host is not None:
+            # 护甲壳可以套在已有植物上（§19.4）；已有壳则不能再套
+            shell = (self.plant_defs.get(key) or {}).get("shell") or {}
+            if shell and host.shell_hp <= 0:
+                return True, "shell"
             return False, "occupied"
         d = self.plant_defs[key]
         if self.cooldown_left.get(key, 0) > 0:
@@ -88,6 +93,15 @@ class Simulation:
         d = self.plant_defs[key]
         self.sun -= int(d["sun"])
         self.cooldown_left[key] = float(d.get("recharge", C.RECHARGE_MID))
+        host = self.plant_at(row, col)
+        shell = d.get("shell") or {}
+        if host is not None and shell:
+            # 套在已有植物上：不新增实体，只给宿主加壳
+            host.shell_hp = float(shell.get("hp", 0) or 0)
+            host.shell_hp_max = host.shell_hp
+            host.shell_key = key
+            self.plants_placed += 1
+            return True
         self.plants.append(Plant(key, row, col, d, self.now))
         self.plants_placed += 1
         return True
@@ -404,15 +418,53 @@ class Simulation:
                 dmg = e.bite_dps * dt
                 passive = blocker.defn.get("passive") or {}
                 dmg *= float(passive.get("frontal_damage_taken_mult", 1.0))
-                blocker.hp -= dmg
-                if blocker.hp <= 0:
-                    blocker.alive = False
+                self._damage_plant(blocker, dmg, attacker=e)
+                if not blocker.alive:
                     e.eating = None
             else:
                 e.eating = None
                 e.x -= e.base_speed * e.current_speed_mult(self.now) * dt / C.CELL
                 if e.x <= C.LAWN_MOWER_TRIGGER_X:
                     self._handle_breach(e)
+
+    # ------------------------------------------------------------------ 护甲壳 / 反弹光环
+    REFLECT_RADIUS = 1      # 光环按"周围方形区域"，不是整排（§19.3）
+
+    def _damage_plant(self, p: Plant, dmg: float,
+                      attacker: Optional[Enemy] = None) -> float:
+        """对植物造成伤害：先扣护甲壳，再扣本体。返回真正打到本体上的伤害。"""
+        if p.shell_hp > 0:
+            absorbed = min(p.shell_hp, dmg)
+            p.shell_hp -= absorbed
+            dmg -= absorbed
+            if p.shell_hp <= 0:
+                p.shell_hp = 0.0
+                p.shell_key = ""
+        if dmg > 0:
+            p.hp -= dmg
+            if p.hp <= 0:
+                p.hp = 0.0
+                p.alive = False
+        # 反弹光环：啃食者会受到附近光环植物的反弹
+        if attacker is not None and dmg > 0:
+            self._reflect_to(attacker, p, dmg)
+        return dmg
+
+    def _reflect_to(self, attacker: Enemy, victim: Plant, dmg: float) -> None:
+        ratio = 0.0
+        for q in self.plants:
+            if not q.alive:
+                continue
+            r = float((q.defn.get("reflection") or {}).get("ratio", 0) or 0)
+            if r <= 0:
+                continue
+            radius = float((q.defn.get("reflection") or {}).get(
+                "radius", self.REFLECT_RADIUS))
+            # 方形区域判定（行差与列差同时受限）
+            if abs(q.row - victim.row) <= radius and abs(q.col - victim.col) <= radius:
+                ratio = max(ratio, r)
+        if ratio > 0 and not attacker.dead:
+            self._apply_damage(attacker, dmg * ratio, ["reflection"])
 
     def _blocker_for(self, e: Enemy) -> Optional[Plant]:
         cands = [p for p in self.plants if p.alive and p.row == e.row and (p.col + 1) >= e.x - 1e-9]

@@ -183,10 +183,10 @@ def main() -> None:
         "m3_11": {"plant": "winter_melon", "plant_reason": "范围+控制（西瓜升级位）"},
         "m3_12": {"plant": "siege_mortar", "plant_reason": "高攻破甲，会被快速僵尸克制"},
         "m3_13": {"plant": "meteor_pult", "plant_reason": "远程范围压制"},
-        "m3_14": {"plant_pending": "iron_pumpkin",
-                  "plant_pending_reason": "肉盾（护甲壳）：机制未实现"},
-        "m3_15": {"plant_pending": "thorn_aura",
-                  "plant_pending_reason": "辅助（反弹光环）：机制未实现，按 §19 应为 T11/M4"},
+        "m3_14": {"plant": "iron_pumpkin",
+                  "plant_reason": "肉盾（护甲壳）：可套在植物外层，机制已实现"},
+        "m3_15": {"plant": "thorn_aura",
+                  "plant_reason": "辅助（反弹光环）：周围方形区域反弹伤害，机制已实现"},
         # M3 Boss：不给植物，给够造 T8 的代币 + 创造 T8 的权限
         # 460 = 对 balance 净额公式穷举得到的最便宜 T8（area5/dur3/control5, power 162.0）
         "m3_boss": {"design_tokens": 460, "unlock_tier": 8,

@@ -1,15 +1,31 @@
 {
-  "key": "bamboo", "cn": "竹笋刀手", "role": "melee", "tier": 3,
-  "axes": {"fire": 3, "area": 1, "pierce": 0, "durability": 2, "control": 0},
-  "tags": [], "sun": 125, "recharge": 7.5, "hp": 200,
-  "art_prompt": "一颗饱满挺拔青绿色竹笋，分节笋壳纹理，黑色圆眼小嘴，底部两片笋壳化成弧形青色短刀刃，Q版小武士，白底纯白背景，明快平涂",
+  "key": "bamboo",
+  "cn": "竹笋刀手",
+  "role": "melee",
+  "axes": {
+    "fire": 3,
+    "area": 1,
+    "pierce": 0,
+    "durability": 3,
+    "control": 0
+  },
+  "tags": [],
+  "sun": 125,
+  "hp": 500,
   "combat": {
-    "atk_interval": 1.0, "damage": 40,
-    "range": {"type": "melee", "cells": 1},
+    "atk_interval": 1.0,
+    "damage": 40,
+    "range": {
+      "type": "melee",
+      "cells": 1
+    },
     "ability": {
-      "name": "三连重劈", "trigger": "every_n", "n": 3, "damage": 80,
-      "splash_radius_cells": 0.5, "splash_damage_mult": 0.5, "max_targets": 3
+      "n": 3,
+      "damage": 80,
+      "splash_radius_cells": 0.5,
+      "splash_damage_mult": 0.6
     }
   },
-  "passive": {"name": "青锋格挡", "frontal_damage_taken_mult": 0.85}
+  "_note": "强化：HP 200->500（坦度），每第 3 次攻击为重劈（80 伤 + 邻行溅射），近战半肉 + 群伤（用户要求）。",
+  "_implemented": true
 }

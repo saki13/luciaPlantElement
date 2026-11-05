@@ -1,0 +1,26 @@
+{
+  "key": "thorn_queen",
+  "cn": "荆棘女王",
+  "role": "support",
+  "axes": {
+    "fire": 0,
+    "area": 4,
+    "pierce": 0,
+    "durability": 3,
+    "control": 4
+  },
+  "tags": [
+    "aura",
+    "reflection",
+    "boss_reward"
+  ],
+  "sun": 625,
+  "hp": 200,
+  "reflection": {
+    "ratio": 0.6,
+    "radius": 2
+  },
+  "art_prompt": "Q版粗描边卡通，荆棘女王：一株高大的暗红荆棘王座形植物，冠部有尖刺王冠，藤蔓环绕，纯白背景，明快平涂，威武但圆润不恐怖，单个角色居中",
+  "_note": "boss_50 首通奖励。反弹比例更高、范围 5x5。",
+  "_implemented": true
+}
