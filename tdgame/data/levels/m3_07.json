@@ -41,7 +41,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant_pending": "thorn_aura",
-    "plant_pending_reason": "辅助（光环）：机制未实现"
+    "plant": "saw_vine",
+    "plant_reason": "穿透+击退"
   }
 }

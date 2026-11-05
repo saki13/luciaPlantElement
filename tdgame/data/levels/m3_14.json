@@ -1,0 +1,47 @@
+{
+  "key": "m3_14",
+  "phase": "M3",
+  "name": "m3_14",
+  "cn": "进阶主线 第14关",
+  "start_resource": 300,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "repeater",
+    "morningglory",
+    "wallnut",
+    "custom_shieldbreaker",
+    "frostbell",
+    "bombberry",
+    "leafdancer",
+    "pine_needler",
+    "melonpult",
+    "winter_melon",
+    "bamboo",
+    "thorn_piercer"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 21,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner",
+      "cone",
+      "shield_cadet",
+      "bucket",
+      "giant"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 6,
+    "cap_grow": 1,
+    "cap_max": 13
+  },
+  "reward": {
+    "design_tokens": 0,
+    "unlock": [],
+    "plant_pending": "iron_pumpkin",
+    "plant_pending_reason": "肉盾（护甲壳）：机制未实现"
+  }
+}

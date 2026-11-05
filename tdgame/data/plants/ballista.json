@@ -1,0 +1,31 @@
+{
+  "key": "ballista",
+  "cn": "连弩塔",
+  "role": "ranged",
+  "axes": {
+    "fire": 4,
+    "area": 2,
+    "pierce": 0,
+    "durability": 1,
+    "control": 2
+  },
+  "tags": [
+    "pierce"
+  ],
+  "sun": 275,
+  "hp": 100,
+  "_note": "T5 补位：连射穿透；轴位由「目标品阶+身份轴下限」求解，combat 由轴位线性映射，待人工校。",
+  "combat": {
+    "atk_interval": 1.0,
+    "damage": 80,
+    "range": {
+      "type": "row",
+      "cells": 9
+    },
+    "projectile": {
+      "key": "pea",
+      "speed": 320,
+      "hit": "single"
+    }
+  }
+}

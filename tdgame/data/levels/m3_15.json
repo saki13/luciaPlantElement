@@ -1,0 +1,47 @@
+{
+  "key": "m3_15",
+  "phase": "M3",
+  "name": "m3_15",
+  "cn": "进阶主线 第15关",
+  "start_resource": 325,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "repeater",
+    "morningglory",
+    "wallnut",
+    "custom_shieldbreaker",
+    "frostbell",
+    "bombberry",
+    "leafdancer",
+    "pine_needler",
+    "melonpult",
+    "winter_melon",
+    "bamboo",
+    "thorn_piercer"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 22,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner",
+      "cone",
+      "shield_cadet",
+      "bucket",
+      "giant"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 6,
+    "cap_grow": 1,
+    "cap_max": 14
+  },
+  "reward": {
+    "design_tokens": 0,
+    "unlock": [],
+    "plant_pending": "thorn_aura",
+    "plant_pending_reason": "辅助（反弹光环）：机制未实现，按 §19 应为 T11/M4"
+  }
+}

@@ -41,7 +41,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "winter_melon",
-    "plant_reason": "范围+控制：应对快速群（西瓜的升级位）"
+    "plant": "frostbell",
+    "plant_reason": "控制：应对高速"
   }
 }

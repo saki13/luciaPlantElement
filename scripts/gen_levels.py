@@ -127,6 +127,14 @@ def main() -> None:
         (13, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 3, 9, 200, True),
         (14, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 3, 9, 225, True),
         (15, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 4, 10, 225, True),
+        # ---- 扩关到 15（承接 M2 不再发放的六株奖励，见 design §19.1）----
+        (16, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 4, 11, 250, True),
+        (17, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 4, 11, 250, True),
+        (18, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 5, 12, 275, True),
+        (19, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 5, 12, 275, True),
+        (20, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 5, 13, 300, True),
+        (21, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 6, 13, 300, True),
+        (22, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 6, 14, 325, True),
     ]
     for i, (waves, allowed, cap_base, cap_max, start, full) in enumerate(m3_plan, start=1):
         levels.append(budget_level(
@@ -141,8 +149,53 @@ def main() -> None:
     boss_entries = [[8, "normal"], [14, "cone"], [20, "bucket"], [28, "giant"],
                     [46, "cone"], [60, "bucket"], [76, "giant"]]
     levels.append(fixed_level("m3_boss", "M3", "阶段Boss·五十轮门槛", boss_entries,
-                              [2, 1, 3, 2, 1, 3], LATE_POOL, start=800, reward=300,
+                              [2, 1, 3, 2, 1, 3, 4], LATE_POOL, start=800, reward=300,
                               max_sec=320))
+
+
+    # ---------------------------------------------------------------- 奖励表
+    # 必须写在这里：关卡 JSON 由本脚本整体重写，手改 JSON 会被冲掉
+    # （实际发生过：m3_boss 的 460 代币与 T8 权限被重新生成覆盖）。
+    REWARDS = {
+        # M1：成长阶梯，品阶单调，末关大奖
+        "m1_01": {"plant": "sunbloom", "plant_reason": "经济位：一切开局的基础"},
+        "m1_02": {"plant": "peashooter", "plant_reason": "最基础火力"},
+        "m1_03": {"plant": "wallnut", "plant_reason": "肉盾位：先挡再打"},
+        "m1_04": {"plant": "morningglory", "plant_reason": "第二路火力，教多线"},
+        "m1_05": {"plant": "slow_vine", "plant_reason": "减速：教控场换输出窗口"},
+        "m1_06": {"plant": "repeater", "plant_reason": "火力上台阶"},
+        "m1_07": {"plant": "tri_pea", "plant_reason": "点射强化，应对中甲"},
+        "m1_08": {"plant": "splash_pea", "plant_reason": "小范围溅射，应对成群"},
+        "m1_09": {"plant": "charge_shot", "plant_reason": "蓄力：单发高伤"},
+        "m1_10": {"plant": "melonpult", "plant_reason": "批次大奖：范围高伤，M2 敲门砖"},
+        # M2：定位是教定制器与能力机制，只发代币，不发植物（design §19.1）
+        # M3：15 关，承接 M2 移出的六株，品阶单调
+        "m3_01": {"plant": "bamboo", "plant_reason": "近战半肉，补前排"},
+        "m3_02": {"plant": "bombberry", "plant_reason": "一次性爆发，教时机"},
+        "m3_03": {"plant": "leafdancer", "plant_reason": "穿透：应对列队尸群"},
+        "m3_04": {"plant": "thorn_piercer", "plant_reason": "破甲：应对护甲抬升"},
+        "m3_05": {"plant": "frostbell", "plant_reason": "控制：应对高速"},
+        "m3_06": {"plant": "pine_needler", "plant_reason": "碎片溅射：应对人海"},
+        "m3_07": {"plant": "saw_vine", "plant_reason": "穿透+击退"},
+        "m3_08": {"plant": "pierce_crossbow", "plant_reason": "破甲强化"},
+        "m3_09": {"plant": "ballista", "plant_reason": "连射穿透，火力台阶"},
+        "m3_10": {"plant": "triple_gun", "plant_reason": "三重火力，进入中高品阶"},
+        "m3_11": {"plant": "winter_melon", "plant_reason": "范围+控制（西瓜升级位）"},
+        "m3_12": {"plant": "siege_mortar", "plant_reason": "高攻破甲，会被快速僵尸克制"},
+        "m3_13": {"plant": "meteor_pult", "plant_reason": "远程范围压制"},
+        "m3_14": {"plant_pending": "iron_pumpkin",
+                  "plant_pending_reason": "肉盾（护甲壳）：机制未实现"},
+        "m3_15": {"plant_pending": "thorn_aura",
+                  "plant_pending_reason": "辅助（反弹光环）：机制未实现，按 §19 应为 T11/M4"},
+        # M3 Boss：不给植物，给够造 T8 的代币 + 创造 T8 的权限
+        # 460 = 对 balance 净额公式穷举得到的最便宜 T8（area5/dur3/control5, power 162.0）
+        "m3_boss": {"design_tokens": 460, "unlock_tier": 8,
+                    "reward_reason": "M3 终关：给代币 + 创造 T8 的权限，植物由玩家自造"},
+    }
+    for lv in levels:
+        extra = REWARDS.get(lv["key"])
+        if extra:
+            lv.setdefault("reward", {}).update(extra)
 
     for lv in levels:
         (OUT / f"{lv['key']}.json").write_text(

@@ -1,0 +1,47 @@
+{
+  "key": "m3_13",
+  "phase": "M3",
+  "name": "m3_13",
+  "cn": "进阶主线 第13关",
+  "start_resource": 300,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "repeater",
+    "morningglory",
+    "wallnut",
+    "custom_shieldbreaker",
+    "frostbell",
+    "bombberry",
+    "leafdancer",
+    "pine_needler",
+    "melonpult",
+    "winter_melon",
+    "bamboo",
+    "thorn_piercer"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 20,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner",
+      "cone",
+      "shield_cadet",
+      "bucket",
+      "giant"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 5,
+    "cap_grow": 1,
+    "cap_max": 13
+  },
+  "reward": {
+    "design_tokens": 0,
+    "unlock": [],
+    "plant": "meteor_pult",
+    "plant_reason": "远程范围压制"
+  }
+}

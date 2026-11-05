@@ -36,7 +36,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "pierce_crossbow",
-    "plant_reason": "破甲专精：应对重甲"
+    "plant": "thorn_piercer",
+    "plant_reason": "破甲：应对护甲抬升"
   }
 }

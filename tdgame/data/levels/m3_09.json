@@ -1,0 +1,47 @@
+{
+  "key": "m3_09",
+  "phase": "M3",
+  "name": "m3_09",
+  "cn": "进阶主线 第9关",
+  "start_resource": 250,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "repeater",
+    "morningglory",
+    "wallnut",
+    "custom_shieldbreaker",
+    "frostbell",
+    "bombberry",
+    "leafdancer",
+    "pine_needler",
+    "melonpult",
+    "winter_melon",
+    "bamboo",
+    "thorn_piercer"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 16,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner",
+      "cone",
+      "shield_cadet",
+      "bucket",
+      "giant"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 4,
+    "cap_grow": 1,
+    "cap_max": 11
+  },
+  "reward": {
+    "design_tokens": 0,
+    "unlock": [],
+    "plant": "ballista",
+    "plant_reason": "连射穿透，火力台阶"
+  }
+}

@@ -41,7 +41,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant_pending": "iron_pumpkin",
-    "plant_pending_reason": "肉盾（护甲壳）：机制未实现"
+    "plant": "pierce_crossbow",
+    "plant_reason": "破甲强化"
   }
 }

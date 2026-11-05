@@ -41,7 +41,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "siege_mortar",
-    "plant_reason": "高攻破甲：慢速换高伤，会被快速僵尸克制"
+    "plant": "pine_needler",
+    "plant_reason": "碎片溅射：应对人海"
   }
 }
