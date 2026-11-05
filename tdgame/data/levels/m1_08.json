@@ -29,6 +29,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "melonpult"
+    "plant": "splash_pea",
+    "plant_reason": "小范围溅射，应对成群"
   }
 }

@@ -41,6 +41,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "siege_mortar"
+    "plant": "siege_mortar",
+    "plant_reason": "高攻破甲：慢速换高伤，会被快速僵尸克制"
   }
 }

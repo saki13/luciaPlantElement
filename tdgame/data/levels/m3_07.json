@@ -41,7 +41,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant_pending": "iron_pumpkin",
-    "plant_pending_reason": "需要「可套在植物上的护甲壳」机制，引擎尚未实现（当前等同坚果壳）"
+    "plant_pending": "thorn_aura",
+    "plant_pending_reason": "辅助（光环）：机制未实现"
   }
 }

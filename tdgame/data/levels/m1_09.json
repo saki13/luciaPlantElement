@@ -29,6 +29,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "splash_pea"
+    "plant": "charge_shot",
+    "plant_reason": "蓄力：单发高伤，为破甲战做准备"
   }
 }

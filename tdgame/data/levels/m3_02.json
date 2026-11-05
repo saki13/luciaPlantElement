@@ -35,6 +35,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "winter_melon"
+    "plant": "triple_gun",
+    "plant_reason": "火力升级：应对第 3 关起的中甲尸群"
   }
 }

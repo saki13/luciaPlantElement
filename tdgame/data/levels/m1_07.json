@@ -28,6 +28,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "tri_pea"
+    "plant": "tri_pea",
+    "plant_reason": "点射强化，应对中甲"
   }
 }

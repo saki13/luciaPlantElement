@@ -26,6 +26,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "wallnut"
+    "plant": "wallnut",
+    "plant_reason": "肉盾位：教你先挡再打"
   }
 }

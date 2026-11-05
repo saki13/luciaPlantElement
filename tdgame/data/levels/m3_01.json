@@ -35,6 +35,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "bamboo"
+    "plant": "bamboo",
+    "plant_reason": "近战半肉，补前排缺口"
   }
 }

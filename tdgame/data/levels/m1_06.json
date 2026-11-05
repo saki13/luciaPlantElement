@@ -27,6 +27,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "repeater"
+    "plant": "repeater",
+    "plant_reason": "火力上台阶"
   }
 }

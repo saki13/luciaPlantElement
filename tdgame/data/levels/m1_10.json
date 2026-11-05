@@ -29,6 +29,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "charge_shot"
+    "plant": "melonpult",
+    "plant_reason": "批次末位大奖：范围高伤，同时是 M2 挑战关的敲门砖"
   }
 }

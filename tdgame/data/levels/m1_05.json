@@ -27,6 +27,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "slow_vine"
+    "plant": "slow_vine",
+    "plant_reason": "减速：教控场换输出窗口"
   }
 }

@@ -35,6 +35,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "triple_gun"
+    "plant": "saw_vine",
+    "plant_reason": "穿透+击退：应对密集小怪"
   }
 }

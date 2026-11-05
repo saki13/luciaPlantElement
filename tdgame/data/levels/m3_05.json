@@ -41,7 +41,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant_pending": "thorn_aura",
-    "plant_pending_reason": "需要「同排植物伤害加成」光环机制，引擎尚未实现（当前只会是一株火力0的废植物）"
+    "plant": "winter_melon",
+    "plant_reason": "范围+控制：应对快速群（西瓜的升级位）"
   }
 }

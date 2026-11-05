@@ -26,6 +26,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "morningglory"
+    "plant": "morningglory",
+    "plant_reason": "第二路火力，教多线"
   }
 }

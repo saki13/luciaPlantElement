@@ -25,6 +25,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant": "peashooter"
+    "plant": "peashooter",
+    "plant_reason": "最基础火力"
   }
 }
