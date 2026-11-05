@@ -151,6 +151,7 @@
   "reward": {
     "design_tokens": 120,
     "unlock": [],
-    "plant": "bombberry"
+    "plant_moved_to": "M3",
+    "_note": "M2 定位为教定制器与能力机制，不发预设植物（见 design §19.1）"
   }
 }
