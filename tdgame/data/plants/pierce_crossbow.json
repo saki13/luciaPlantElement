@@ -1,0 +1,31 @@
+{
+  "key": "pierce_crossbow",
+  "cn": "穿透弩",
+  "role": "ranged",
+  "axes": {
+    "fire": 3,
+    "area": 2,
+    "pierce": 3,
+    "durability": 1,
+    "control": 3
+  },
+  "tags": [
+    "pierce"
+  ],
+  "sun": 325,
+  "hp": 100,
+  "_note": "轴位由「目标品阶 + 身份轴下限」求解，代币成本取最省；combat 由轴位线性映射；tier/recharge 由 loader.derive_plant 派生。",
+  "combat": {
+    "atk_interval": 1.15,
+    "damage": 65,
+    "range": {
+      "type": "row",
+      "cells": 9
+    },
+    "projectile": {
+      "key": "pea",
+      "speed": 320,
+      "hit": "pierce:3"
+    }
+  }
+}

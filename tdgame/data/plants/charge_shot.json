@@ -1,0 +1,31 @@
+{
+  "key": "charge_shot",
+  "cn": "蓄力射手",
+  "role": "ranged",
+  "axes": {
+    "fire": 3,
+    "area": 2,
+    "pierce": 1,
+    "durability": 1,
+    "control": 0
+  },
+  "tags": [
+    "pierce"
+  ],
+  "sun": 150,
+  "hp": 100,
+  "_note": "轴位驱动生成：combat 由 fire/area/pierce 线性映射，sun 由品阶派生，tier/recharge 交给 loader.derive_plant。数值待人工校。",
+  "combat": {
+    "atk_interval": 1.15,
+    "damage": 65,
+    "range": {
+      "type": "row",
+      "cells": 9
+    },
+    "projectile": {
+      "key": "pea",
+      "speed": 320,
+      "hit": "single"
+    }
+  }
+}

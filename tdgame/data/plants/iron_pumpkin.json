@@ -1,0 +1,20 @@
+{
+  "key": "iron_pumpkin",
+  "cn": "铁皮南瓜",
+  "role": "wall",
+  "axes": {
+    "fire": 0,
+    "area": 4,
+    "pierce": 1,
+    "durability": 5,
+    "control": 3
+  },
+  "tags": [
+    "wall"
+  ],
+  "sun": 500,
+  "hp": 1600,
+  "_note": "轴位由「目标品阶 + 身份轴下限」求解，代币成本取最省；combat 由轴位线性映射；tier/recharge 由 loader.derive_plant 派生。",
+  "_implemented": false,
+  "_blocked_reason": "需要「可套在植物上的护甲壳」机制，引擎尚未实现（当前等同坚果壳）"
+}

@@ -1,0 +1,29 @@
+{
+  "key": "triple_gun",
+  "cn": "三重射手",
+  "role": "ranged",
+  "axes": {
+    "fire": 4,
+    "area": 3,
+    "pierce": 0,
+    "durability": 1,
+    "control": 3
+  },
+  "tags": [],
+  "sun": 325,
+  "hp": 100,
+  "_note": "轴位由「目标品阶 + 身份轴下限」求解，代币成本取最省；combat 由轴位线性映射；tier/recharge 由 loader.derive_plant 派生。",
+  "combat": {
+    "atk_interval": 1.0,
+    "damage": 80,
+    "range": {
+      "type": "row",
+      "cells": 9
+    },
+    "projectile": {
+      "key": "pea",
+      "speed": 320,
+      "hit": "single"
+    }
+  }
+}

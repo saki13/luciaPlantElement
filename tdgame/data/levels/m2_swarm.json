@@ -150,6 +150,7 @@
   },
   "reward": {
     "design_tokens": 120,
-    "unlock": []
+    "unlock": [],
+    "plant": "bombberry"
   }
 }

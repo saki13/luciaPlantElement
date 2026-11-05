@@ -35,6 +35,7 @@
   },
   "reward": {
     "design_tokens": 0,
-    "unlock": []
+    "unlock": [],
+    "plant": "saw_vine"
   }
 }

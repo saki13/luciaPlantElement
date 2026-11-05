@@ -1,0 +1,31 @@
+{
+  "key": "siege_mortar",
+  "cn": "破城臼炮",
+  "role": "ranged",
+  "axes": {
+    "fire": 5,
+    "area": 5,
+    "pierce": 0,
+    "durability": 1,
+    "control": 3
+  },
+  "tags": [
+    "armor_pierce"
+  ],
+  "sun": 565,
+  "hp": 100,
+  "_note": "轴位由「目标品阶 + 身份轴下限」求解，代币成本取最省；combat 由轴位线性映射；tier/recharge 由 loader.derive_plant 派生。",
+  "combat": {
+    "atk_interval": 0.85,
+    "damage": 95,
+    "range": {
+      "type": "row",
+      "cells": 9
+    },
+    "projectile": {
+      "key": "pea",
+      "speed": 320,
+      "hit": "single"
+    }
+  }
+}

@@ -90,6 +90,7 @@
   },
   "reward": {
     "design_tokens": 200,
-    "unlock": []
+    "unlock": [],
+    "plant": "thorn_piercer"
   }
 }

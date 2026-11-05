@@ -1,0 +1,21 @@
+{
+  "key": "thorn_aura",
+  "cn": "荆棘光环",
+  "role": "ranged",
+  "axes": {
+    "fire": 0,
+    "area": 5,
+    "pierce": 0,
+    "durability": 2,
+    "control": 3
+  },
+  "tags": [
+    "aoe",
+    "control"
+  ],
+  "sun": 325,
+  "hp": 100,
+  "_note": "轴位由「目标品阶 + 身份轴下限」求解，代币成本取最省；combat 由轴位线性映射；tier/recharge 由 loader.derive_plant 派生。",
+  "_implemented": false,
+  "_blocked_reason": "需要「同排植物伤害加成」光环机制，引擎尚未实现（当前只会是一株火力0的废植物）"
+}

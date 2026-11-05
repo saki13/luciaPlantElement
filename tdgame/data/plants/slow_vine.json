@@ -1,0 +1,31 @@
+{
+  "key": "slow_vine",
+  "cn": "缓速藤",
+  "role": "ranged",
+  "axes": {
+    "fire": 1,
+    "area": 2,
+    "pierce": 0,
+    "durability": 1,
+    "control": 2
+  },
+  "tags": [
+    "control"
+  ],
+  "sun": 150,
+  "hp": 100,
+  "_note": "轴位驱动生成：combat 由 fire/area/pierce 线性映射，sun 由品阶派生，tier/recharge 交给 loader.derive_plant。数值待人工校。",
+  "combat": {
+    "atk_interval": 1.45,
+    "damage": 35,
+    "range": {
+      "type": "row",
+      "cells": 9
+    },
+    "projectile": {
+      "key": "pea",
+      "speed": 320,
+      "hit": "single"
+    }
+  }
+}
