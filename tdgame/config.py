@@ -46,7 +46,8 @@ AXIS_WEIGHTS = {"fire": 1.0, "area": 1.3, "pierce": 0.9, "durability": 0.8, "con
 # 个别能力标签的价值远高于通用标签（例如护甲壳：等于省一个格子），
 # 单独给它们定「能力分」与「代币价」，而不是硬抬阳光价。
 TAG_SCORE_OVERRIDE = {
-    "shell": 110,       # 护甲壳等于省一个格子，价值远高于破甲/减速
+    # §5.3：纯功能标签（护甲壳、经济、对空…）**不计战斗点**，
+    # 价值只体现在代币与局内作用上，不允许抬高 power/品阶。
 }
 TAG_TOKEN_OVERRIDE = {
     "shell": 240,       # 是 shield_break / armor_pierce(80) 的 3 倍

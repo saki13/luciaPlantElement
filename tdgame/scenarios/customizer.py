@@ -27,8 +27,8 @@ DEFAULT_INTERVAL = 1.0
 
 # 各阶段准入：单轴最高档、可用战斗标签、单轴外的品阶天花板
 PHASE_RULES: Dict[str, Dict[str, Any]] = {
-    "P2": {"max_axis": 3, "max_tier": 6, "tags": {"shield_break"}},
-    "P3": {"max_axis": 4, "max_tier": 9,
+    "P2": {"max_axis": 3, "max_tier": 3, "tags": {"shield_break"}},
+    "P3": {"max_axis": 4, "max_tier": 6,
            "tags": {"shield_break", "armor_pierce", "control", "aoe", "pierce", "fragments"}},
     "P4": {"max_axis": 5, "max_tier": C.MAX_TIER,
            "tags": {"shield_break", "armor_pierce", "control", "aoe", "pierce",
