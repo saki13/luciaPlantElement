@@ -109,14 +109,12 @@ def total_slots(levels: Dict[str, int], mechanics: Tuple[str, ...] = (),
     """把一株植物的档位分配折算成总档位点。
 
     levels: 轴名 -> 档位（硬数值轴缺省按 1 档算；能力轴缺省 0）
-    硬数值轴 4 条各至少 1 点；攻击型植物额外计 1 点攻速。
+    硬数值轴 4 条各至少 1 点。**攻速不占档位点**（设计方确认）：
+    它只是把同样的 DPS 重新分配到"多发小额"或"少发大额"上，不改变总量。
     """
     total = 0
     for axis in BASE_AXES:
         total += max(1, int(levels.get(axis, 1)))
-    if attacking:
-        # 攻速是「7 档的旋钮」：选哪一档都只占 1 点，不按档位值计费
-        total += 1
     for axis in ("shield_break", "slow", "armor_pierce", "targets",
                  "knockback", "heal"):
         total += int(levels.get(axis, 0))

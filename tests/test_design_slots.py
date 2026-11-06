@@ -23,10 +23,11 @@ class TierLookupTests(unittest.TestCase):
 
 
 class PeashooterTests(unittest.TestCase):
-    def test_peashooter_is_t2(self):
+    def test_peashooter_is_t1(self):
+        """攻速不占点：坦度1 + 攻击2 + 阳光1 + CD1 = 5 档 -> T1（设计方确认）。"""
         p = D.PlantPlan(levels={"dps": 2, "attack_speed": 4})
-        self.assertEqual(p.slots, 6)
-        self.assertEqual(p.tier, 2)
+        self.assertEqual(p.slots, 5)
+        self.assertEqual(p.tier, 1)
         self.assertEqual(p.dps, 20)
         self.assertEqual(p.interval, 1.4)
         self.assertAlmostEqual(p.damage_per_hit, 28.0)
@@ -91,27 +92,19 @@ class ValidationTests(unittest.TestCase):
 
 
 class DesignerT6ExampleTests(unittest.TestCase):
-    """设计方的 T6 例子：坦度1+攻击力3+阳光2+CD2+破盾1+减速1 = 10 档。
+    """设计方的 T6 例子：坦度1+攻击力3+阳光2+CD2+破盾1+减速1 = 10 档 -> T6。
 
-    注意：这里有一个**待确认的 1 点差异**——若「攻速」也占 1 点，
-    则总数为 11（T6 上限也是 10，会溢出到 T7）。
-    见 tests 报告里列出的两种读法。
+    攻速不占点，已确认。
     """
 
-    def test_without_attack_speed_point(self):
-        p = D.PlantPlan(levels={"hp": 1, "dps": 3, "sun": 2, "cd": 2,
-                                "shield_break": 1, "slow": 1},
-                        attacking=False)
-        self.assertEqual(p.slots, 10)
-        self.assertEqual(p.tier, 6)
-
-    def test_with_attack_speed_point(self):
+    def test_t6_example_is_ten_slots(self):
         p = D.PlantPlan(levels={"hp": 1, "dps": 3, "sun": 2, "cd": 2,
                                 "shield_break": 1, "slow": 1,
-                                "attack_speed": 4},
-                        attacking=True)
-        self.assertEqual(p.slots, 11)
-        self.assertEqual(p.tier, 7)
+                                "attack_speed": 4})
+        self.assertEqual(p.slots, 10)
+        self.assertEqual(p.tier, 6)
+        self.assertEqual(p.sun, 200)          # T6 250 - 50
+        self.assertEqual(p.damage_per_hit, 40 * 1.4)
 
 
 if __name__ == "__main__":
