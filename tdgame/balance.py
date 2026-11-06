@@ -23,13 +23,19 @@ def free_chassis_axes(role: str) -> Dict[str, int]:
     return {"fire": 0, "area": area, "pierce": 0, "durability": 1, "control": 0}
 
 
-def power_score(axes: Mapping[str, int], generic_tag_count: int = 0) -> float:
-    """power = Σ b(档)×权重 + 功能标签通用分。"""
+def power_score(axes: Mapping[str, int], generic_tag_count: int = 0,
+                tags: Sequence[str] = ()) -> float:
+    """power = Σ b(档)×权重 + 功能标签通用分 + 个别标签的额外能力分。
+
+    `tags` 里凡是出现在 `C.TAG_SCORE_OVERRIDE` 的能力（如护甲壳），
+    会额外计分——它们价值远高于通用标签，光靠 3 分/枚体现不出来。
+    """
     total = 0.0
     for axis in AXES:
         level = int(axes.get(axis, 0))
         total += C.AXIS_BASE_SCORE[level] * C.AXIS_WEIGHTS[axis]
-    return round(total + generic_tag_count * C.GENERIC_TAG_SCORE, 4)
+    extra = sum(C.TAG_SCORE_OVERRIDE.get(str(t), 0) for t in tags)
+    return round(total + generic_tag_count * C.GENERIC_TAG_SCORE + extra, 4)
 
 
 def tier_of(power: float) -> int:
@@ -73,7 +79,8 @@ def design_token_for_build(target_axes: Mapping[str, int], role: str,
         t = C.TOKEN_AXIS_CUM[paid_axes[a]]
         detail[a] = {"level": int(target_axes.get(a, 0)), "paid_levels": paid_axes[a], "tokens": t}
         axis_tokens += t
-    tag_tokens = sum(C.TAG_TOKEN_PRICE.get(t, 0) for t in combat_tags)
+    tag_tokens = sum(C.TAG_TOKEN_OVERRIDE.get(t, C.TAG_TOKEN_PRICE.get(t, 0))
+                     for t in combat_tags)
     generic_tokens = sum(
         0 for _ in ())  # 通用战斗标签价格在具体标签 JSON 内声明，这里仅汇总破防标签
     return {

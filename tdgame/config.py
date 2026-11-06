@@ -43,6 +43,14 @@ MAX_TIER = 13
 AXIS_LEVELS = 5                 # 单轴 0..5 档
 AXIS_BASE_SCORE = [0, 8, 17, 27, 38, 52]          # b(档)，边际 8·9·10·11·14
 AXIS_WEIGHTS = {"fire": 1.0, "area": 1.3, "pierce": 0.9, "durability": 0.8, "control": 1.4}
+# 个别能力标签的价值远高于通用标签（例如护甲壳：等于省一个格子），
+# 单独给它们定「能力分」与「代币价」，而不是硬抬阳光价。
+TAG_SCORE_OVERRIDE = {
+    "shell": 110,       # 护甲壳等于省一个格子，价值远高于破甲/减速
+}
+TAG_TOKEN_OVERRIDE = {
+    "shell": 240,       # 是 shield_break / armor_pierce(80) 的 3 倍
+}
 GENERIC_TAG_SCORE = 3           # 每个战斗功能标签的 power 通用分
 TOKEN_AXIS_CUM = [0, 40, 80, 120, 180, 260]       # 单轴第 n 档累计代币
 TAG_TOKEN_PRICE = {"shield_break": 80, "armor_pierce": 80}

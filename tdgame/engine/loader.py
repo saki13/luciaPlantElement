@@ -28,7 +28,7 @@ def derive_plant(defn: Dict[str, Any]) -> Dict[str, Any]:
     out = dict(defn)
     tags = list(out.get("tags", []))
     generic_tag_count = len([t for t in tags if t in C.COMBAT_TAGS])
-    power = balance.power_score(out["axes"], generic_tag_count)
+    power = balance.power_score(out["axes"], generic_tag_count, tags)
     tier = balance.tier_of(power)
     out["_power"] = power
     out["_tier"] = tier
