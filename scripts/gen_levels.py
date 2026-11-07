@@ -174,10 +174,10 @@ def main() -> None:
         "m1_14": {"plant": "spikeweed", "plant_reason": "原版经典：地刺，部署型伤害"},
         "m1_15": {"plant": "sun_shroom", "plant_reason": "原版经典：阳光菇，廉价经济"},
         "m1_16": {"plant": "cabbage_pult", "plant_reason": "原版经典：卷心菜投手，抛射"},
-        "m1_17": {"plant_pending": "potato_mine",
-                  "plant_pending_reason": "原版经典：土豆雷，需要一次性触发机制"},
-        "m1_18": {"plant_pending": "cherry_bomb",
-                  "plant_pending_reason": "原版经典：樱桃炸弹，需要一次性爆炸机制"},
+        "m1_17": {"plant_blocked": "potato_mine",
+                  "plant_blocked_reason": "需要「埋雷 + 踩到触发」机制，尚未实现"},
+        "m1_18": {"plant_blocked": "cherry_bomb",
+                  "plant_blocked_reason": "需要「种下即爆 3x3 随即消失」机制，尚未实现"},
         # M2：定位是教定制器与能力机制，只发代币，不发植物（design §19.1）
         # M3：15 关，承接 M2 移出的六株，品阶单调
         "m3_01": {"plant": "bamboo", "plant_reason": "近战半肉，补前排"},
@@ -206,6 +206,9 @@ def main() -> None:
         extra = REWARDS.get(lv["key"])
         if extra:
             lv.setdefault("reward", {}).update(extra)
+        # 挑战关（M2）：不发放植物，只给设计代币 -> 用 plant_pending 标记
+        if lv["key"].startswith("m2_"):
+            lv.setdefault("reward", {})["plant_pending"] = True
 
     for lv in levels:
         (OUT / f"{lv['key']}.json").write_text(

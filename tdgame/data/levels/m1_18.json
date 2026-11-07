@@ -29,7 +29,7 @@
   "reward": {
     "design_tokens": 0,
     "unlock": [],
-    "plant_pending": "cherry_bomb",
-    "plant_pending_reason": "原版经典：樱桃炸弹，需要一次性爆炸机制"
+    "plant_blocked": "cherry_bomb",
+    "plant_blocked_reason": "需要「种下即爆 3x3 随即消失」机制，尚未实现"
   }
 }
