@@ -1,0 +1,25 @@
+{
+  "key": "desecrator",
+  "cn": "亵渎者",
+  "budget": 9,
+  "speed": 22,
+  "bite_dps": 30,
+  "tenacity": 105,
+  "aura": {
+    "drain_pct_per_sec": 1.5
+  },
+  "_note": "T11 级僵尸，boss_50 之后登场。被动亵渎光环：全场植物每秒 -1.5% 最大生命，保底 1 HP 不致死。惩罚堆肉盾与拖时间。",
+  "hp_body": 2400,
+  "armor": {
+    "hp": 0,
+    "reduction": 0.0,
+    "ap": 0
+  },
+  "block_flat": 0,
+  "kb_immune": false,
+  "slow_resist": 0.0,
+  "weight": 1,
+  "regen": 0,
+  "tags": [],
+  "art_prompt": ""
+}

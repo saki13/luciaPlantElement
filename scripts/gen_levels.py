@@ -124,13 +124,13 @@ def main() -> None:
         (14, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 3, 9, 225, True),
         (15, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 4, 10, 225, True),
         # ---- 扩关到 15（承接 M2 不再发放的六株奖励，见 design §19.1）----
-        (16, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 4, 11, 250, True),
-        (17, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 4, 11, 250, True),
-        (18, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 5, 12, 275, True),
-        (19, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 5, 12, 275, True),
-        (20, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 5, 13, 300, True),
-        (21, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 6, 13, 300, True),
-        (22, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant"], 6, 14, 325, True),
+        (16, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 4, 11, 250, True),
+        (17, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 4, 11, 250, True),
+        (18, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 5, 12, 275, True),
+        (19, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 5, 12, 275, True),
+        (20, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 6, 13, 300, True),
+        (21, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 6, 13, 300, True),
+        (22, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 6, 14, 325, True),
     ]
     for i, (waves, allowed, cap_base, cap_max, start, full) in enumerate(m3_plan, start=1):
         levels.append(budget_level(

@@ -1,0 +1,27 @@
+{
+  "key": "lobber",
+  "cn": "抛射僵尸",
+  "budget": 5,
+  "speed": 20,
+  "bite_dps": 0,
+  "tenacity": 50,
+  "lob": {
+    "interval": 2.5,
+    "damage": 60,
+    "stop_distance": 3
+  },
+  "_note": "停在前排前 3 格，抛射该行最靠后的植物（伤害 60，无视前排阻挡与格挡）。逼玩家造治疗植物或分散站位。",
+  "hp_body": 800,
+  "armor": {
+    "hp": 0,
+    "reduction": 0.0,
+    "ap": 0
+  },
+  "block_flat": 0,
+  "kb_immune": false,
+  "slow_resist": 0.0,
+  "weight": 1,
+  "regen": 0,
+  "tags": [],
+  "art_prompt": ""
+}

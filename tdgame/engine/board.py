@@ -424,8 +424,15 @@ class Simulation:
     def _update_enemies(self, dt: float) -> None:
         self._update_boss_phases()
         self._update_summons(dt)
+        drain = sum(e.aura_drain for e in self.enemies
+                    if not e.dead and e.aura_drain > 0)
+        if drain > 0:
+            self._drain_plants(drain, dt)
         for e in self.enemies:
             if e.dead:
+                continue
+            if e.lob:
+                self._update_lobber(e, dt)
                 continue
             if e.regen > 0 and e.hp_body < e.hp_body_max:
                 e.hp_body = min(e.hp_body_max, e.hp_body + e.regen * dt)
@@ -489,6 +496,42 @@ class Simulation:
             return None
         target = max(cands, key=lambda p: p.col)
         return target if e.x <= target.col + 1.0 + 1e-9 else None
+
+    def _drain_plants(self, pct_per_sec: float, dt: float) -> None:
+        """亵渎光环：每秒扣除植物最大生命的 pct%，但不致命（保底 1 HP）。"""
+        for p in self.plants:
+            if not p.alive:
+                continue
+            loss = p.hp_max * pct_per_sec / 100.0 * dt
+            p.hp = max(1.0, p.hp - loss)
+
+    def _row_plants(self, row: int):
+        return [p for p in self.plants if p.row == row and p.alive]
+
+    def _update_lobber(self, e: Enemy, dt: float) -> None:
+        """抛射僵尸：走到距最前排一定距离后停下，抛射该行最靠后的植物。
+
+        它**不啃前排**，所以堆肉盾挡不住它 —— 逼玩家用治疗或速杀。
+        """
+        row_plants = self._row_plants(e.row)
+        if not row_plants:
+            e.x -= e.base_speed * e.current_speed_mult(self.now) * dt / C.CELL
+            if e.x <= C.LAWN_MOWER_TRIGGER_X:
+                self._handle_breach(e)
+            return
+        front = max(row_plants, key=lambda p: p.col)
+        stop = float(e.lob.get("stop_distance", 3))
+        if e.x - (front.col + 0.5) > stop:
+            e.x -= e.base_speed * e.current_speed_mult(self.now) * dt / C.CELL
+            if e.x <= C.LAWN_MOWER_TRIGGER_X:
+                self._handle_breach(e)
+            return
+        e.lob_timer -= dt
+        if e.lob_timer <= 0:
+            e.lob_timer += float(e.lob.get("interval", 2.5))
+            back = min(row_plants, key=lambda p: p.col)
+            self._damage_plant(back, float(e.lob.get("damage", 60)), attacker=e)
+            self.event_log.append(f"t={self.now:.1f} row{e.row} lob")
 
     def _enemy_within(self, p: Plant, radius: float) -> bool:
         """该格附近是否有活着的敌人（地雷触发判据）。"""

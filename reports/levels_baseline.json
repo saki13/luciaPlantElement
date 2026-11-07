@@ -2,7 +2,7 @@
   "format": "pvz-levels-baseline/1",
   "seeds_per_level": 5,
   "seed_base": 1000,
-  "generated_at": "2026-11-08 01:10:31",
+  "generated_at": "2026-11-08 01:19:56",
   "note": "智能 Bot 全卡池，固定 seed 子集；结果确定，改动后需显式 --update",
   "levels": {
     "m1_01": {
@@ -384,11 +384,11 @@
       "spawn_mode": "budget",
       "win_rate": 0.0,
       "clean_win_rate": 0.0,
-      "avg_mowers_used": 2.6,
-      "avg_breaches": 5.2,
+      "avg_mowers_used": 2.4,
+      "avg_breaches": 5.0,
       "avg_lives_left": 0.0,
-      "avg_sun_left": 40.0,
-      "avg_duration": 130.94
+      "avg_sun_left": 45.0,
+      "avg_duration": 123.42
     },
     "m3_14": {
       "phase": "M3",

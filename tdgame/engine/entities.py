@@ -63,6 +63,11 @@ class Enemy:
         self.kb_immune = bool(definition.get("kb_immune", False))
         # Boss 级单位不吃割草机：否则它走到最左被小车一碾就白送一局
         self.mower_immune = bool(definition.get("mower_immune", False))
+        # 抛射：保持距离、越过前排打后排
+        self.lob = definition.get("lob")
+        self.lob_timer = float((self.lob or {}).get("interval", 2.5))
+        # 亵渎光环：全场植物按最大生命百分比持续掉血
+        self.aura_drain = float((definition.get("aura") or {}).get("drain_pct_per_sec", 0.0))
         self.regen = float(definition.get("regen", 0) or 0)
         self.slow_until = -1.0
         self.slow_mult = 1.0

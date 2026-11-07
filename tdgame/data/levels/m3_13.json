@@ -31,10 +31,11 @@
       "cone",
       "shield_cadet",
       "bucket",
-      "giant"
+      "giant",
+      "lobber"
     ],
     "first_spawn_at": 12,
-    "cap_base": 5,
+    "cap_base": 6,
     "cap_grow": 1,
     "cap_max": 13
   },
