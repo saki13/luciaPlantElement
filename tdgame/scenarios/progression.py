@@ -55,7 +55,9 @@ def reward_for_level(level_key: str, first_clear: bool = True,
     已删除。调用方必须传入 `levels`，否则一律按 0 处理。
     """
     if not first_clear:
-        return {"design_tokens": 0, "unlock_tier": 0}
+        # 挑战关（M2）复刷仍给少量代币；其余关卡复刷不再产出
+        repeat = CHALLENGE_REPEAT_TOKENS if level_key.startswith("m2_") else 0
+        return {"design_tokens": repeat, "unlock_tier": 0}
     if levels and level_key in levels:
         reward = (levels[level_key].get("reward") or {})
         return {
@@ -108,7 +110,9 @@ class PlayerProgress:
         reward = int(info["design_tokens"])
         if first:
             self.cleared.append(level_key)
-            self.design_tokens += reward
+        # 首通与复刷都计入代币（挑战关复刷 50，其余关卡复刷 0）
+        self.design_tokens += reward
+        if first:
             phase = phase_of_level(level_key)
             if phase:
                 self.unlocked.update(PHASES[phase].unlocks)

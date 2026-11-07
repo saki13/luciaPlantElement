@@ -108,10 +108,11 @@ class ProgressionTests(unittest.TestCase):
         self.levels = level_run.load_levels(DATA / "levels")
         self.p = pg.PlayerProgress(self.levels)
 
-    def test_first_clear_grants_200_repeat_gives_none(self):
-        self.assertEqual(self.p.clear_level("m2_shield"), 200)
-        self.assertEqual(self.p.clear_level("m2_shield"), 0)
-        self.assertEqual(self.p.design_tokens, 200)
+    def test_first_clear_grants_400_repeat_gives_50(self):
+        """挑战关：首通 400（够一株 T6），复刷 50。"""
+        self.assertEqual(self.p.clear_level("m2_shield"), 400)
+        self.assertEqual(self.p.clear_level("m2_shield"), 50)
+        self.assertEqual(self.p.design_tokens, 450)
         self.assertIn("plant_customizer", self.p.unlocked)
 
     def test_phase_detection(self):
