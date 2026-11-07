@@ -42,6 +42,17 @@ ATTACK_INTERVAL_BY_LEVEL = {1: 3.50, 2: 2.60, 3: 1.90, 4: 1.40,
 
 CD_FLOOR = 7.5          # 卡片 CD 硬下限（= 原版豌豆）
 
+# ---------------------------------------------------------------- 一次性爆炸
+# 参照原版樱桃炸弹的比例反推：樱桃 150 阳光 / 50s CD / 1800 伤害，
+# 对比豌豆 100 阳光 / 7.5s CD -> 阳光 1.5x、CD 6.67x、伤害 90x DPS。
+# 设计方要求「花费减少、CD 加长」，故取 阳光 1.2x、CD 10x。
+ONE_SHOT_DAMAGE_MULT = 100      # 爆炸伤害 = DPS x 100
+ONE_SHOT_SUN_MULT = 1.2         # 阳光 = 该阶基础 x 1.2（比原版便宜）
+ONE_SHOT_CD_MULT = 10.0         # CD = 该阶基础 x 10（比原版更长）
+ONE_SHOT_CD_MIN = 60.0
+ONE_SHOT_CD_MAX = 120.0
+ONE_SHOT_AREA = (3, 3)          # 固定 3x3，不随档位变化
+
 # ---------------------------------------------------------------- 量化能力轴
 SHIELD_BREAK_BY_LEVEL = {0: 0, 1: 20, 2: 30, 3: 40, 4: 60, 5: 80, 6: 120}
 # (减速比例, 持续秒)
@@ -213,6 +224,23 @@ def force_with_attack_speed(force: int, attack_speed_level: int) -> float:
     """攻速对力道的影响：4 档基准；越慢越重，越快每档 −15%。"""
     mult = FORCE_ATTACK_SPEED_MULT[int(attack_speed_level)]
     return round(force * mult, 3)
+
+
+def one_shot_damage(dps: float) -> float:
+    """一次性爆炸的伤害 = DPS x 100。"""
+    return round(dps * ONE_SHOT_DAMAGE_MULT, 1)
+
+
+def one_shot_sun(tier: int) -> int:
+    """一次性植物的阳光：该阶基础 x 1.2，取整到 25 的倍数。"""
+    raw = TIER_SUN[int(tier)] * ONE_SHOT_SUN_MULT
+    return int(round(raw / 25.0)) * 25
+
+
+def one_shot_cd(tier: int) -> float:
+    """一次性植物的 CD：该阶基础 x 10，夹在 60..120s。"""
+    raw = TIER_CD[int(tier)] * ONE_SHOT_CD_MULT
+    return round(min(ONE_SHOT_CD_MAX, max(ONE_SHOT_CD_MIN, raw)), 1)
 
 
 def splash_effect(value: float) -> float:

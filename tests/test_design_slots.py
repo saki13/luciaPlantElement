@@ -89,6 +89,25 @@ class TenacityTests(unittest.TestCase):
         self.assertAlmostEqual(D.splash_effect(1.42), 0.355)
 
 
+class OneShotTests(unittest.TestCase):
+    def test_damage_is_100x_dps(self):
+        self.assertEqual(D.one_shot_damage(20), 2000)
+        self.assertEqual(D.one_shot_damage(40), 4000)
+        self.assertEqual(D.one_shot_damage(120), 12000)
+
+    def test_cherry_like_profile(self):
+        """对照原版樱桃（150 阳光 / 50s / 1800）：我们更便宜、CD 更长。"""
+        tier = D.tier_for_slots(4 + D.MECHANIC_COST["one_shot"])
+        sun, cd = D.one_shot_sun(tier), D.one_shot_cd(tier)
+        self.assertGreater(cd, 50.0)          # CD 加长
+        self.assertLessEqual(sun, 150)        # 花费不高于原版
+        self.assertEqual(D.one_shot_damage(20), 2000)   # 接近 1800
+
+    def test_cd_clamped(self):
+        self.assertGreaterEqual(D.one_shot_cd(1), 60.0)
+        self.assertLessEqual(D.one_shot_cd(13), 120.0)
+
+
 class ValidationTests(unittest.TestCase):
     def test_level6_requires_overclock(self):
         p = D.PlantPlan(levels={"dps": 6}, attacking=False)
