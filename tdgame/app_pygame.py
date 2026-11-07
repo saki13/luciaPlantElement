@@ -217,7 +217,19 @@ class GameApp:
             self.bot = ZombieBot() if self.autoplay else None
         else:
             self.session = PlaySession(self.level, self.registry, seed=self.seed)
-            self.bot = RuleBot(self.session.pool, smart=True) if self.autoplay else None
+            # 玩家在工坊造出来的植物（custom_*）应当随时可以带上场
+        try:
+            pool = list(self.session.pool)
+            for k in sorted(self.registry.plants):
+                if k.startswith("custom_") and k not in pool:
+                    pool.append(k)
+            pool.extend([k for k in self.registry.plants
+                         if k in getattr(self.progress, "unlocked_plants", [])
+                         and k not in pool])
+            self.session.pool = pool
+        except Exception:            # noqa: BLE001
+            pass
+        self.bot = RuleBot(self.session.pool, smart=True) if self.autoplay else None
         self.views: dict[int, object] = {}
         self.message = ""
         self.message_t = 0.0
