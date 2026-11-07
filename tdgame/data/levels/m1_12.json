@@ -1,0 +1,35 @@
+{
+  "key": "m1_12",
+  "phase": "M1",
+  "name": "m1_12",
+  "cn": "新手白天 第12关",
+  "start_resource": 100,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "wallnut",
+    "morningglory",
+    "repeater"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 12,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner",
+      "cone"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 2,
+    "cap_grow": 1,
+    "cap_max": 6
+  },
+  "reward": {
+    "design_tokens": 0,
+    "unlock": [],
+    "plant": "chomper",
+    "plant_reason": "原版经典：大嘴花，近战秒杀"
+  }
+}

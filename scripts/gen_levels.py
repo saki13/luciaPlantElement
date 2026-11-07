@@ -47,7 +47,7 @@ def main() -> None:
     # ---- M1 新手白天 10 关：逐关加波、逐关解锁卡，末段才引入轻甲路障 ----
     early_allowed = ["normal", "fast", "banner"]
     late_allowed = early_allowed + ["cone"]
-    for i in range(1, 11):
+    for i in range(1, 19):
         pool = ["sunbloom", "peashooter"]
         if i >= 3:
             pool.append("wallnut")
@@ -168,6 +168,16 @@ def main() -> None:
         "m1_08": {"plant": "splash_pea", "plant_reason": "小范围溅射，应对成群"},
         "m1_09": {"plant": "charge_shot", "plant_reason": "蓄力：单发高伤"},
         "m1_10": {"plant": "melonpult", "plant_reason": "批次大奖：范围高伤，M2 敲门砖"},
+        "m1_11": {"plant": "snow_pea", "plant_reason": "原版经典：寒冰射手，减速输出"},
+        "m1_12": {"plant": "chomper", "plant_reason": "原版经典：大嘴花，近战秒杀"},
+        "m1_13": {"plant": "threepeater", "plant_reason": "原版经典：三线射手，多线覆盖"},
+        "m1_14": {"plant": "spikeweed", "plant_reason": "原版经典：地刺，部署型伤害"},
+        "m1_15": {"plant": "sun_shroom", "plant_reason": "原版经典：阳光菇，廉价经济"},
+        "m1_16": {"plant": "cabbage_pult", "plant_reason": "原版经典：卷心菜投手，抛射"},
+        "m1_17": {"plant_pending": "potato_mine",
+                  "plant_pending_reason": "原版经典：土豆雷，需要一次性触发机制"},
+        "m1_18": {"plant_pending": "cherry_bomb",
+                  "plant_pending_reason": "原版经典：樱桃炸弹，需要一次性爆炸机制"},
         # M2：定位是教定制器与能力机制，只发代币，不发植物（design §19.1）
         # M3：15 关，承接 M2 移出的六株，品阶单调
         "m3_01": {"plant": "bamboo", "plant_reason": "近战半肉，补前排"},

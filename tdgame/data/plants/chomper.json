@@ -1,0 +1,27 @@
+{
+  "key": "chomper",
+  "cn": "大嘴花",
+  "role": "melee",
+  "tier": 4,
+  "sun": 150,
+  "hp": 300,
+  "axes": {
+    "fire": 2,
+    "area": 2,
+    "pierce": 0,
+    "durability": 1,
+    "control": 0
+  },
+  "tags": [],
+  "recharge": 7.5,
+  "_classic": true,
+  "_note": "原版经典：近战一口吞噬。当前用高伤近战近似。 属于「经典原版植物」轨道，数值锚定原版，不参与档位点体系。",
+  "combat": {
+    "atk_interval": 2.0,
+    "damage": 300,
+    "range": {
+      "type": "melee",
+      "cells": 1
+    }
+  }
+}

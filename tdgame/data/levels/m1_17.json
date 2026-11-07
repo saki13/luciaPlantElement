@@ -1,0 +1,35 @@
+{
+  "key": "m1_17",
+  "phase": "M1",
+  "name": "m1_17",
+  "cn": "新手白天 第17关",
+  "start_resource": 100,
+  "max_seconds": 400,
+  "card_pool": [
+    "sunbloom",
+    "peashooter",
+    "wallnut",
+    "morningglory",
+    "repeater"
+  ],
+  "spawn": {
+    "mode": "budget",
+    "waves": 17,
+    "allowed": [
+      "normal",
+      "fast",
+      "banner",
+      "cone"
+    ],
+    "first_spawn_at": 12,
+    "cap_base": 2,
+    "cap_grow": 1,
+    "cap_max": 6
+  },
+  "reward": {
+    "design_tokens": 0,
+    "unlock": [],
+    "plant_pending": "potato_mine",
+    "plant_pending_reason": "原版经典：土豆雷，需要一次性触发机制"
+  }
+}

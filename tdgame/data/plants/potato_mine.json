@@ -1,0 +1,15 @@
+{
+  "key": "potato_mine",
+  "cn": "土豆雷",
+  "role": "instant",
+  "tier": 2,
+  "sun": 25,
+  "hp": 300,
+  "axes": {"fire": 2, "area": 1, "pierce": 0, "durability": 1, "control": 0},
+  "tags": ["one_shot"],
+  "recharge": 30.0,
+  "_classic": true,
+  "_implemented": false,
+  "_blocked_reason": "需要「埋雷 + 敌人踩到才触发」的一次性触发机制，引擎尚未实现",
+  "_note": "经典原版植物：50 阳光不够就用地雷。数值锚定原版，不参与档位点体系。"
+}

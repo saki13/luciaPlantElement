@@ -1,0 +1,23 @@
+{
+  "key": "sun_shroom",
+  "cn": "阳光菇",
+  "role": "economy",
+  "tier": 2,
+  "sun": 25,
+  "hp": 300,
+  "axes": {
+    "fire": 2,
+    "area": 2,
+    "pierce": 0,
+    "durability": 1,
+    "control": 0
+  },
+  "tags": [],
+  "recharge": 7.5,
+  "_classic": true,
+  "_note": "原版经典：廉价经济。economy 字段驱动产阳光。 属于「经典原版植物」轨道，数值锚定原版，不参与档位点体系。",
+  "economy": {
+    "interval": 8.0,
+    "amount": 25
+  }
+}

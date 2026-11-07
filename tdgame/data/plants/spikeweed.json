@@ -1,0 +1,32 @@
+{
+  "key": "spikeweed",
+  "cn": "地刺",
+  "role": "ranged",
+  "tier": 2,
+  "sun": 100,
+  "hp": 300,
+  "axes": {
+    "fire": 2,
+    "area": 2,
+    "pierce": 0,
+    "durability": 1,
+    "control": 0
+  },
+  "tags": [],
+  "recharge": 7.5,
+  "_classic": true,
+  "_note": "原版经典：部署型持续伤害。当前用短程持续输出近似。 属于「经典原版植物」轨道，数值锚定原版，不参与档位点体系。",
+  "combat": {
+    "atk_interval": 1.0,
+    "damage": 12,
+    "range": {
+      "type": "row",
+      "cells": 9
+    },
+    "projectile": {
+      "key": "pea",
+      "speed": 320,
+      "hit": "single"
+    }
+  }
+}

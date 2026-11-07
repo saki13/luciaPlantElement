@@ -1,0 +1,34 @@
+{
+  "key": "snow_pea",
+  "cn": "寒冰射手",
+  "role": "ranged",
+  "tier": 4,
+  "sun": 175,
+  "hp": 300,
+  "axes": {
+    "fire": 2,
+    "area": 2,
+    "pierce": 0,
+    "durability": 1,
+    "control": 0
+  },
+  "tags": [
+    "control"
+  ],
+  "recharge": 7.5,
+  "_classic": true,
+  "_note": "原版经典：豌豆 + 减速。减速由 control 标签承载。 属于「经典原版植物」轨道，数值锚定原版，不参与档位点体系。",
+  "combat": {
+    "atk_interval": 1.4,
+    "damage": 20,
+    "range": {
+      "type": "row",
+      "cells": 9
+    },
+    "projectile": {
+      "key": "pea",
+      "speed": 320,
+      "hit": "single"
+    }
+  }
+}
