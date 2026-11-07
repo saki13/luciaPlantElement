@@ -598,13 +598,19 @@ def main(argv=None) -> int:
     ap.add_argument("--no-sprites", action="store_true", help="强制色块占位（对照回归用）")
     ap.add_argument("--autoplay", action="store_true", help="用 RuleBot 自动对局（截图/演示用）")
     ap.add_argument("--warmup", type=float, default=0.5, help="截图前先推进几秒")
-    ap.add_argument("--mode", default="play", choices=("play", "izombie"),
+    ap.add_argument("--mode", default="play", choices=("play", "izombie", "workshop"),
                     help="play=主线守关；izombie=M5 我是僵尸（攻防反转）")
     args = ap.parse_args(argv)
 
     if args.smoke:
         os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
         os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
+
+    if args.mode == "workshop":
+        from . import ui_workshop_screen
+        return ui_workshop_screen.run(smoke=args.smoke,
+                                     frames=getattr(args, "frames", 0),
+                                     shot=getattr(args, "shot", None))
 
     app = GameApp(use_sprites=not args.no_sprites, level_key=args.level, seed=args.seed,
                   autoplay=args.autoplay, mode=args.mode)
