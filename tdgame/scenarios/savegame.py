@@ -32,6 +32,7 @@ def snapshot(progress: PlayerProgress) -> Dict[str, Any]:
         # 已解锁植物 + 可创造品阶权限（关卡奖励给的是"代币 + 权限"）
         "unlocked_plants": list(getattr(progress, "unlocked_plants", [])),
         "plant_tier_permission": int(getattr(progress, "plant_tier_permission", 0)),
+        "challenge_state": dict(getattr(progress, "challenge_state", {})),
         "boss_clears": list(getattr(progress, "boss_clears", [])),
     }
 
@@ -88,6 +89,14 @@ def restore(data: Any, levels: Optional[Dict[str, Dict]] = None) -> Tuple[Player
     # 品阶夹在 0..MAX_TIER，防止手改成 999
     from .. import config as _C
     prog.plant_tier_permission = max(0, min(int(perm), int(_C.MAX_TIER)))
+
+    raw_state = data.get("challenge_state")
+    if isinstance(raw_state, dict):
+        for k, v in raw_state.items():
+            if isinstance(k, str) and v in ("rescued", "clean"):
+                prog.challenge_state[k] = v
+    elif raw_state is not None:
+        warn = (warn + "；" if warn else "") + "challenge_state 字段类型不对，已忽略"
 
     bosses = data.get("boss_clears")
     if isinstance(bosses, list):

@@ -71,6 +71,11 @@ def reward_for_level(level_key: str, first_clear: bool = True,
 # Boss 首通奖励表（不是关卡，是 Boss 战的里程碑奖励）
 # 卡槽位：初始 6，每个能力挑战关首通 +1，每进新阶段 +1，上限 15
 CHALLENGE_REPEAT_TOKENS = 50     # 挑战关复刷只给 50 代币
+
+# 挑战关（能力引导关）按顺序解锁；必须"干净通关"才算过关
+CHALLENGE_LEVELS = ("m2_shield", "m2_armor", "m2_speed", "m2_swarm")
+CHALLENGE_RESCUED = "rescued"     # 靠首车救援勉强通关，不算过关
+CHALLENGE_CLEAN = "clean"         # 一次都没掉车，真正过关
 CARD_SLOT_BASE = 6
 CARD_SLOT_MAX = 13
 CARD_SLOT_PER_CHALLENGE = 1
@@ -95,6 +100,8 @@ class PlayerProgress:
         self.tower_floor = 0
         # 已解锁的植物 key（关卡奖励给的是"代币 + 权限"，具体植物以这里为准）
         self.unlocked_plants: List[str] = []
+        # 挑战关状态：{key: "rescued" | "clean"}
+        self.challenge_state: Dict[str, str] = {}
         # 已击败过的能力挑战关（用于累计卡槽位）
         self.challenges_cleared: List[str] = []
         # 已击败过的 Boss（用于发放 Boss 里程碑奖励）
@@ -121,6 +128,38 @@ class PlayerProgress:
             if granted > self.plant_tier_permission:
                 self.plant_tier_permission = granted
         return reward
+
+    # ------------------------------------------------------------ 挑战关
+    def record_challenge_result(self, level_key: str, won: bool,
+                                rescues: int = 0) -> str:
+        """记录一次挑战关结果，返回该关新状态（"" = 仍未过关）。"""
+        if level_key not in CHALLENGE_LEVELS or not won:
+            return self.challenge_state.get(level_key, "")
+        state = CHALLENGE_CLEAN if rescues == 0 else CHALLENGE_RESCUED
+        # 已经是 clean 的不要被后来的 rescued 覆盖
+        if self.challenge_state.get(level_key) == CHALLENGE_CLEAN:
+            return CHALLENGE_CLEAN
+        self.challenge_state[level_key] = state
+        return state
+
+    def challenge_cleared(self, level_key: str) -> bool:
+        return self.challenge_state.get(level_key) == CHALLENGE_CLEAN
+
+    def needs_refight(self, level_key: str) -> bool:
+        """救援通关后需要重打本关（此时才该引导玩家去工坊造植物）。"""
+        return self.challenge_state.get(level_key) == CHALLENGE_RESCUED
+
+    def next_challenge(self) -> Optional[str]:
+        """下一关可以进哪个挑战关；全部干净通关则返回 None。"""
+        for key in CHALLENGE_LEVELS:
+            if not self.challenge_cleared(key):
+                return key
+        return None
+
+    def can_enter_challenge(self, level_key: str) -> bool:
+        if level_key not in CHALLENGE_LEVELS:
+            return True
+        return self.next_challenge() == level_key
 
     def card_slots(self, levels: Dict[str, Any] | None = None) -> int:
         """当前可带植物卡数：6 + 能力挑战关数 + 已进入的阶段数，封顶 15。
