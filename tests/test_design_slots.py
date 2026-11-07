@@ -80,6 +80,10 @@ class TenacityTests(unittest.TestCase):
         self.assertEqual(D.force_with_attack_speed(100, 1), 170.0)
         self.assertTrue(D.knockback_effective(
             D.force_with_attack_speed(100, 1), "T5"))
+        # 比基准快：每提一档力道 -15%
+        self.assertEqual(D.force_with_attack_speed(100, 5), 85.0)
+        self.assertEqual(D.force_with_attack_speed(100, 6), 70.0)
+        self.assertEqual(D.force_with_attack_speed(100, 7), 55.0)
 
     def test_splash_discount(self):
         self.assertAlmostEqual(D.splash_effect(1.42), 0.355)

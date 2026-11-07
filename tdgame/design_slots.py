@@ -53,8 +53,10 @@ KNOCKBACK_BY_LEVEL = {0: 0.0, 1: 0.2, 2: 0.4, 3: 0.8, 4: 1.2, 5: 2.0, 6: 3.0}
 FORCE_BY_LEVEL = {0: 0, 1: 20, 2: 40, 3: 60, 4: 80, 5: 100, 6: 150}
 
 # 攻速越慢，单次打击力道越强（4 档为基准，无加成）
+# 4 档为基准；比基准慢 -> 加成（+70/+30/+10）；
+# 比基准快 -> **每提一档力道 −15%**（设计方给定）
 FORCE_ATTACK_SPEED_MULT = {1: 1.70, 2: 1.30, 3: 1.10, 4: 1.00,
-                           5: 1.00, 6: 1.00, 7: 1.00}
+                           5: 0.85, 6: 0.70, 7: 0.55}
 
 # 治疗（3/4/5 档才有；治疗量 = 攻击力×2，频率 = 攻速）
 HEAL_RADIUS_BY_LEVEL = {3: 0, 4: 1, 5: 2}   # 0=1x1, 1=2x2, 2=3x3（半径）
@@ -208,7 +210,7 @@ def knockback_effective(force: int, tenacity_tier: str) -> bool:
 
 
 def force_with_attack_speed(force: int, attack_speed_level: int) -> float:
-    """攻速对力道的加成：4 档基准，越慢越重。"""
+    """攻速对力道的影响：4 档基准；越慢越重，越快每档 −15%。"""
     mult = FORCE_ATTACK_SPEED_MULT[int(attack_speed_level)]
     return round(force * mult, 3)
 
