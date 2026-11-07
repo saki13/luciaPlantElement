@@ -101,15 +101,11 @@ def main() -> None:
                        [44, "normal"], [52, "fast"], [60, "cone"], [68, "fast"],
                        [76, "normal"], [84, "fast"]]
     control_rows = [1, 2, 1, 2, 1, 2, 1, 2, 1, 2]
-    levels.append(fixed_level("m2_control", "M2", "控制教学考场", control_entries, control_rows,
-                              LATE_POOL, start=200, reward=100, max_sec=180))
 
     # 重量免控考场：巨人(weight 99 / 免控 / 1600HP) 为主，考察"硬控无效，只能堆伤与墙"
     weight_entries = [[14, "cone"], [26, "giant"], [40, "bucket"], [56, "giant"],
                       [72, "cone"], [88, "giant"], [104, "bucket"]]
     weight_rows = [1, 1, 2, 2, 1, 2, 1]
-    levels.append(fixed_level("m2_weight", "M2", "重量免控考场", weight_entries, weight_rows,
-                              LATE_POOL, start=250, reward=140, max_sec=260))
 
     # ---- M3 进阶主线 8 关 + 阶段 Boss ----
     # 规划原为"约 10 关"，落地 8 关推进 + 1 关 Boss。卡池分两段：
@@ -181,8 +177,6 @@ def main() -> None:
         "m2_armor": {"design_tokens": 400},
         "m2_speed": {"design_tokens": 400},
         "m2_swarm": {"design_tokens": 400},
-        "m2_control": {"design_tokens": 400},
-        "m2_weight": {"design_tokens": 400},
         "m2_shield": {"design_tokens": 400},
         # M3：15 关，承接 M2 移出的六株，品阶单调
         "m3_01": {"plant": "bamboo", "plant_reason": "近战半肉，补前排"},

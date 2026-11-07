@@ -141,7 +141,7 @@ class LevelRunTests(unittest.TestCase):
 
     def test_all_levels_loaded(self):
         # M1x10 + M2x6 + M3x15 + m3_boss = 32
-        self.assertEqual(len(self.levels), 40)
+        self.assertEqual(len(self.levels), 38)
         self.assertIn("m1_01", self.levels)
         self.assertIn("m3_boss", self.levels)
         self.assertIn("m3_08", self.levels, "M3 进阶主线应补齐到 8 关")

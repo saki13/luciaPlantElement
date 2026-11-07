@@ -97,7 +97,7 @@ class RewardIntegrityTest(unittest.TestCase):
         """plant_pending = 挑战关只给代币。M2 六关必须都带这个标记且不发植物。"""
         snap = snapshot()
         m2 = {k: r for k, r in snap.items() if k.startswith("m2_")}
-        self.assertEqual(len(m2), 6)
+        self.assertEqual(len(m2), 4)
         for k, r in m2.items():
             self.assertTrue(r.get("plant_pending"), f"{k} 应标记为只给代币")
             self.assertFalse(r.get("plant"), f"{k} 不该发植物")
