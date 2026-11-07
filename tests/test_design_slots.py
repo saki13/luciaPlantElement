@@ -72,6 +72,15 @@ class TenacityTests(unittest.TestCase):
         self.assertTrue(D.knockback_effective(150, "T5"))
         self.assertFalse(D.knockback_effective(150, "SP"))   # 300*0.8=240
 
+    def test_force_attack_speed(self):
+        """攻速越慢力道越高：5 档力道 100、攻速 1 档 -> 170（可推巨人）。"""
+        self.assertEqual(D.force_with_attack_speed(100, 4), 100.0)
+        self.assertEqual(D.force_with_attack_speed(100, 3), 110.0)
+        self.assertEqual(D.force_with_attack_speed(100, 2), 130.0)
+        self.assertEqual(D.force_with_attack_speed(100, 1), 170.0)
+        self.assertTrue(D.knockback_effective(
+            D.force_with_attack_speed(100, 1), "T5"))
+
     def test_splash_discount(self):
         self.assertAlmostEqual(D.splash_effect(1.42), 0.355)
 

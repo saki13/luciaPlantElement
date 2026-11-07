@@ -52,6 +52,10 @@ TARGETS_BY_LEVEL = {0: 1, 1: 1, 2: 2, 3: 3, 4: 5, 5: 10, 6: 15}
 KNOCKBACK_BY_LEVEL = {0: 0.0, 1: 0.2, 2: 0.4, 3: 0.8, 4: 1.2, 5: 2.0, 6: 3.0}
 FORCE_BY_LEVEL = {0: 0, 1: 20, 2: 40, 3: 60, 4: 80, 5: 100, 6: 150}
 
+# 攻速越慢，单次打击力道越强（4 档为基准，无加成）
+FORCE_ATTACK_SPEED_MULT = {1: 1.70, 2: 1.30, 3: 1.10, 4: 1.00,
+                           5: 1.00, 6: 1.00, 7: 1.00}
+
 # 治疗（3/4/5 档才有；治疗量 = 攻击力×2，频率 = 攻速）
 HEAL_RADIUS_BY_LEVEL = {3: 0, 4: 1, 5: 2}   # 0=1x1, 1=2x2, 2=3x3（半径）
 
@@ -201,6 +205,12 @@ def knockback_effective(force: int, tenacity_tier: str) -> bool:
     """力道是否够推动该韧性档的敌人。"""
     t, _eff, _cut = TENACITY_BY_TIER[tenacity_tier]
     return force >= t * FORCE_THRESHOLD
+
+
+def force_with_attack_speed(force: int, attack_speed_level: int) -> float:
+    """攻速对力道的加成：4 档基准，越慢越重。"""
+    mult = FORCE_ATTACK_SPEED_MULT[int(attack_speed_level)]
+    return round(force * mult, 3)
 
 
 def splash_effect(value: float) -> float:
