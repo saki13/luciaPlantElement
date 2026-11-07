@@ -255,9 +255,20 @@ class GameApp:
         except Exception as exc:      # noqa: BLE001 - 存档失败不该影响玩
             self.save_warning = f"存档写入失败：{exc.__class__.__name__}"
 
+    def level_available(self, key: str) -> bool:
+        """挑战关必须按顺序解锁；已干净通关的可随时重打。"""
+        from .scenarios.progression import CHALLENGE_LEVELS
+        if key not in CHALLENGE_LEVELS:
+            return True
+        if self.progress.challenge_cleared(key):
+            return True
+        return self.progress.can_enter_challenge(key)
+
     def cycle_level(self, step: int) -> None:
-        """按 [ / ] 在当前模式的关卡列表里前后切换。"""
-        keys = sorted(self.levels)
+        """按 [ / ] 在当前模式的关卡列表里前后切换（跳过未解锁的挑战关）。"""
+        keys = [k for k in sorted(self.levels) if self.level_available(k)]
+        if not keys:
+            return
         if not keys:
             return
         try:
