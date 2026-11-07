@@ -197,6 +197,8 @@ class GameApp:
         # 允许注入存档路径：测试必须用临时目录，否则会污染玩家真实存档
         self.save_path = Path(save_path) if save_path else default_save_path()
         self.progress, self.save_warning = load_from(self.save_path, self.levels)
+        # 挑战关引导文案（救援通关后提示去工坊造克制植物）
+        self.guide = ""
         self._recorded = False
         self.sprites = SpriteLibrary(use_sprites)
         self._build_visual_resources()
@@ -221,6 +223,17 @@ class GameApp:
         self.message_t = 0.0
         self._recorded = False
 
+    def open_workshop(self) -> None:
+        """就地打开工坊；造完植物后重新开局本关。"""
+        try:
+            from . import ui_workshop_screen
+            ui_workshop_screen.run(smoke=False)
+        except Exception as exc:              # noqa: BLE001 - 工坊崩了不该影响对局
+            self.guide = f"工坊打不开：{exc.__class__.__name__}"
+            return
+        self.guide = "已回到关卡。新造的植物已写入卡池，重打本关试试。"
+        self.new_game()
+
     def _record_clear_if_needed(self) -> None:
         """通关时记一次进度并落盘。每局只记一次，避免每帧重复写文件。"""
         if self._recorded or not self.session.over or not self.session.won:
@@ -230,6 +243,14 @@ class GameApp:
             return          # M5 关卡不参与主线阶段解锁
         try:
             self.progress.clear_level(self.level_key)
+            sim = getattr(self.session, "sim", None)
+            rescues = int(getattr(sim, "rescues", 0)) if sim is not None else 0
+            self.progress.record_challenge_result(self.level_key, True, rescues)
+            if self.progress.needs_refight(self.level_key):
+                self.guide = ("你被首车救援救了下来 —— 这一关还不算过。"
+                              "按 G 去工坊造一株带「破盾」的植物，再回来重打本关。")
+            elif self.progress.challenge_state.get(self.level_key) == "clean":
+                self.guide = "干净通关！按 [ / ] 进入下一关。"
             save_to(self.save_path, self.progress)
         except Exception as exc:      # noqa: BLE001 - 存档失败不该影响玩
             self.save_warning = f"存档写入失败：{exc.__class__.__name__}"
@@ -301,7 +322,9 @@ class GameApp:
         if ev.type == pygame.QUIT:
             self.running = False
         elif ev.type == pygame.KEYDOWN:
-            if ev.key in (pygame.K_q, pygame.K_ESCAPE):
+            if ev.key == pygame.K_g:
+                self.open_workshop()
+            elif ev.key in (pygame.K_q, pygame.K_ESCAPE):
                 self.running = False
             elif ev.key == pygame.K_r:
                 self.new_game()
@@ -554,6 +577,8 @@ class GameApp:
             cleared = len(self.progress.cleared)
             total = len(self.levels)
             hud = f"{cleared}/{total}  币 {self.progress.design_tokens}"
+        if self.guide:
+            hud += "   " + self.guide
             if getattr(self.progress, "tower_floor", 0) > 0:
                 hud += f"  塔 {self.progress.tower_floor}"
             img = self.font.render(hud, True, (60, 76, 52))
