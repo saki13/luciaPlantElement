@@ -227,10 +227,17 @@ class GameApp:
         """就地打开工坊；造完植物后重新开局本关。"""
         try:
             from . import ui_workshop_screen
-            ui_workshop_screen.run(smoke=False)
+            ui_workshop_screen.run(smoke=False, keep_display=True)
         except Exception as exc:              # noqa: BLE001 - 工坊崩了不该影响对局
             self.guide = f"工坊打不开：{exc.__class__.__name__}"
             return
+        # 工坊改过显示尺寸/状态，回来后必须重建窗口，否则渲染会失效
+        try:
+            import pygame as _pg
+            self.screen = _pg.display.set_mode((WIN_W, WIN_H))
+            _pg.display.set_caption("PVZ-like")
+        except Exception:            # noqa: BLE001
+            pass
         self.guide = "已回到关卡。新造的植物已写入卡池，重打本关试试。"
         self.new_game()
 

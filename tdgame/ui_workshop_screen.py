@@ -18,7 +18,8 @@ ROW_H = 34
 WIN_W, WIN_H = 720, 560
 
 
-def run(smoke: bool = False, frames: int = 0, shot: Optional[str] = None) -> int:
+def run(smoke: bool = False, frames: int = 0, shot: Optional[str] = None,
+        keep_display: bool = False) -> int:
     import pygame
 
     pygame.init()
@@ -103,7 +104,8 @@ def run(smoke: bool = False, frames: int = 0, shot: Optional[str] = None) -> int
         print(render_state(st))
         if built:
             print("built:", built.get("key"), built.get("tags"))
-    pygame.quit()
+    if not keep_display:
+        pygame.quit()
     return 0
 
 
