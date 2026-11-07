@@ -48,6 +48,21 @@ class WorkshopTests(unittest.TestCase):
             self.assertIn(key, d, f"产物缺少字段 {key}")
         self.assertIn("shield_break", d.get("tags", []))
 
+
+    def test_built_plant_is_marked_user_built(self):
+        """产物必须带 _user_built 标记，卡池注入靠它区分预置卡（如 custom_shieldbreaker）。"""
+        s = WorkshopState(tokens=400, name="标记检查")
+        s.toggle_tag("shield_break")
+        self.assertTrue(s.build().get("_user_built"))
+
+    def test_preset_cards_are_not_user_built(self):
+        """预置的 custom_shieldbreaker 不能被当成玩家自造，否则会污染每个卡池。"""
+        from pathlib import Path as P
+        import json
+        root = P(__file__).resolve().parents[1]
+        d = json.loads((root / "tdgame" / "data" / "plants" /
+                        "custom_shieldbreaker.json").read_text(encoding="utf-8"))
+        self.assertFalse(d.get("_user_built", False))
     def test_render_contains_key_numbers(self):
         s = WorkshopState()
         s.bump("fire", +2)
