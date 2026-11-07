@@ -68,6 +68,7 @@ def reward_for_level(level_key: str, first_clear: bool = True,
 
 # Boss 首通奖励表（不是关卡，是 Boss 战的里程碑奖励）
 # 卡槽位：初始 6，每个能力挑战关首通 +1，每进新阶段 +1，上限 15
+CHALLENGE_REPEAT_TOKENS = 50     # 挑战关复刷只给 50 代币
 CARD_SLOT_BASE = 6
 CARD_SLOT_MAX = 15
 CARD_SLOT_PER_CHALLENGE = 1

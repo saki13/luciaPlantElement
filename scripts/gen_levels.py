@@ -176,9 +176,14 @@ def main() -> None:
         "m1_16": {"plant": "cabbage_pult", "plant_reason": "原版经典：卷心菜投手，抛射"},
         "m1_17": {"plant_blocked": "potato_mine",
                   "plant_blocked_reason": "需要「埋雷 + 踩到触发」机制，尚未实现"},
-        "m1_18": {"plant_blocked": "cherry_bomb",
-                  "plant_blocked_reason": "需要「种下即爆 3x3 随即消失」机制，尚未实现"},
-        # M2：定位是教定制器与能力机制，只发代币，不发植物（design §19.1）
+        "m1_18": {"plant": "cherry_bomb", "plant_reason": "原版经典：樱桃炸弹，救场神卡"},
+        # M2 挑战关：只发代币（plant_pending 标记），首通 400 = 够造一株 T6
+        "m2_armor": {"design_tokens": 400},
+        "m2_speed": {"design_tokens": 400},
+        "m2_swarm": {"design_tokens": 400},
+        "m2_control": {"design_tokens": 400},
+        "m2_weight": {"design_tokens": 400},
+        "m2_shield": {"design_tokens": 400},
         # M3：15 关，承接 M2 移出的六株，品阶单调
         "m3_01": {"plant": "bamboo", "plant_reason": "近战半肉，补前排"},
         "m3_02": {"plant": "bombberry", "plant_reason": "一次性爆发，教时机"},

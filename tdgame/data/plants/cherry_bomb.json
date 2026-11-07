@@ -6,10 +6,11 @@
   "sun": 150,
   "hp": 300,
   "axes": {"fire": 2, "area": 2, "pierce": 0, "durability": 1, "control": 0},
-  "tags": ["one_shot"],
+  "tags": ["one_shot", "aoe"],
   "recharge": 50.0,
+  "combat": {
+    "on_place": {"fuse": 0.6, "explosion": {"radius": 1, "damage": 1800}}
+  },
   "_classic": true,
-  "_implemented": false,
-  "_blocked_reason": "需要「种下即爆、3x3 范围、随即消失」的一次性爆炸机制，引擎尚未实现",
-  "_note": "经典原版植物：150 阳光 / 50s CD / 1800 伤害 / 3x3。数值锚定原版。"
+  "_note": "经典原版植物：150 阳光 / 50s CD / 1800 伤害 / 3x3（radius=1）。走引擎的 on_place 一次性爆炸机制。"
 }

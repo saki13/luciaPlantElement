@@ -84,7 +84,7 @@
     ]
   },
   "reward": {
-    "design_tokens": 100,
+    "design_tokens": 400,
     "unlock": [],
     "plant_pending": true
   }
