@@ -95,17 +95,29 @@ class OneShotTests(unittest.TestCase):
         self.assertEqual(D.one_shot_damage(40), 4000)
         self.assertEqual(D.one_shot_damage(120), 12000)
 
-    def test_cherry_like_profile(self):
-        """对照原版樱桃（150 阳光 / 50s / 1800）：我们更便宜、CD 更长。"""
-        tier = D.tier_for_slots(4 + D.MECHANIC_COST["one_shot"])
-        sun, cd = D.one_shot_sun(tier), D.one_shot_cd(tier)
-        self.assertGreater(cd, 50.0)          # CD 加长
-        self.assertLessEqual(sun, 150)        # 花费不高于原版
-        self.assertEqual(D.one_shot_damage(20), 2000)   # 接近 1800
-
     def test_cd_clamped(self):
-        self.assertGreaterEqual(D.one_shot_cd(1), 60.0)
-        self.assertLessEqual(D.one_shot_cd(13), 120.0)
+        self.assertGreaterEqual(D.one_shot_cd(1), 40.0)
+        self.assertLessEqual(D.one_shot_cd(13), 90.0)
+
+    def test_cherry_plant_lands_t6(self):
+        """坦度平替为范围：dps2 + 阳光1 + CD1 + 一次性4 + 范围2 = 10 档 -> T6。"""
+        p = D.PlantPlan(levels={"dps": 2, "sun": 1, "cd": 1, "range": 2},
+                        mechanics=("one_shot",), attacking=True, one_shot=True)
+        self.assertEqual(p.slots, 10)
+        self.assertEqual(p.tier, 6)
+        self.assertEqual(p.sun, 200)          # 250 * 0.8
+        self.assertEqual(p.cooldown, 40.0)    # 10 * 4
+
+    def test_hp_replaced_by_range(self):
+        """一次性植物不为坦度付费，改付范围。"""
+        a = D.PlantPlan(levels={"dps": 2, "range": 3}, mechanics=("one_shot",),
+                        one_shot=True)
+        b = D.PlantPlan(levels={"dps": 2, "range": 1}, mechanics=("one_shot",),
+                        one_shot=True)
+        self.assertEqual(a.slots - b.slots, 2)   # 范围差 2 档 -> 差 2 点
+
+    def test_damage_is_100x_dps(self):
+        self.assertEqual(D.one_shot_damage(20), 2000)
 
 
 class ValidationTests(unittest.TestCase):

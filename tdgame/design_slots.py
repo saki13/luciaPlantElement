@@ -47,11 +47,12 @@ CD_FLOOR = 7.5          # 卡片 CD 硬下限（= 原版豌豆）
 # 对比豌豆 100 阳光 / 7.5s CD -> 阳光 1.5x、CD 6.67x、伤害 90x DPS。
 # 设计方要求「花费减少、CD 加长」，故取 阳光 1.2x、CD 10x。
 ONE_SHOT_DAMAGE_MULT = 100      # 爆炸伤害 = DPS x 100
-ONE_SHOT_SUN_MULT = 1.2         # 阳光 = 该阶基础 x 1.2（比原版便宜）
-ONE_SHOT_CD_MULT = 10.0         # CD = 该阶基础 x 10（比原版更长）
-ONE_SHOT_CD_MIN = 60.0
-ONE_SHOT_CD_MAX = 120.0
-ONE_SHOT_AREA = (3, 3)          # 固定 3x3，不随档位变化
+ONE_SHOT_SUN_MULT = 0.8         # 阳光 = 该阶基础 x 0.8（比常规植物便宜）
+ONE_SHOT_CD_MULT = 4.0          # CD = 该阶基础 x 4
+ONE_SHOT_CD_MIN = 40.0
+ONE_SHOT_CD_MAX = 90.0
+# 一次性植物的「坦度」平替为「范围」：不付坦度基础点，改付范围轴
+RANGE_REPLACES_HP = True
 
 # ---------------------------------------------------------------- 量化能力轴
 SHIELD_BREAK_BY_LEVEL = {0: 0, 1: 20, 2: 30, 3: 40, 4: 60, 5: 80, 6: 120}
@@ -122,7 +123,8 @@ def tier_for_slots(total: int) -> int:
 
 
 def total_slots(levels: Dict[str, int], mechanics: Tuple[str, ...] = (),
-                attacking: bool = True) -> int:
+                attacking: bool = True,
+                hp_replaced_by_range: bool = False) -> int:
     """把一株植物的档位分配折算成总档位点。
 
     levels: 轴名 -> 档位（硬数值轴缺省按 1 档算；能力轴缺省 0）
@@ -131,6 +133,10 @@ def total_slots(levels: Dict[str, int], mechanics: Tuple[str, ...] = (),
     """
     total = 0
     for axis in BASE_AXES:
+        if axis == "hp" and hp_replaced_by_range:
+            # 一次性植物的坦度平替为范围（它不靠耐久站场）
+            total += int(levels.get("range", 0))
+            continue
         total += max(1, int(levels.get(axis, 1)))
     for axis in ("shield_break", "slow", "armor_pierce", "targets",
                  "knockback", "heal"):
@@ -149,10 +155,13 @@ class PlantPlan:
     mechanics: Tuple[str, ...] = ()
     attacking: bool = True
     explicit_sun: int | None = None      # 允许单独设定（例如坚果 50）
+    # 一次性植物：坦度平替为范围，且阳光/CD 走一次性系数
+    one_shot: bool = False
 
     @property
     def slots(self) -> int:
-        return total_slots(self.levels, self.mechanics, self.attacking)
+        return total_slots(self.levels, self.mechanics, self.attacking,
+                           hp_replaced_by_range=self.one_shot)
 
     @property
     def tier(self) -> int:
@@ -162,11 +171,15 @@ class PlantPlan:
     def sun(self) -> int:
         if self.explicit_sun is not None:
             return int(self.explicit_sun)
+        if self.one_shot:
+            return one_shot_sun(self.tier)
         return TIER_SUN[self.tier] + SUN_REDUCTION_BY_LEVEL[
             int(self.levels.get("sun", 1))]
 
     @property
     def cooldown(self) -> float:
+        if self.one_shot:
+            return one_shot_cd(self.tier)
         base = TIER_CD[self.tier]
         cut = CD_REDUCTION_BY_LEVEL[int(self.levels.get("cd", 1))]
         return max(CD_FLOOR, base + cut)
