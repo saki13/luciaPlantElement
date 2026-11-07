@@ -231,6 +231,11 @@ class GameApp:
         except Exception as exc:              # noqa: BLE001 - 工坊崩了不该影响对局
             self.guide = f"工坊打不开：{exc.__class__.__name__}"
             return
+        # 工坊刚写入了新的植物 JSON，必须重载注册表，否则新植物进不了卡池
+        try:
+            self.registry = load_registry(Path(__file__).parent / "data")
+        except Exception:            # noqa: BLE001
+            pass
         # 工坊改过显示尺寸/状态，回来后必须重建窗口，否则渲染会失效
         try:
             import pygame as _pg
