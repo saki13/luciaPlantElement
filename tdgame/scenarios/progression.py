@@ -67,6 +67,12 @@ def reward_for_level(level_key: str, first_clear: bool = True,
 
 
 # Boss 首通奖励表（不是关卡，是 Boss 战的里程碑奖励）
+# 卡槽位：初始 6，每个能力挑战关首通 +1，每进新阶段 +1，上限 15
+CARD_SLOT_BASE = 6
+CARD_SLOT_MAX = 15
+CARD_SLOT_PER_CHALLENGE = 1
+CARD_SLOT_PER_PHASE = 1
+
 BOSS_REWARDS: Dict[str, str] = {
     "boss_50": "thorn_queen",     # 荆棘女王：反弹光环的强化版
 }
@@ -86,6 +92,8 @@ class PlayerProgress:
         self.tower_floor = 0
         # 已解锁的植物 key（关卡奖励给的是"代币 + 权限"，具体植物以这里为准）
         self.unlocked_plants: List[str] = []
+        # 已击败过的能力挑战关（用于累计卡槽位）
+        self.challenges_cleared: List[str] = []
         # 已击败过的 Boss（用于发放 Boss 里程碑奖励）
         self.boss_clears: List[str] = []
         # 可创造的最高品阶（0 = 不覆盖，用阶段默认上限）
@@ -108,6 +116,20 @@ class PlayerProgress:
             if granted > self.plant_tier_permission:
                 self.plant_tier_permission = granted
         return reward
+
+    def card_slots(self, levels: Dict[str, Any] | None = None) -> int:
+        """当前可带植物卡数：6 + 能力挑战关数 + 已进入的阶段数，封顶 15。
+
+        挑战关 = 关卡 key 以 m2_ 开头的六关（能力挑战 + 定制器教学）。
+        直接从已通关列表推导，避免依赖额外的钩子字段。
+        """
+        slots = CARD_SLOT_BASE
+        challenges = [k for k in self.cleared if k.startswith("m2_")]
+        slots += len(challenges) * CARD_SLOT_PER_CHALLENGE
+        phase = self.phase(levels) if levels is not None else "P1"
+        order = {"P1": 0, "P2": 1, "P3": 2, "P4": 3}
+        slots += order.get(phase, 0) * CARD_SLOT_PER_PHASE
+        return min(CARD_SLOT_MAX, slots)
 
     def record_boss_clear(self, boss_key: str) -> Optional[str]:
         """记录一次 Boss 首通；返回因此解锁的植物 key（没有则 None）。"""
