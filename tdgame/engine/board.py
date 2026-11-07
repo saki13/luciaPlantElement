@@ -48,6 +48,8 @@ class Simulation:
         self.won = False
         self.kills: Dict[str, int] = {}
         self.mowers_used = 0
+        # 首车救援次数（挑战关的教学兜底）
+        self.rescues = 0
         self.breaches = 0
         self.sun_earned = 0
         self.plants_placed = 0
@@ -473,11 +475,34 @@ class Simulation:
         target = max(cands, key=lambda p: p.col)
         return target if e.x <= target.col + 1.0 + 1e-9 else None
 
+    RESCUE_PLANT = "winter_melon"
+
+    def _rescue(self) -> None:
+        """首车救援：清除场上全部僵尸，并在每行最右侧补种一株冰西瓜。
+
+        对应 DESIGN 里的挑战关教学兜底：玩家被某种僵尸特性卡住时不会死档，
+        而是被"扶一把"过关，随后再被引导去造克制植物重打本关。
+        """
+        self.rescues += 1
+        self.enemies.clear()
+        d = self.plant_defs.get(self.RESCUE_PLANT)
+        if d is None:
+            return
+        for row in range(C.ROWS):
+            for col in range(C.COLS - 1, -1, -1):
+                if self.plant_at(row, col) is None:
+                    self.plants.append(
+                        Plant(self.RESCUE_PLANT, row, col, d, self.now))
+                    break
+
     def _handle_breach(self, e: Enemy) -> None:
         # mower_immune 的 Boss 级单位不吃割草机，直接算破线扣命
         if self.mowers.get(e.row, False) and not e.mower_immune:
             self.mowers[e.row] = False
             self.mowers_used += 1
+            # 首车救援：第一次掉车不判负，清场 + 每行补种冰西瓜
+            if self.mowers_used == 1:
+                self._rescue()
             # 割草机清场，但碾不动 mower_immune 的 Boss 级单位
             for other in [x for x in self.enemies
                           if x.row == e.row and not x.dead and not x.mower_immune]:
