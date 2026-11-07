@@ -95,6 +95,7 @@ class WorkshopState:
         _free = _bal.free_chassis_axes(self.role)
         d["axes"] = {a: max(int(d["axes"].get(a, 0)), int(_free.get(a, 0)))
                      for a in d["axes"]}
+        d["_user_built"] = True
         if save:
             import json
             from pathlib import Path as _P

@@ -221,7 +221,7 @@ class GameApp:
         try:
             pool = list(self.session.pool)
             for k in sorted(self.registry.plants):
-                if k.startswith("custom_") and k not in pool:
+                if self.registry.plants[k].get("_user_built") and k not in pool:
                     pool.append(k)
             pool.extend([k for k in self.registry.plants
                          if k in getattr(self.progress, "unlocked_plants", [])
