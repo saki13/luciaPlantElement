@@ -5,11 +5,27 @@
   "tier": 2,
   "sun": 25,
   "hp": 300,
-  "axes": {"fire": 2, "area": 1, "pierce": 0, "durability": 1, "control": 0},
-  "tags": ["one_shot"],
+  "axes": {
+    "fire": 2,
+    "area": 1,
+    "pierce": 0,
+    "durability": 1,
+    "control": 0
+  },
+  "tags": [
+    "one_shot"
+  ],
   "recharge": 30.0,
   "_classic": true,
-  "_implemented": false,
-  "_blocked_reason": "需要「埋雷 + 敌人踩到才触发」的一次性触发机制，引擎尚未实现",
-  "_note": "经典原版植物：50 阳光不够就用地雷。数值锚定原版，不参与档位点体系。"
+  "_note": "经典原版植物：25 阳光 / 30s CD。三机制组合——延迟成长(arm 4s)、接近触发(半径 0.6 格)、一次性爆炸(1800)。",
+  "combat": {
+    "on_place": {
+      "arm": 4.0,
+      "trigger_radius": 0.6,
+      "explosion": {
+        "radius": 0.5,
+        "damage": 1800
+      }
+    }
+  }
 }

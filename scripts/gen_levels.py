@@ -170,8 +170,7 @@ def main() -> None:
         "m1_14": {"plant": "spikeweed", "plant_reason": "原版经典：地刺，部署型伤害"},
         "m1_15": {"plant": "sun_shroom", "plant_reason": "原版经典：阳光菇，廉价经济"},
         "m1_16": {"plant": "cabbage_pult", "plant_reason": "原版经典：卷心菜投手，抛射"},
-        "m1_17": {"plant_blocked": "potato_mine",
-                  "plant_blocked_reason": "需要「埋雷 + 踩到触发」机制，尚未实现"},
+        "m1_17": {"plant": "potato_mine", "plant_reason": "原版经典：土豆雷，埋雷埋伏"},
         "m1_18": {"plant": "cherry_bomb", "plant_reason": "原版经典：樱桃炸弹，救场神卡"},
         # M2 挑战关：只发代币（plant_pending 标记），首通 400 = 够造一株 T6
         "m2_armor": {"design_tokens": 400},
@@ -208,6 +207,7 @@ def main() -> None:
         # 挑战关（M2）：不发放植物，只给设计代币 -> 用 plant_pending 标记
         if lv["key"].startswith("m2_"):
             lv.setdefault("reward", {})["plant_pending"] = True
+            lv["rescue"] = True    # 挑战关：首车救援（清场 + 每行冰西瓜）
 
     for lv in levels:
         (OUT / f"{lv['key']}.json").write_text(

@@ -152,13 +152,19 @@ class LevelRunTests(unittest.TestCase):
         _, m = level_run.run_level(self.levels["m1_01"], self.reg, seed=1000)
         self.assertTrue(m["won"])
 
-    def test_m2_shield_smart_wins_dumb_cannot(self):
+    def test_m2_shield_rescue_is_the_safety_net(self):
+        """挑战关的设计是「必能过关，靠首车救援兜底」：
+        带克制配置的聪明打法应当不依赖救援；无破盾的笨打法会被救援救下来。
+        """
         lv = self.levels["m2_shield"]
         _, smart = level_run.run_level(lv, self.reg, seed=1000, smart=True)
         _, dumb = level_run.run_level(lv, self.reg, card_pool=POOL_BASIC,
                                       seed=1000, smart=False)
-        self.assertTrue(smart["won"])
-        self.assertFalse(dumb["won"])
+        self.assertTrue(smart["won"], "带克制配置应当过关")
+        self.assertEqual(smart.get("rescues", 0), 0,
+                         "聪明打法不该依赖救援，否则救援掩盖了克制关系")
+        self.assertTrue(dumb["won"], "无克制配置靠救援也必须能过关（教学保底）")
+        self.assertGreaterEqual(dumb.get("rescues", 0), 1, "救援应真的被触发")
 
 
 if __name__ == "__main__":

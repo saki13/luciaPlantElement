@@ -18,7 +18,8 @@ class Simulation:
                  spawn_schedule: Sequence[Tuple[float, str, Optional[int]]], card_pool: Sequence[str],
                  seed: int = 0, start_resource: int = C.START_RESOURCE,
                  max_seconds: float = 600.0, sky_sun: bool = True,
-                 objective: str = "survive"):
+                 objective: str = "survive", rescue: bool = False):
+        self.rescue_enabled = bool(rescue)
         self.plant_defs = plant_defs
         self.enemy_defs = enemy_defs
         self.schedule = sorted(spawn_schedule, key=lambda z: z[0])
@@ -50,6 +51,8 @@ class Simulation:
         self.mowers_used = 0
         # 首车救援次数（挑战关的教学兜底）
         self.rescues = 0
+        # 首车救援只在挑战关开启（关卡数据里 rescue=true），避免污染全局平衡
+        self.rescue_enabled = getattr(self, "rescue_enabled", False)
         self.breaches = 0
         self.sun_earned = 0
         self.plants_placed = 0
@@ -202,6 +205,18 @@ class Simulation:
     def _update_plants(self, dt: float) -> None:
         for p in self.plants:
             if not p.alive:
+                continue
+            # 地雷：先埋雷（arm），埋好后等敌人接近（trigger_radius）再炸
+            if p.arm_timer is not None:
+                p.arm_timer -= dt
+                if p.arm_timer <= 0:
+                    p.arm_timer = None
+                    p.armed = True
+                continue
+            if p.trigger_radius is not None:
+                if p.armed and self._enemy_within(p, p.trigger_radius):
+                    self._detonate(p)
+                    p.alive = False
                 continue
             # 一次性引信（爆栗果）
             if p.fuse_timer is not None:
@@ -475,6 +490,16 @@ class Simulation:
         target = max(cands, key=lambda p: p.col)
         return target if e.x <= target.col + 1.0 + 1e-9 else None
 
+    def _enemy_within(self, p: Plant, radius: float) -> bool:
+        """该格附近是否有活着的敌人（地雷触发判据）。"""
+        cx = p.col + 0.5
+        for e in self.enemies:
+            if e.dead or e.row != p.row:
+                continue
+            if abs(e.x - cx) <= radius:
+                return True
+        return False
+
     RESCUE_PLANT = "winter_melon"
 
     def _rescue(self) -> None:
@@ -485,6 +510,7 @@ class Simulation:
         """
         self.rescues += 1
         self.enemies.clear()
+        self.event_log.append(f"t={self.now:.1f} rescue")
         d = self.plant_defs.get(self.RESCUE_PLANT)
         if d is None:
             return
@@ -501,7 +527,7 @@ class Simulation:
             self.mowers[e.row] = False
             self.mowers_used += 1
             # 首车救援：第一次掉车不判负，清场 + 每行补种冰西瓜
-            if self.mowers_used == 1:
+            if self.mowers_used == 1 and self.rescue_enabled:
                 self._rescue()
             # 割草机清场，但碾不动 mower_immune 的 Boss 级单位
             for other in [x for x in self.enemies
@@ -559,7 +585,7 @@ class Simulation:
     def metrics(self) -> Dict[str, Any]:
         return {
             "won": self.won, "duration": round(self.now, 2), "sun_left": self.sun,
-            "sun_earned": self.sun_earned, "mowers_used": self.mowers_used,
+            "sun_earned": self.sun_earned, "mowers_used": self.mowers_used, "rescues": self.rescues,
             "breaches": self.breaches, "lives_left": max(0, self.lives),
             "kills": dict(self.kills), "plants_placed": self.plants_placed,
             "plants_alive": len(self.plants), "seed": self.rng_seed,

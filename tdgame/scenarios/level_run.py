@@ -65,7 +65,8 @@ def run_level(level: Dict[str, Any], reg, card_pool: Optional[Sequence[str]] = N
     sched = build_schedule_from_level(level, reg.enemies, seed)
     sim = Simulation(reg.plants, reg.enemies, sched, pool, seed=seed,
                      start_resource=int(level.get("start_resource", 100)),
-                     max_seconds=float(level.get("max_seconds", 300)))
+                     max_seconds=float(level.get("max_seconds", 300)),
+                     rescue=bool(level.get("rescue", False)))
     actor = bot or RuleBot(pool, smart=smart)
     metrics = sim.run_to_end(actor)
     return sim, metrics

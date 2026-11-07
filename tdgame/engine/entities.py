@@ -18,6 +18,12 @@ class Plant:
         self.shell_hp = float(shell_def.get("hp", 0) or 0)
         self.shell_hp_max = self.shell_hp
         self.shell_key = str(shell_def.get("key", "")) if self.shell_hp else ""
+        # 地雷机制：埋雷计时 -> 待命 -> 敌人接近触发
+        _op = (definition.get("combat") or {}).get("on_place") or {}
+        self.arm_timer = (float(_op["arm"]) if "arm" in _op else None)
+        self.armed = self.arm_timer is None and "trigger_radius" in _op
+        self.trigger_radius = (float(_op["trigger_radius"])
+                               if "trigger_radius" in _op else None)
         self.placed_at = now
         self.attack_timer = 0.0          # 距下次攻击的倒计时
         self.shot_count = 0              # 已发射次数（every_n 技能用）
