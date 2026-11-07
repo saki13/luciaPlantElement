@@ -170,7 +170,7 @@ class PlayerProgress:
         slots = CARD_SLOT_BASE
         challenges = [k for k in self.cleared if k.startswith("m2_")]
         slots += len(challenges) * CARD_SLOT_PER_CHALLENGE
-        phase = self.phase(levels) if levels is not None else "P1"
+        phase = self.reached_phase() if levels is not None else "P1"
         order = {"P1": 0, "P2": 1, "P3": 2, "P4": 3}
         slots += order.get(phase, 0) * CARD_SLOT_PER_PHASE
         return min(CARD_SLOT_MAX, slots)
