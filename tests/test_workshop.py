@@ -63,6 +63,24 @@ class WorkshopTests(unittest.TestCase):
         d = json.loads((root / "tdgame" / "data" / "plants" /
                         "custom_shieldbreaker.json").read_text(encoding="utf-8"))
         self.assertFalse(d.get("_user_built", False))
+
+    def test_appearance_prompt_follows_tags(self):
+        """外观描述必须随能力变化，否则玩家看不出"这么配会长什么样"。"""
+        s = WorkshopState(name="外观测试")
+        before = s.appearance_prompt()
+        s.toggle_tag("shield_break")
+        after = s.appearance_prompt()
+        self.assertNotEqual(before, after)
+        self.assertIn("破盾", after)
+
+    def test_sprite_path_matches_plant_key(self):
+        s = WorkshopState(name="甲")
+        self.assertTrue(str(s.sprite_path()).endswith("custom_甲.png"))
+        self.assertEqual(s.plant_key(), "custom_甲")
+
+    def test_full_prompt_has_eyes_constraint(self):
+        s = WorkshopState(name="眼神")
+        self.assertIn("眼睛", s.full_prompt())
     def test_render_contains_key_numbers(self):
         s = WorkshopState()
         s.bump("fire", +2)
