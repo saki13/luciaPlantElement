@@ -2,30 +2,30 @@
   "format": "pvz-levels-baseline/1",
   "seeds_per_level": 5,
   "seed_base": 1000,
-  "generated_at": "2026-11-09 23:05:11",
+  "generated_at": "2026-11-09 23:19:24",
   "note": "智能 Bot 全卡池，固定 seed 子集；结果确定，改动后需显式 --update",
   "levels": {
     "m1_01": {
       "phase": "M1",
       "spawn_mode": "budget",
-      "win_rate": 1.0,
+      "win_rate": 0.8,
       "clean_win_rate": 0.8,
-      "avg_mowers_used": 0.2,
-      "avg_breaches": 0.0,
-      "avg_lives_left": 5.0,
-      "avg_sun_left": 35.0,
-      "avg_duration": 30.08
+      "avg_mowers_used": 0.6,
+      "avg_breaches": 1.0,
+      "avg_lives_left": 4.0,
+      "avg_sun_left": 90.0,
+      "avg_duration": 121.28
     },
     "m1_02": {
       "phase": "M1",
       "spawn_mode": "budget",
-      "win_rate": 1.0,
+      "win_rate": 0.8,
       "clean_win_rate": 0.8,
-      "avg_mowers_used": 0.2,
-      "avg_breaches": 0.0,
-      "avg_lives_left": 5.0,
-      "avg_sun_left": 35.0,
-      "avg_duration": 37.02
+      "avg_mowers_used": 0.6,
+      "avg_breaches": 1.0,
+      "avg_lives_left": 4.0,
+      "avg_sun_left": 140.0,
+      "avg_duration": 130.92
     },
     "m1_03": {
       "phase": "M1",
@@ -35,8 +35,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 65.0,
-      "avg_duration": 51.5
+      "avg_sun_left": 80.0,
+      "avg_duration": 129.64
     },
     "m1_04": {
       "phase": "M1",
@@ -46,8 +46,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 55.0,
-      "avg_duration": 62.08
+      "avg_sun_left": 80.0,
+      "avg_duration": 129.64
     },
     "m1_05": {
       "phase": "M1",
@@ -57,8 +57,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 25.0,
-      "avg_duration": 73.7
+      "avg_sun_left": 55.0,
+      "avg_duration": 129.64
     },
     "m1_06": {
       "phase": "M1",
@@ -68,8 +68,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 40.0,
-      "avg_duration": 81.06
+      "avg_sun_left": 55.0,
+      "avg_duration": 129.64
     },
     "m1_07": {
       "phase": "M1",
@@ -79,8 +79,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 40.0,
-      "avg_duration": 102.78
+      "avg_sun_left": 30.0,
+      "avg_duration": 121.54
     },
     "m1_08": {
       "phase": "M1",
@@ -90,8 +90,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 25.0,
-      "avg_duration": 110.24
+      "avg_sun_left": 30.0,
+      "avg_duration": 121.54
     },
     "m1_09": {
       "phase": "M1",
@@ -211,8 +211,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 25.0,
-      "avg_duration": 92.9
+      "avg_sun_left": 100.0,
+      "avg_duration": 120.5
     },
     "m2_shield": {
       "phase": "M2",
@@ -222,8 +222,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 50.0,
-      "avg_duration": 99.2
+      "avg_sun_left": 125.0,
+      "avg_duration": 128.3
     },
     "m2_speed": {
       "phase": "M2",
@@ -233,8 +233,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 25.0,
-      "avg_duration": 83.2
+      "avg_sun_left": 75.0,
+      "avg_duration": 132.2
     },
     "m2_swarm": {
       "phase": "M2",
@@ -255,8 +255,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 40.0,
-      "avg_duration": 117.68
+      "avg_sun_left": 45.0,
+      "avg_duration": 136.22
     },
     "m3_02": {
       "phase": "M3",
@@ -266,8 +266,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 25.0,
-      "avg_duration": 126.92
+      "avg_sun_left": 45.0,
+      "avg_duration": 136.22
     },
     "m3_03": {
       "phase": "M3",
@@ -277,30 +277,30 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 60.0,
-      "avg_duration": 137.32
+      "avg_sun_left": 40.0,
+      "avg_duration": 151.36
     },
     "m3_04": {
       "phase": "M3",
       "spawn_mode": "budget",
       "win_rate": 1.0,
-      "clean_win_rate": 0.6,
-      "avg_mowers_used": 0.6,
+      "clean_win_rate": 0.8,
+      "avg_mowers_used": 0.4,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 45.0,
-      "avg_duration": 178.02
+      "avg_sun_left": 55.0,
+      "avg_duration": 193.22
     },
     "m3_05": {
       "phase": "M3",
       "spawn_mode": "budget",
-      "win_rate": 1.0,
+      "win_rate": 0.8,
       "clean_win_rate": 0.4,
-      "avg_mowers_used": 1.0,
-      "avg_breaches": 0.8,
-      "avg_lives_left": 4.2,
-      "avg_sun_left": 65.0,
-      "avg_duration": 193.04
+      "avg_mowers_used": 0.8,
+      "avg_breaches": 1.0,
+      "avg_lives_left": 4.0,
+      "avg_sun_left": 95.0,
+      "avg_duration": 207.82
     },
     "m3_06": {
       "phase": "M3",
@@ -316,13 +316,13 @@
     "m3_07": {
       "phase": "M3",
       "spawn_mode": "budget",
-      "win_rate": 0.8,
-      "clean_win_rate": 0.6,
+      "win_rate": 1.0,
+      "clean_win_rate": 0.8,
       "avg_mowers_used": 0.6,
-      "avg_breaches": 1.0,
-      "avg_lives_left": 4.0,
-      "avg_sun_left": 90.0,
-      "avg_duration": 225.34
+      "avg_breaches": 0.8,
+      "avg_lives_left": 4.2,
+      "avg_sun_left": 540.0,
+      "avg_duration": 259.16
     },
     "m3_08": {
       "phase": "M3",
@@ -338,79 +338,79 @@
     "m3_09": {
       "phase": "M3",
       "spawn_mode": "budget",
-      "win_rate": 0.2,
-      "clean_win_rate": 0.2,
+      "win_rate": 0.6,
+      "clean_win_rate": 0.6,
       "avg_mowers_used": 1.2,
-      "avg_breaches": 4.0,
-      "avg_lives_left": 1.0,
-      "avg_sun_left": 45.0,
-      "avg_duration": 170.2
+      "avg_breaches": 2.0,
+      "avg_lives_left": 3.0,
+      "avg_sun_left": 130.0,
+      "avg_duration": 170.12
     },
     "m3_10": {
       "phase": "M3",
       "spawn_mode": "budget",
-      "win_rate": 0.2,
-      "clean_win_rate": 0.2,
+      "win_rate": 0.6,
+      "clean_win_rate": 0.6,
       "avg_mowers_used": 1.2,
-      "avg_breaches": 4.0,
-      "avg_lives_left": 1.0,
-      "avg_sun_left": 80.0,
-      "avg_duration": 174.22
+      "avg_breaches": 2.0,
+      "avg_lives_left": 3.0,
+      "avg_sun_left": 210.0,
+      "avg_duration": 192.28
     },
     "m3_11": {
       "phase": "M3",
       "spawn_mode": "budget",
-      "win_rate": 0.0,
-      "clean_win_rate": 0.0,
-      "avg_mowers_used": 2.2,
-      "avg_breaches": 5.4,
-      "avg_lives_left": 0.0,
-      "avg_sun_left": 35.0,
-      "avg_duration": 114.04
+      "win_rate": 0.4,
+      "clean_win_rate": 0.4,
+      "avg_mowers_used": 2.4,
+      "avg_breaches": 3.0,
+      "avg_lives_left": 2.0,
+      "avg_sun_left": 795.0,
+      "avg_duration": 207.24
     },
     "m3_12": {
       "phase": "M3",
       "spawn_mode": "budget",
-      "win_rate": 0.0,
-      "clean_win_rate": 0.0,
-      "avg_mowers_used": 2.2,
-      "avg_breaches": 5.4,
-      "avg_lives_left": 0.0,
-      "avg_sun_left": 35.0,
-      "avg_duration": 114.04
+      "win_rate": 0.4,
+      "clean_win_rate": 0.4,
+      "avg_mowers_used": 2.4,
+      "avg_breaches": 3.0,
+      "avg_lives_left": 2.0,
+      "avg_sun_left": 880.0,
+      "avg_duration": 211.9
     },
     "m3_13": {
       "phase": "M3",
       "spawn_mode": "budget",
-      "win_rate": 0.0,
-      "clean_win_rate": 0.0,
-      "avg_mowers_used": 2.4,
-      "avg_breaches": 5.0,
-      "avg_lives_left": 0.0,
-      "avg_sun_left": 45.0,
-      "avg_duration": 123.42
+      "win_rate": 1.0,
+      "clean_win_rate": 1.0,
+      "avg_mowers_used": 0.0,
+      "avg_breaches": 0.0,
+      "avg_lives_left": 5.0,
+      "avg_sun_left": 2535.0,
+      "avg_duration": 352.38
     },
     "m3_14": {
       "phase": "M3",
       "spawn_mode": "budget",
-      "win_rate": 0.0,
-      "clean_win_rate": 0.0,
-      "avg_mowers_used": 2.4,
-      "avg_breaches": 5.0,
-      "avg_lives_left": 0.0,
-      "avg_sun_left": 45.0,
-      "avg_duration": 123.42
+      "win_rate": 1.0,
+      "clean_win_rate": 1.0,
+      "avg_mowers_used": 0.0,
+      "avg_breaches": 0.0,
+      "avg_lives_left": 5.0,
+      "avg_sun_left": 2750.0,
+      "avg_duration": 364.5
     },
     "m3_15": {
       "phase": "M3",
       "spawn_mode": "budget",
-      "win_rate": 0.0,
-      "clean_win_rate": 0.0,
-      "avg_mowers_used": 1.6,
-      "avg_breaches": 3.0,
-      "avg_lives_left": 2.0,
-      "avg_sun_left": 1095.0,
-      "avg_duration": 256.18
+      "win_rate": 0.8,
+      "clean_win_rate": 0.8,
+      "avg_mowers_used": 0.8,
+      "avg_breaches": 1.0,
+      "avg_lives_left": 4.0,
+      "avg_sun_left": 570.0,
+      "avg_duration": 253.54
     },
     "m3_boss": {
       "phase": "M3",
@@ -420,8 +420,8 @@
       "avg_mowers_used": 0.0,
       "avg_breaches": 0.0,
       "avg_lives_left": 5.0,
-      "avg_sun_left": 25.0,
-      "avg_duration": 98.2
+      "avg_sun_left": 50.0,
+      "avg_duration": 120.3
     }
   }
 }

@@ -23,7 +23,7 @@
   ],
   "spawn": {
     "mode": "budget",
-    "waves": 20,
+    "waves": 29,
     "allowed": [
       "normal",
       "fast",
@@ -38,7 +38,8 @@
     "first_spawn_at": 12,
     "cap_base": 6,
     "cap_grow": 1,
-    "cap_max": 13
+    "cap_max": 4,
+    "wave_gap": 13.0
   },
   "reward": {
     "design_tokens": 0,

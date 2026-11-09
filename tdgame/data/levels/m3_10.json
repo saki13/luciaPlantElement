@@ -37,7 +37,8 @@
     "first_spawn_at": 12,
     "cap_base": 4,
     "cap_grow": 1,
-    "cap_max": 11
+    "cap_max": 4,
+    "wave_gap": 13.0
   },
   "reward": {
     "design_tokens": 0,

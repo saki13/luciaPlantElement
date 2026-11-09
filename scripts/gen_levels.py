@@ -200,6 +200,25 @@ def main() -> None:
         "m3_boss": {"design_tokens": 460, "unlock_tier": 8,
                     "reward_reason": "M3 终关：给代币 + 创造 T8 的权限，植物由玩家自造"},
     }
+    # 应用自动调参结果（tools/tune_levels.py 产出），保证重新生成不丢
+    _tune_path = Path(__file__).resolve().parents[1] / "tdgame" / "data" / "level_tuning.json"
+    if _tune_path.exists():
+        _tune = json.loads(_tune_path.read_text(encoding="utf-8"))
+        for lv in levels:
+            t = _tune.get(lv["key"])
+            if not t:
+                continue
+            sp = lv.get("spawn") or {}
+            if "waves" in t:
+                sp["waves"] = int(t["waves"])
+                sp["cap_max"] = int(t.get("cap_max", sp.get("cap_max", 6)))
+                sp["wave_gap"] = float(t.get("wave_gap", sp.get("wave_gap", 13.0)))
+                lv["spawn"] = sp
+            elif "stretch" in t and sp.get("entries"):
+                k = float(t["stretch"])
+                sp["entries"] = [[round(float(a) * k, 2), b] for a, b in sp["entries"]]
+                lv["spawn"] = sp
+
     for lv in levels:
         extra = REWARDS.get(lv["key"])
         if extra:
