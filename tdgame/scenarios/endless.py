@@ -34,6 +34,9 @@ def allowed_for_round(round_idx: int) -> List[str]:
 
 def round_budget_growth(round_idx: int) -> int:
     """无尽单轮威胁预算：比主线 8+4w 更陡，体现后期压力。"""
+    # 20 轮之后进入深水区：预算增长显著加速（每轮再多 +4），不追求平衡，只保证曲线单调上升
+    if round_idx >= 20:
+        return 8 + 6 * round_idx + 4 * (round_idx - 20)
     return 8 + 6 * round_idx
 
 
@@ -102,6 +105,9 @@ def build_round_schedule(enemy_defs: Dict[str, Dict[str, Any]], round_idx: int, 
     profile = profile_cards(card_keys, plant_defs)
     extra = [k for k in pick_counter_enemies(profile) if k in allowed]
     cap = min(12, 4 + round_idx // 2)
+    if round_idx >= 20:
+        # 单波上限也抬高，制造真正的高压
+        cap = min(20, cap + (round_idx - 20) // 2)
     return build_schedule(enemy_defs, waves=1 + round_idx // 4, seed=seed,
                           extra_pool=extra, allowed=allowed,
                           wave_cap_fn=lambda w, _cap=cap: _cap)
