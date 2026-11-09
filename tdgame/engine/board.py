@@ -206,6 +206,13 @@ class Simulation:
         for p in self.plants:
             if not p.alive:
                 continue
+            # 治疗：周期性给方形邻域内的植物回血（不给自己以外超出范围的）
+            if p.heal_timer is not None and p.heal_amount > 0:
+                p.heal_timer -= dt
+                if p.heal_timer <= 0:
+                    p.heal_timer += float(
+                        (p.defn.get("heal") or {}).get("interval", 1.0))
+                    self._heal_nearby(p)
             # 地雷：先埋雷（arm），埋好后等敌人接近（trigger_radius）再炸
             if p.arm_timer is not None:
                 p.arm_timer -= dt
@@ -496,6 +503,23 @@ class Simulation:
             return None
         target = max(cands, key=lambda p: p.col)
         return target if e.x <= target.col + 1.0 + 1e-9 else None
+
+    def _heal_nearby(self, healer: Plant) -> None:
+        """给以治疗者为圆心的方形区域内的植物回血（含自身）。"""
+        r = int(round(healer.heal_radius))
+        healed = 0
+        for q in self.plants:
+            if not q.alive:
+                continue
+            if abs(q.row - healer.row) > r or abs(q.col - healer.col) > r:
+                continue
+            if q.hp >= q.hp_max:
+                continue
+            q.hp = min(q.hp_max, q.hp + healer.heal_amount)
+            healed += 1
+        if healed:
+            self.event_log.append(
+                f"t={self.now:.1f} heal r{healer.row}c{healer.col} x{healed}")
 
     def _drain_plants(self, pct_per_sec: float, dt: float) -> None:
         """亵渎光环：每秒扣除植物最大生命的 pct%，但不致命（保底 1 HP）。"""

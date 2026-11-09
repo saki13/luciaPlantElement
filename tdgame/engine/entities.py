@@ -21,6 +21,11 @@ class Plant:
         # 地雷机制：埋雷计时 -> 待命 -> 敌人接近触发
         _op = (definition.get("combat") or {}).get("on_place") or {}
         self.arm_timer = (float(_op["arm"]) if "arm" in _op else None)
+        # 治疗：周期性给周围植物回血
+        _heal = definition.get("heal") or {}
+        self.heal_radius = float(_heal.get("radius", 0) or 0)
+        self.heal_amount = float(_heal.get("amount", 0) or 0)
+        self.heal_timer = float(_heal.get("interval", 1.0)) if _heal else None
         self.armed = self.arm_timer is None and "trigger_radius" in _op
         self.trigger_radius = (float(_op["trigger_radius"])
                                if "trigger_radius" in _op else None)
