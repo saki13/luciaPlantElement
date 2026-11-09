@@ -110,6 +110,49 @@ def _combat_spec(role: str, clean: Mapping[str, int], tags: Sequence[str]) -> Di
     }
 
 
+# 能力标签 -> 外观特征（让生成的立绘能体现这株植物的能力）
+_TAG_LOOK = {
+    "shield_break": "前端有一圈明亮的金色破盾光纹，炮口/尖端泛金光",
+    "armor_pierce": "装着冷银色的金属钻头或尖刺，带金属高光",
+    "control": "周身飘着冰蓝色寒气与小冰晶，炮口结霜",
+    "aoe": "炮口或果实鼓胀圆大，能看出要炸开一片",
+    "pierce": "叶片收成细长的矛形，锋利挺拔",
+    "fragments": "果壳表面有裂纹，透出将碎裂的碎屑",
+    "fullscreen": "顶端有一道朝上散开的光束",
+    "hard_cc": "带一圈发光的束缚光环",
+    "one_shot": "头顶有一根点燃的引信，身体圆鼓鼓",
+    "summon": "根部有小小的子株或孢子",
+}
+
+_ROLE_LOOK = {
+    "ranged": "主体是一颗圆润的炮塔状茎球，正前方是一个短炮口",
+    "melee": "主体是紧凑有力的近战植株，长着坚硬的口器或刃叶",
+    "wall": "主体是厚重敦实的果壳护盾墙，表面有木纹或铆钉",
+    "economy": "主体是一朵会发光的朝阳花冠，中央托着一颗小太阳",
+    "support": "主体是一丛环形的藤蔓，中央有一颗发光核心",
+    "instant": "主体是一颗圆鼓鼓的爆炸果实，头顶有引信",
+}
+
+
+def describe_appearance(cn: str, role: str, axes: Mapping[str, int],
+                        tags: Sequence[str]) -> str:
+    """根据角色 + 能力标签拼出具体可画的外观描述。"""
+    parts = [f"一株原创塔防植物「{cn}」", _ROLE_LOOK.get(role, _ROLE_LOOK["ranged"])]
+    looks = [_TAG_LOOK[t] for t in tags if t in _TAG_LOOK]
+    if looks:
+        parts.append("；".join(looks))
+    fire = int(axes.get("fire", 0))
+    if fire >= 4:
+        parts.append("炮身粗壮有力，蓄着明显的高热能量")
+    elif fire <= 1:
+        parts.append("体量小巧，看起来不太具攻击性")
+    dur = int(axes.get("durability", 0))
+    if dur >= 3:
+        parts.append("底部厚重结实，像钉在地上的桩")
+    parts.append("长着一双又大又亮的卡通眼睛和一张小嘴，表情生动")
+    return "，".join(parts)
+
+
 def build_plant_definition(key: str, cn: str, role: str, axes: Mapping[str, int],
                            tags: Sequence[str], phase: str,
                            token_budget: int, art_prompt: str = "") -> Dict[str, Any]:
@@ -138,6 +181,8 @@ def build_plant_definition(key: str, cn: str, role: str, axes: Mapping[str, int]
             "total": q["total"],
             "budget": int(token_budget),
         },
-        "art_prompt": art_prompt or f"Q版粗描边卡通手游原创植物，{cn}，白底纯白背景，明快绿色平涂",
+        "art_prompt": art_prompt or (
+            describe_appearance(cn, role, clean, tag_list)
+            + "，Q版粗描边卡通手游植物立绘，纯白色干净背景，明快平涂"),
         "combat": _combat_spec(role, clean, tag_list),
     }

@@ -6,6 +6,7 @@
     python tools/art_manager.py rebuild snow_pea
     python tools/art_manager.py import  snow_pea  D:\我的图\snow_pea.png
     python tools/art_manager.py import  snow_pea  D:\我的帧目录\          (目录=多帧)
+    python tools/art_manager.py gen     custom_xxx      (用自带 art_prompt 出图)
     python tools/art_manager.py verify
 
 设计原则：
@@ -103,6 +104,59 @@ def cmd_import(key: str, source: str) -> int:
     return cmd_verify()
 
 
+STYLE_TAIL = ("，2D游戏精灵立绘，Q版圆润卡通，粗深色描边，明快平涂，"
+              "**一定要有一双又大又亮的卡通眼睛**（黑色大眼珠+白色高光），表情生动，"
+              "正面平视，全身居中，站在画面底部中央，纯白色干净背景，无阴影，无文字，无边框")
+
+
+def _defn(key: str) -> dict:
+    for sub in ("plants", "enemies"):
+        f = DATA / sub / f"{key}.json"
+        if f.exists():
+            return json.loads(f.read_text(encoding="utf-8"))
+    raise SystemExit(f"未知单位 {key}")
+
+
+def cmd_gen(key: str) -> int:
+    """用该单位 JSON 里的 art_prompt（没有就用中文名）调千问出立绘，再拼表。"""
+    import os
+    d = _defn(key)
+    prompt = d.get("art_prompt") or (d.get("cn", key) + "，一株原创塔防植物")
+    prompt = prompt + STYLE_TAIL
+
+    token = os.environ.get("MODELSCOPE_TOKEN") or os.environ.get("MS_TOKEN")
+    if not token:
+        f = ANIM / ".ms_token"
+        if f.exists():
+            token = f.read_text(encoding="utf-8").strip()
+    if not token:
+        print("没有 token：设置 MODELSCOPE_TOKEN 或写入 anim_demo/.ms_token")
+        return 1
+
+    stage = ROOT / "_work" / "art_gen"
+    stage.mkdir(parents=True, exist_ok=True)
+    raw = stage / f"{key}.png"
+    env = dict(os.environ, MODELSCOPE_TOKEN=token, PYTHONIOENCODING="utf-8")
+    if raw.exists():
+        print(f"复用已有立绘 {raw}")
+    else:
+        print(f"出图：{key} ...")
+        r = subprocess.run([sys.executable, str(ANIM / "gen_image_qwen.py"),
+                            "--out", str(raw), "--prompt", prompt],
+                           cwd=str(ANIM), env=env, capture_output=True, text=True,
+                           encoding="utf-8", errors="replace")
+        if r.returncode != 0 or not raw.exists():
+            print((r.stderr or r.stdout)[-400:])
+            return 1
+        print(f"立绘 OK：{raw.stat().st_size // 1024}KB")
+
+    out = sheet_path(key)
+    print(f"拼表 -> {out.relative_to(ROOT)}")
+    if _run([sys.executable, str(BUILD), str(raw), str(out)]) != 0:
+        return 1
+    return cmd_verify()
+
+
 def cmd_verify() -> int:
     print("校验 check_sprites ...")
     r = subprocess.run([sys.executable, str(CHECK)], cwd=str(ROOT),
@@ -120,6 +174,8 @@ def main(argv: list[str]) -> int:
     cmd = argv[0]
     if cmd == "list":
         return cmd_list()
+    if cmd == "gen" and len(argv) >= 2:
+        return cmd_gen(argv[1])
     if cmd == "verify":
         return cmd_verify()
     if cmd == "rebuild" and len(argv) >= 2:
