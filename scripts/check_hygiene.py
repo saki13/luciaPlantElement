@@ -116,6 +116,27 @@ def check_trace_only_sync() -> None:
     check(not extra, f"ONLY 里没有 baseline 不存在的场景（多余：{extra}）")
 
 
+
+# ---------------------------------------------------------------- 检查: 测试专用植物不得进卡池
+def check_test_only_not_in_pools(root: Path) -> List[str]:
+    """`_test_only` 的植物只供 headless 校准/单测使用，绝不能出现在关卡卡池里。"""
+    import json as _json
+    data = root / "tdgame" / "data"
+    test_keys = set()
+    for f in (data / "plants").glob("*.json"):
+        d = _json.loads(f.read_text(encoding="utf-8"))
+        if d.get("_test_only"):
+            test_keys.add(d.get("key") or f.stem)
+    bad = []
+    if not test_keys:
+        return bad
+    for f in (data / "levels").glob("*.json"):
+        d = _json.loads(f.read_text(encoding="utf-8"))
+        for key in (d.get("card_pool") or []):
+            if key in test_keys:
+                bad.append(f"{d.get('key')} 的卡池含测试专用植物 {key}")
+    return bad
+
 def main() -> int:
     check_bom()
     check_gdscript_or()

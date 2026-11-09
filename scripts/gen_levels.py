@@ -128,9 +128,9 @@ def main() -> None:
         (17, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 4, 11, 250, True),
         (18, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 5, 12, 275, True),
         (19, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 5, 12, 275, True),
-        (20, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 6, 13, 300, True),
-        (21, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 6, 13, 300, True),
-        (22, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber"], 6, 14, 325, True),
+        (20, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber", "desecrator"], 6, 13, 300, True),
+        (21, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber", "desecrator"], 6, 13, 300, True),
+        (22, ["normal", "fast", "banner", "cone", "shield_cadet", "bucket", "giant", "lobber", "desecrator"], 6, 14, 325, True),
     ]
     for i, (waves, allowed, cap_base, cap_max, start, full) in enumerate(m3_plan, start=1):
         levels.append(budget_level(
