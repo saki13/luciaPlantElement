@@ -37,12 +37,13 @@
   .cell img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
   .cell .lbl{position:absolute;left:4px;top:3px;font-size:9.5px;color:var(--dim);
     background:rgba(0,0,0,.5);padding:0 4px;border-radius:3px;pointer-events:none}
-  .cell .ops{position:absolute;right:3px;top:2px;display:none;gap:3px}
-  .cell:hover .ops{display:flex}
-  .cell .ops span{font-size:10.5px;background:rgba(0,0,0,.62);border-radius:3px;
-    padding:0 4px;cursor:pointer}
-  .cell .ops .re:hover{color:var(--accent)}
-  .cell .ops .rm:hover{color:var(--bad)}
+  .cell .ops{position:absolute;left:0;right:0;bottom:0;display:flex;
+    justify-content:flex-end;gap:4px;padding:3px;background:linear-gradient(
+      to top, rgba(0,0,0,.55), rgba(0,0,0,0))}
+  .cell .ops button{font-size:11px;line-height:1;background:#2b3240;color:#e8ecf2;
+    border:1px solid #46506a;border-radius:4px;padding:3px 6px;cursor:pointer;
+    font-family:inherit}
+  .cell .ops button:hover{background:var(--accent);color:#1a1a1a;border-color:var(--accent)}
   .cell.off{opacity:.3}
   .cell.busy::after{content:"…";position:absolute;inset:0;display:flex;
     align-items:center;justify-content:center;font-size:20px;color:var(--accent);
@@ -69,7 +70,7 @@
 <body>
 <header>
   <h1>植物立绘工坊</h1>
-  <span class="tag">单文件 · 内置现有 54 个角色 · 数据只在本机</span>
+  <span class="tag" id="unitCountTag">单文件 · 数据只在本机</span>
 </header>
 
 <div id="banner"><span class="close" onclick="this.parentNode.style.display='none'">✕</span><span id="bannerText"></span></div>
@@ -107,10 +108,10 @@
 
     <h2 style="margin-top:16px">② 风格约束（自动拼接）</h2>
     <textarea id="style" style="min-height:72px">Q版圆润卡通，粗深色描边，明快平涂加少量渐变，一定要有一双又大又亮的卡通眼睛（黑色眼珠+白色高光），表情生动，正面平视，全身完整居中、站在画面底部中央，纯白色干净背景(#FFFFFF)，无地面投影，无文字水印，画面中只有这一个角色。</textarea>
-    <h2 style="margin-top:16px">③ 本机存档</h2>
+    <h2 style="margin-top:16px">③ 保存</h2>
     <div class="hint">
-      改动会<b>自动存到这台电脑的浏览器里</b>，关掉页面再打开还在。
-      换电脑/换浏览器时用下面的「导出全部」和「导入存档」搬过去。
+      最稳的是<b>点下面的「导出工作副本」</b>：下载一个新 HTML，
+      里面含你改过的全部图。下次双击那个文件即可继续，不依赖浏览器存储。
     </div>
     <div id="saveState">尚未保存</div>
     <div class="row">
@@ -142,10 +143,11 @@
 
   <!-- ============ 中：帧网格 + 预览 ============ -->
   <section class="card">
-    <h2>③ 10 个动作帧 <span class="badge" id="frameBadge">0/10</span></h2>
+    <h2>⑤ 动作帧 <span class="badge" id="frameBadge">0/11</span></h2>
     <div class="hint">
-      点击格子换图 · 拖图进来 · 鼠标悬停出现 <b>↻</b>(用当前帧图生图重抽) 和 <b>×</b>(清空)。
-      留空的必需帧会自动用 idle_0 补齐。
+      每格底部有 <b>↻ 重抽</b>（以该帧为参考图生图）和 <b>×</b>（清空）；点格子空白处才是选图。
+      共 11 个可用格：idle×2 / walk×4 / attack×3 / hurt×2（另 5 格留空）。
+      留空的必需帧会用 idle_0 自动补齐。
     </div>
     <div id="grid"></div>
     <div class="row">
@@ -154,7 +156,7 @@
       <button id="clearAll">清空全部</button>
     </div>
 
-    <h2 style="margin-top:16px">④ 合成预览</h2>
+    <h2 style="margin-top:16px">⑥ 合成预览</h2>
     <div id="previewWrap"><canvas id="preview" width="256" height="256"></canvas></div>
     <div class="checks" id="checks"></div>
 
@@ -167,7 +169,7 @@
 
   <!-- ============ 右：AI ============ -->
   <section class="card">
-    <h2>⑤ AI 生成（可选）</h2>
+    <h2>⑦ AI 生成（可选）</h2>
     <div class="hint">
       支持 <b>OpenAI 兼容</b>接口。<br>
       文生图 <code>/v1/images/generations</code> · 图生图 <code>/v1/images/edits</code><br>
@@ -190,7 +192,7 @@
     </div>
     <div class="hint" style="margin-top:8px">
       图生图会以<b>当前帧</b>为参考，保持同一个角色只改姿态——
-      这是让 10 帧看起来是同一株植物的关键。
+      这是让 11 帧看起来是同一株植物的关键。
     </div>
     <div class="hint">
       若报 CORS / 网络错误，说明该服务不允许浏览器直连：
@@ -214,12 +216,19 @@ const ROW_HINT = {
   hurt: "受击：身体后仰，眼睛眯起或闭成弧线，表情痛苦"
 };
 const SLOTS = [];
+/* 可用格数 = 2+4+3+2 = 11；网格仍是 4x4=16 格，多出的 5 格留空 */
+const SLOT_TOTAL = ROW_FRAMES.reduce((a, b) => a + b, 0);
 ROW_FRAMES.forEach((n, r) => {
   for (let c = 0; c < COLS; c++)
     SLOTS.push({ row: r, col: c, name: `${ROW_NAMES[r]}_${c}`, rowName: ROW_NAMES[r], enabled: c < n });
 });
 
 let images = new Array(SLOTS.length).fill(null);
+/* 本轮改动缓存：即使浏览器存储不可用（Safari/file://），
+   也能靠它在会话内切角色不丢、导出全部有内容。 */
+const sessionEdits = new Map();
+/* 只有真的改过才标记，避免仅浏览过的角色被当成已改导出 */
+let dirty = false;
 let currentUnit = null;   // {key, cn, role, desc, isNew}
 let busy = new Array(SLOTS.length).fill(false);
 
@@ -232,6 +241,15 @@ const keyNorm = s => (s || "").trim().toLowerCase()
   .replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "") || "custom_plant";
 
 /* ================= 本机存档（IndexedDB） ================= */
+/* 任何 Promise 加超时兜底：file:// 下 IndexedDB 可能既不 resolve 也不 reject，
+   不设超时会把整条载入链路卡死（这是"内置图不显示"的真正原因）。 */
+function withTimeout(p, ms, fallback) {
+  return Promise.race([
+    Promise.resolve(p).catch(() => fallback),
+    new Promise(res => setTimeout(() => res(fallback), ms))
+  ]);
+}
+
 const Store = (() => {
   /* 三档后端，能力从高到低：
      idb  IndexedDB     —— 容量大；Chrome/Edge 在 file:// 下可用
@@ -274,9 +292,11 @@ const Store = (() => {
 
   async function detect() {
     try {
-      await idbTx("readwrite", st => st.put({ key: "__probe__", t: Date.now() }));
-      await idbTx("readonly", st => st.get("__probe__"));
-      await idbTx("readwrite", st => st.delete("__probe__"));
+      await withTimeout((async () => {
+        await idbTx("readwrite", st => st.put({ key: "__probe__", t: Date.now() }));
+        await idbTx("readonly", st => st.get("__probe__"));
+        await idbTx("readwrite", st => st.delete("__probe__"));
+      })(), 1500, Promise.reject(new Error("idb timeout")));
       mode = "idb";
       return;
     } catch (e) { /* 降级 */ }
@@ -296,8 +316,8 @@ const Store = (() => {
     get ready() { return ready; },
     get mode() { return mode; },
     async get(key) {
-      await ready;
-      if (mode === "idb") return idbTx("readonly", st => st.get(key));
+      await withTimeout(ready, 2000, null);
+      if (mode === "idb") return withTimeout(idbTx("readonly", st => st.get(key)), 2000, undefined);
       if (mode === "ls") {
         const raw = localStorage.getItem(LS_PREFIX + key);
         return raw ? JSON.parse(raw) : undefined;
@@ -305,8 +325,8 @@ const Store = (() => {
       return mem.get(key);
     },
     async put(rec) {
-      await ready;
-      if (mode === "idb") return idbTx("readwrite", st => st.put(rec));
+      await withTimeout(ready, 2000, null);
+      if (mode === "idb") return withTimeout(idbTx("readwrite", st => st.put(rec)), 2500, true);
       if (mode === "ls") {
         try { localStorage.setItem(LS_PREFIX + rec.key, JSON.stringify(rec)); return true; }
         catch (e) { throw new Error("localStorage 已满或被禁用：" + e.message); }
@@ -314,14 +334,14 @@ const Store = (() => {
       mem.set(rec.key, rec); return true;
     },
     async del(key) {
-      await ready;
-      if (mode === "idb") return idbTx("readwrite", st => st.delete(key));
+      await withTimeout(ready, 2000, null);
+      if (mode === "idb") return withTimeout(idbTx("readwrite", st => st.delete(key)), 2000, true);
       if (mode === "ls") { localStorage.removeItem(LS_PREFIX + key); return true; }
       mem.delete(key); return true;
     },
     async all() {
-      await ready;
-      if (mode === "idb") return idbTx("readonly", st => st.getAll());
+      await withTimeout(ready, 2000, null);
+      if (mode === "idb") return withTimeout(idbTx("readonly", st => st.getAll()), 2500, []);
       if (mode === "ls") {
         const out = [];
         for (let k = 0; k < localStorage.length; k++) {
@@ -368,9 +388,10 @@ function showStorageBanner() {
   }
 }
 
-async function saveNow() {
+async function saveNow(force) {
   if (saving) return;
   if (!currentUnit) return;
+  if (!dirty && !force) { return; }   // 没改过就不写，保持"已改"列表干净
   saving = true;
   try {
     const rec = {
@@ -378,12 +399,14 @@ async function saveNow() {
       desc: currentUnit.desc || "", isNew: !!currentUnit.isNew,
       frames: snapshotFrames(), updated_at: new Date().toISOString()
     };
-    await Store.put(rec);
+    sessionEdits.set(rec.key, rec);
+    try { await Store.put(rec); } catch (e) { /* 存储不可用也要留在会话里 */ }
     const t = new Date();
     const hh = String(t.getHours()).padStart(2, "0");
     const mm = String(t.getMinutes()).padStart(2, "0");
     const where = Store.mode === "idb" ? "本机"
                 : Store.mode === "ls" ? "本机(localStorage)" : "内存(临时)";
+    dirty = false;
     setSaveState(`已保存到${where} ${hh}:${mm}`
       + (Store.mode === "mem" ? " · 关页面即失效，请及时导出" : ""));
   } catch (e) {
@@ -414,6 +437,8 @@ function fillUnitSelect() {
 function unitByKey(k) { return UNITS.find(u => u.key === k) || null; }
 
 async function loadUnit(key) {
+  if (currentUnit) { try { await saveNow(); } catch (e) { } }
+  dirty = false;
   if (key === "__new__") { $("newForm").style.display = "block"; $("nKey").focus(); return; }
   const u = unitByKey(key);
   currentUnit = u ? { ...u, isNew: false } : null;
@@ -423,16 +448,17 @@ async function loadUnit(key) {
     `<b>${u.cn}</b> <code>${u.key}</code> · ${u.role}` +
     (u.desc ? `<div class="hint">${u.desc.slice(0, 140)}…</div>` : "");
 
-  // 先看本机有没有改过的存档
-  let rec = null;
-  try { rec = await Store.get(key); } catch (e) { }
+  // 先立刻把内置图铺上去（绝不因存储问题而空白）
+  sliceSheet(u.sheet);
+  setSaveState("当前是内置原图，尚未修改");
+
+  // 再异步叠加本机存档（读不到就保持内置图）
+  const rec = await withTimeout(Store.get(key), 2500, null);
   if (rec && rec.frames && Object.keys(rec.frames).length) {
     await hydrateFrames(rec.frames);
     $("unitInfo").innerHTML += ` <span class="badge dirty">已改过</span>`;
-    setSaveState("已载入本机存档（" + (rec.updated_at || "").slice(0, 16).replace("T", " ") + "）");
-  } else {
-    sliceSheet(u.sheet);
-    setSaveState("当前是内置原图，尚未修改");
+    const t = (rec.updated_at || "").slice(0, 16).replace("T", " ");
+    setSaveState(`已叠加本机存档 ${t}`);
   }
 }
 
@@ -495,11 +521,20 @@ function buildGrid() {
     d.dataset.i = i;
     d.title = slot.enabled ? `${slot.name}（必需）` : `${slot.name}（可选）`;
     d.innerHTML = `<span class="lbl">${slot.name}</span>
-      <span class="ops"><span class="re" title="用这张图做参考，重抽这一帧">↻</span>
-      <span class="rm" title="清空">×</span></span>`;
+      <span class="ops">
+        <button type="button" class="re" title="以这一帧为参考重抽（图生图）">↻ 重抽</button>
+        <button type="button" class="rm" title="清空这一格">×</button>
+      </span>`;
+    // 按钮独立绑定并阻止冒泡，避免被格子的"选图"吞掉
+    d.querySelector(".re").addEventListener("click", ev => {
+      ev.stopPropagation(); ev.preventDefault(); rerollFrame(i);
+    });
+    d.querySelector(".rm").addEventListener("click", ev => {
+      ev.stopPropagation(); ev.preventDefault(); setImage(i, null);
+    });
+    // 点空白处才是"选图"
     d.addEventListener("click", ev => {
-      if (ev.target.classList.contains("rm")) { setImage(i, null); return; }
-      if (ev.target.classList.contains("re")) { rerollFrame(i); return; }
+      if (ev.target.closest(".ops")) return;
       pickFile(i);
     });
     d.addEventListener("dragover", ev => { ev.preventDefault(); d.style.borderColor = "#f5c85c"; });
@@ -525,7 +560,7 @@ function renderGrid() {
     }
   });
   const n = images.filter(Boolean).length;
-  $("frameBadge").textContent = `${n}/10`;
+  $("frameBadge").textContent = `${n}/${SLOT_TOTAL}`;
   drawPreview();
 }
 function pickFile(i) {
@@ -544,7 +579,7 @@ function readToSlot(file, i) {
   };
   fr.readAsDataURL(file);
 }
-function setImage(i, img) { images[i] = img; renderGrid(); scheduleSave(); }
+function setImage(i, img) { images[i] = img; dirty = true; renderGrid(); scheduleSave(); }
 
 /* ================= 合成 ================= */
 function drawCell(ctx, img, cx, cy) {
@@ -584,7 +619,7 @@ function validate() {
   const n = images.filter(Boolean).length;
   out.push({ ok: n > 0, msg: n > 0 ? `已有 ${n} 帧` : "还没有任何帧图" });
   const miss = SLOTS.filter((s, i) => s.enabled && !images[i]).length;
-  if (miss) out.push({ warn: true, msg: `${miss} 个必需帧留空，导出时用 idle_0 补齐（游戏可运行，但动效简单）` });
+  if (miss) out.push({ warn: true, msg: `${miss}/${SLOT_TOTAL} 个必需帧留空，导出时用 idle_0 补齐（游戏可运行，但动效简单）` });
   else out.push({ ok: true, msg: "必需帧齐全" });
   SLOTS.forEach((s, i) => {
     const img = images[i]; if (!img) return;
@@ -889,8 +924,19 @@ function composeFromMap(map) {
 }
 
 async function exportAll() {
-  const recs = await Store.all();
-  if (!recs.length) { log("本机还没有保存过任何改动。"); return; }
+  try {
+    if (currentUnit && dirty) await saveNow(true);   // 先把当前未保存的改动落进缓存
+    let recs = [];
+    try { recs = await Store.all(); } catch (e) { recs = []; }
+    // 合并：Store 里可能为空（存储被禁），sessionEdits 一定有
+    const map = new Map();
+    recs.forEach(r => map.set(r.key, r));
+    sessionEdits.forEach((r, k) => map.set(k, r));
+    recs = Array.from(map.values()).filter(r => r.frames && Object.keys(r.frames).length);
+    if (!recs.length) {
+      log("还没有保存过任何改动——先在格子里放图（或用 AI 生成），再点这个按钮。");
+      return;
+    }
   const files = [];
   const manifest = { exported_at: new Date().toISOString(), units: [] };
   for (const r of recs) {
@@ -914,8 +960,11 @@ async function exportAll() {
     "workspace.json   : 存档本体（含每一帧原图，可导入回页面继续改）\n" +
     "manifest.json    : 角色清单与新角色标记\n\n" +
     "发回给开发即可。游戏数值由开发补齐。\n") });
-  download(zipStore(files), "art_forge_all.zip");
-  log(`已导出全部 ${recs.length} 个角色（art_forge_all.zip）`);
+    download(zipStore(files), "art_forge_all.zip");
+    log(`已导出全部 ${recs.length} 个角色（art_forge_all.zip）`);
+  } catch (e) {
+    log("导出全部失败：" + (e && e.message ? e.message : e));
+  }
 }
 
 async function importArchive(file) {
@@ -991,7 +1040,7 @@ function init() {
   };
   $("rerollAll").onclick = rerollAll;
   $("clearAll").onclick = () => { images.fill(null); renderGrid(); };
-  $("saveNow").onclick = saveNow;
+  $("saveNow").onclick = () => saveNow(true);
   $("revertUnit").onclick = async () => {
     if (!currentUnit) return;
     if (!confirm("恢复该角色的内置原图？本机存档会被清除。")) return;
@@ -1023,6 +1072,8 @@ function init() {
     showStorageBanner();
     if (Store.mode !== "idb") log("存档后端：" + Store.mode + "（见顶部提示）");
   });
+  const tag = $("unitCountTag");
+  if (tag) tag.textContent = `单文件 · 内置现有 ${UNITS.length} 个角色 · 数据只在本机`;
   if (UNITS.length) loadUnit(UNITS[0].key);
   window.addEventListener("beforeunload", () => { if (saveTimer) saveNow(); });
 }
