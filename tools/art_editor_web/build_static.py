@@ -76,25 +76,27 @@ def build() -> int:
 
 
 def pack() -> None:
-    readme = HERE / "README.md"
+    """打成一份可直接发给设计师的压缩包。"""
+    items = [
+        (OUT, "植物立绘工坊/index.html"),
+        (HERE / "说明.md", "植物立绘工坊/说明.md"),
+        (HERE / "art_studio_cli.py", "植物立绘工坊/art_studio_cli.py"),
+        (HERE / "开始生成.bat", "植物立绘工坊/开始生成.bat"),
+        (HERE / "打开我.txt", "植物立绘工坊/打开我.txt"),
+    ]
     with zipfile.ZipFile(PACK, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
-        z.write(OUT, "植物立绘工坊/index.html")
-        if readme.exists():
-            z.write(readme, "植物立绘工坊/说明.md")
-        z.writestr("植物立绘工坊/打开我.txt",
-                   "双击 index.html 即可开始。不用装任何东西。\n"
-                   "\n"
-                   "【怎么保存】\n"
-                   "  改完一批，点左侧「导出工作副本（下次双击它继续改）」，\n"
-                   "  会下载一个新的 HTML 文件（名字带时间）。\n"
-                   "  下次直接双击那个新文件，你改的东西全在里面，接着改就行。\n"
-                   "\n"
-                   "  这样不依赖浏览器存储：用 Safari、清缓存、换电脑都不怕。\n"
-                   "\n"
-                   "【交给开发】\n"
-                   "  点「导出全部已改（zip）」或「导出资源包 .zip」，把 zip 发回去。\n"
-                   "\n"
-                   "不需要联网（除非你要用页面里的 AI 生成）。\n")
+        for src, arc in items:
+            if not src.exists():
+                print(f"  [skip] 缺少 {src.name}")
+                continue
+            z.write(src, arc)
+        # .command 需要可执行位，macOS 解压后才好双击
+        cmd = HERE / "开始生成.command"
+        if cmd.exists():
+            info = zipfile.ZipInfo("植物立绘工坊/开始生成.command")
+            info.external_attr = (0o755 << 16)
+            info.compress_type = zipfile.ZIP_DEFLATED
+            z.writestr(info, cmd.read_bytes())
     print(f"打包 -> {PACK.relative_to(ROOT)}  {PACK.stat().st_size/1024:.0f} KB")
 
 
