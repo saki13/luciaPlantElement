@@ -58,6 +58,8 @@
   .badge{display:inline-block;font-size:10px;padding:0 6px;border-radius:999px;
     background:#2d3546;color:var(--dim);margin-left:6px}
   .badge.new{background:#3a2f1a;color:var(--accent)}
+  .badge.dirty{background:#3a1f1f;color:#ef7a7a}
+  #saveState{font-size:11px;color:var(--dim);margin-top:6px}
 </style>
 </head>
 <body>
@@ -100,6 +102,23 @@
 
     <h2 style="margin-top:16px">② 风格约束（自动拼接）</h2>
     <textarea id="style" style="min-height:72px">Q版圆润卡通，粗深色描边，明快平涂加少量渐变，一定要有一双又大又亮的卡通眼睛（黑色眼珠+白色高光），表情生动，正面平视，全身完整居中、站在画面底部中央，纯白色干净背景(#FFFFFF)，无地面投影，无文字水印，画面中只有这一个角色。</textarea>
+    <h2 style="margin-top:16px">③ 本机存档</h2>
+    <div class="hint">
+      改动会<b>自动存到这台电脑的浏览器里</b>，关掉页面再打开还在。
+      换电脑/换浏览器时用下面的「导出全部」和「导入存档」搬过去。
+    </div>
+    <div id="saveState">尚未保存</div>
+    <div class="row">
+      <button class="primary" id="saveNow">立即保存</button>
+      <button id="revertUnit">恢复该角色内置图</button>
+    </div>
+    <div class="row">
+      <button id="exportAll">导出全部已改（zip）</button>
+      <button id="importArchive">导入存档…</button>
+      <input type="file" id="importFile" accept=".json,.zip" style="display:none">
+    </div>
+
+    <h2 style="margin-top:16px">④ Prompt</h2>
     <div class="row">
       <button id="copyPrompt">复制完整 prompt</button>
       <button id="downloadPrompt">下载 prompt.txt</button>
@@ -197,7 +216,75 @@ function log(m) {
 const keyNorm = s => (s || "").trim().toLowerCase()
   .replace(/[^a-z0-9_]+/g, "_").replace(/^_+|_+$/g, "") || "custom_plant";
 
-/* ================= 内置资源 ================= */
+/* ================= 本机存档（IndexedDB） ================= */
+const Store = (() => {
+  const DB = "plant-art-forge", ST = "units";
+  let dbp = null;
+  function open() {
+    if (dbp) return dbp;
+    dbp = new Promise((res, rej) => {
+      const r = indexedDB.open(DB, 1);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        if (!d.objectStoreNames.contains(ST)) d.createObjectStore(ST, { keyPath: "key" });
+      };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    return dbp;
+  }
+  async function tx(mode, fn) {
+    const d = await open();
+    return new Promise((res, rej) => {
+      const t = d.transaction(ST, mode);
+      const st = t.objectStore(ST);
+      let out;
+      try { out = fn(st); } catch (e) { rej(e); return; }
+      t.oncomplete = () => res(out && out.result !== undefined ? out.result : true);
+      t.onerror = () => rej(t.error);
+    });
+  }
+  return {
+    get: key => tx("readonly", st => st.get(key)),
+    put: rec => tx("readwrite", st => st.put(rec)),
+    del: key => tx("readwrite", st => st.delete(key)),
+    all: () => tx("readonly", st => st.getAll()),
+    keys: () => tx("readonly", st => st.getAllKeys()),
+  };
+})();
+
+/* 把当前 10 帧序列化成 {slotName: dataURL} */
+function snapshotFrames() {
+  const out = {};
+  SLOTS.forEach((s, i) => { if (images[i]) out[s.name] = images[i].src; });
+  return out;
+}
+let saveTimer = null, saving = false;
+function setSaveState(txt) { const el = $("saveState"); if (el) el.textContent = txt; }
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  setSaveState("有改动，稍后自动保存…");
+  saveTimer = setTimeout(saveNow, 800);
+}
+async function saveNow() {
+  if (saving) return;
+  if (!currentUnit) return;
+  saving = true;
+  try {
+    const rec = {
+      key: currentUnit.key, cn: currentUnit.cn, role: currentUnit.role,
+      desc: currentUnit.desc || "", isNew: !!currentUnit.isNew,
+      frames: snapshotFrames(), updated_at: new Date().toISOString()
+    };
+    await Store.put(rec);
+    const t = new Date();
+    setSaveState(`已保存到本机 ${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")}`);
+  } catch (e) {
+    setSaveState("保存失败：" + e.message);
+  } finally { saving = false; }
+}
+
+/* 内置资源 ================= */
 function fillUnitSelect() {
   const sel = $("unitSel");
   sel.innerHTML = "";
@@ -219,16 +306,45 @@ function fillUnitSelect() {
 }
 function unitByKey(k) { return UNITS.find(u => u.key === k) || null; }
 
-function loadUnit(key) {
+async function loadUnit(key) {
   if (key === "__new__") { $("newForm").style.display = "block"; $("nKey").focus(); return; }
   const u = unitByKey(key);
   currentUnit = u ? { ...u, isNew: false } : null;
   if (!u) return;
+  $("newForm").style.display = "none";
   $("unitInfo").innerHTML =
     `<b>${u.cn}</b> <code>${u.key}</code> · ${u.role}` +
-    (u.prompt ? `<div class="hint">${u.prompt.slice(0, 120)}…</div>` : "");
-  $("newForm").style.display = "none";
-  sliceSheet(u.sheet);
+    (u.desc ? `<div class="hint">${u.desc.slice(0, 140)}…</div>` : "");
+
+  // 先看本机有没有改过的存档
+  let rec = null;
+  try { rec = await Store.get(key); } catch (e) { }
+  if (rec && rec.frames && Object.keys(rec.frames).length) {
+    await hydrateFrames(rec.frames);
+    $("unitInfo").innerHTML += ` <span class="badge dirty">已改过</span>`;
+    setSaveState("已载入本机存档（" + (rec.updated_at || "").slice(0, 16).replace("T", " ") + "）");
+  } else {
+    sliceSheet(u.sheet);
+    setSaveState("当前是内置原图，尚未修改");
+  }
+}
+
+/* 用存档里的 dataURL 还原 10 帧 */
+async function hydrateFrames(map) {
+  const jobs = [];
+  images = new Array(SLOTS.length).fill(null);
+  SLOTS.forEach((s, i) => {
+    const src = map[s.name];
+    if (!src) return;
+    jobs.push(new Promise(res => {
+      const im = new Image();
+      im.onload = () => { images[i] = im; res(); };
+      im.onerror = () => res();
+      im.src = src;
+    }));
+  });
+  await Promise.all(jobs);
+  renderGrid();
 }
 
 /* 把内置精灵表切成 10 帧 */
@@ -321,7 +437,7 @@ function readToSlot(file, i) {
   };
   fr.readAsDataURL(file);
 }
-function setImage(i, img) { images[i] = img; renderGrid(); }
+function setImage(i, img) { images[i] = img; renderGrid(); scheduleSave(); }
 
 /* ================= 合成 ================= */
 function drawCell(ctx, img, cx, cy) {
@@ -570,6 +686,82 @@ async function genBase() {
   }
 }
 
+/* ================= 批量导出 / 导入存档 ================= */
+function composeFromMap(map) {
+  const cv = document.createElement("canvas");
+  cv.width = FRAME * COLS; cv.height = FRAME * ROW_FRAMES.length;
+  const ctx = cv.getContext("2d");
+  const imgs = {};
+  const loads = Object.entries(map).map(([name, src]) => new Promise(res => {
+    const im = new Image();
+    im.onload = () => { imgs[name] = im; res(); };
+    im.onerror = () => res();
+    im.src = src;
+  }));
+  return Promise.all(loads).then(() => {
+    const fb = SLOTS.map(s => imgs[s.name]).find(Boolean);
+    SLOTS.forEach(slot => {
+      const img = imgs[slot.name] || (slot.enabled ? fb : null);
+      drawCell(ctx, img, slot.col * FRAME, slot.row * FRAME);
+    });
+    return cv;
+  });
+}
+
+async function exportAll() {
+  const recs = await Store.all();
+  if (!recs.length) { log("本机还没有保存过任何改动。"); return; }
+  const files = [];
+  const manifest = { exported_at: new Date().toISOString(), units: [] };
+  for (const r of recs) {
+    const cv = await composeFromMap(r.frames || {});
+    const png = await canvasToU8(cv);
+    files.push({ name: `sheets/${r.key}.png`, data: png });
+    manifest.units.push({
+      key: r.key, cn: r.cn, role: r.role, is_new_unit: !!r.isNew,
+      frames: Object.keys(r.frames || {}), updated_at: r.updated_at
+    });
+  }
+  // 存档本体（含帧数据），用于换电脑继续改
+  files.push({ name: "workspace.json",
+               data: new TextEncoder().encode(JSON.stringify(recs)) });
+  files.push({ name: "manifest.json",
+               data: new TextEncoder().encode(JSON.stringify(manifest, null, 2)) });
+  files.push({ name: "README.txt", data: new TextEncoder().encode(
+    "设计成果交付包\n=============\n" +
+    `共 ${recs.length} 个角色。\n\n` +
+    "sheets/<key>.png : 每个角色合成好的精灵表（256x256 / 4列4行 / 每格64）\n" +
+    "workspace.json   : 存档本体（含每一帧原图，可导入回页面继续改）\n" +
+    "manifest.json    : 角色清单与新角色标记\n\n" +
+    "发回给开发即可。游戏数值由开发补齐。\n") });
+  download(zipStore(files), "art_forge_all.zip");
+  log(`已导出全部 ${recs.length} 个角色（art_forge_all.zip）`);
+}
+
+async function importArchive(file) {
+  try {
+    const text = await file.text();
+    let data = JSON.parse(text);
+    // 允许直接导入 workspace.json 或 {"units":[...]} 形式
+    if (!Array.isArray(data) && Array.isArray(data.units)) data = data.units;
+    if (!Array.isArray(data)) throw new Error("不是合法的存档 JSON");
+    let n = 0;
+    for (const r of data) {
+      if (!r || !r.key) continue;
+      await Store.put({
+        key: r.key, cn: r.cn || r.key, role: r.role || "ranged",
+        desc: r.desc || "", isNew: !!r.isNew,
+        frames: r.frames || {}, updated_at: r.updated_at || new Date().toISOString()
+      });
+      n++;
+    }
+    log(`已导入 ${n} 个角色的存档。重新选择角色即可看到。`);
+    if (currentUnit) loadUnit(currentUnit.key);
+  } catch (e) {
+    log("导入失败：" + e.message + "（请选择 workspace.json）");
+  }
+}
+
 /* ================= 绑定 ================= */
 function loadKey() {
   try {
@@ -600,6 +792,7 @@ function init() {
     renderGrid();
     $("unitInfo").innerHTML = `<b>${cn}</b> <code>${k}</code> · 新建 <span class="badge new">待设计</span>`;
     log(`已新建 ${k}，可以开始放图或生成了。`);
+    scheduleSave();
   };
   $("loadSheetBtn").onclick = () => {
     if (currentUnit && !currentUnit.isNew) loadUnit(currentUnit.key);
@@ -618,6 +811,17 @@ function init() {
   };
   $("rerollAll").onclick = rerollAll;
   $("clearAll").onclick = () => { images.fill(null); renderGrid(); };
+  $("saveNow").onclick = saveNow;
+  $("revertUnit").onclick = async () => {
+    if (!currentUnit) return;
+    if (!confirm("恢复该角色的内置原图？本机存档会被清除。")) return;
+    await Store.del(currentUnit.key);
+    setSaveState("已恢复内置原图");
+    loadUnit(currentUnit.key);
+  };
+  $("exportAll").onclick = exportAll;
+  $("importArchive").onclick = () => $("importFile").click();
+  $("importFile").onchange = e => { if (e.target.files[0]) importArchive(e.target.files[0]); };
   $("exportZip").onclick = exportZip;
   $("exportPng").onclick = exportPng;
   $("genBase").onclick = genBase;
@@ -635,6 +839,7 @@ function init() {
   };
   $("style").addEventListener("input", validate);
   if (UNITS.length) loadUnit(UNITS[0].key);
+  window.addEventListener("beforeunload", () => { if (saveTimer) saveNow(); });
 }
 init();
 </script>
