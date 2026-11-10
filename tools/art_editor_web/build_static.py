@@ -76,28 +76,17 @@ def build() -> int:
 
 
 def pack() -> None:
-    """打成一份可直接发给设计师的压缩包。"""
+    """打成一份可直接发给人的压缩包：就三个文件。"""
     items = [
         (OUT, "植物立绘工坊/index.html"),
         (HERE / "说明.md", "植物立绘工坊/说明.md"),
         (HERE / "art_studio_cli.py", "植物立绘工坊/art_studio_cli.py"),
-        (HERE / "打开我.txt", "植物立绘工坊/打开我.txt"),
     ]
     with zipfile.ZipFile(PACK, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
         for src, arc in items:
             if not src.exists():
-                print(f"  [skip] 缺少 {src.name}")
-                continue
+                raise SystemExit(f"缺少 {src}")
             z.write(src, arc)
-        # .command 需要可执行位，macOS 解压后才好双击
-        for name in ("开始生成.command", "设置令牌.command"):
-            f = HERE / name
-            if not f.exists():
-                continue
-            info = zipfile.ZipInfo("植物立绘工坊/" + name)
-            info.external_attr = (0o755 << 16)
-            info.compress_type = zipfile.ZIP_DEFLATED
-            z.writestr(info, f.read_bytes())
     print(f"打包 -> {PACK.relative_to(ROOT)}  {PACK.stat().st_size/1024:.0f} KB")
 
 

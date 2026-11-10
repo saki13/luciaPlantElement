@@ -5,16 +5,12 @@
 用途：把网页「导出生成任务 .zip」得到的任务包，批量跑成图片，
       产出 `<key>_results.zip`，再回网页点「导入生成结果」回填。
 
-用法（三种都行）：
-    python art_studio_cli.py 任务包.zip
-    python art_studio_cli.py                    # 不带参数会自动找同目录的 *_jobs.zip
-    python art_studio_cli.py 任务包.zip --dry-run     # 只看计划，不花钱
-    python art_studio_cli.py 任务包.zip --only idle_0,attack_1
+用法：
+    python3 art_studio_cli.py 任务包.zip --token ms-xxxx
+    python3 art_studio_cli.py 任务包.zip --token ms-xxxx --dry-run   # 只看计划，不花钱
+    python3 art_studio_cli.py 任务包.zip --token ms-xxxx --only idle_0,attack_1
 
-Token 从环境变量读（不要写进脚本）：
-    macOS / Linux:   export MODELSCOPE_TOKEN="ms-xxxx"
-    Windows PowerShell:  $env:MODELSCOPE_TOKEN = "ms-xxxx"
-    Windows CMD:     set MODELSCOPE_TOKEN=ms-xxxx
+Token 也可以放环境变量 MODELSCOPE_TOKEN，省得每次都敲。
 
 依赖：Python 3.8+。不需要 pip install 任何东西。
 """
@@ -119,6 +115,7 @@ def main() -> int:
     ap.add_argument("--out", type=Path, default=None, help="结果 zip 输出路径")
     ap.add_argument("--only", default="", help="只跑这些槽位，逗号分隔，如 idle_0,attack_1")
     ap.add_argument("--dry-run", action="store_true", help="只打印计划，不真的生成（不花钱）")
+    ap.add_argument("--token", default="", help="ModelScope 访问令牌（ms-xxxx）；也可用环境变量 MODELSCOPE_TOKEN")
     args = ap.parse_args()
 
     if sys.version_info < (3, 8):
@@ -150,13 +147,12 @@ def main() -> int:
         print("\n这是 dry-run，没有花任何额度。去掉 --dry-run 就会真的生成。")
         return 0
 
-    token = os.environ.get("MODELSCOPE_TOKEN") or os.environ.get("MS_TOKEN")
+    token = (args.token or os.environ.get("MODELSCOPE_TOKEN")
+             or os.environ.get("MS_TOKEN") or "").strip()
     if not token:
-        print("没读到 token。请先设置环境变量，再重新运行：\n"
-              "  macOS/Linux:        export MODELSCOPE_TOKEN=\"ms-xxxx\"\n"
-              "  Windows PowerShell: $env:MODELSCOPE_TOKEN = \"ms-xxxx\"\n"
-              "  Windows CMD:        set MODELSCOPE_TOKEN=ms-xxxx\n"
-              "（token 在 https://modelscope.cn → 个人中心 → 访问令牌 里复制）")
+        print("缺少 token。加上 --token 参数再运行：\n"
+              "    python3 art_studio_cli.py 任务包.zip --token ms-xxxx\n"
+              "（token 在 https://modelscope.cn → 个人中心 → 访问令牌 复制）")
         return 2
 
     key = jobs[0].get("key") or jobs_zip.stem.replace("_jobs", "")
