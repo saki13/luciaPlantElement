@@ -38,6 +38,7 @@ def build() -> None:
     (OUT / "anim_demo" / "assets" / "plants").mkdir(parents=True)
 
     shutil.copy2(FORGE / "server.js", OUT / "server.js")
+    shutil.copy2(FORGE / "server.py", OUT / "server.py")
     shutil.copytree(FORGE / "public", OUT / "public")
     for name in ("start.command", "start.bat", "README.md"):
         shutil.copy2(FORGE / name, OUT / name)

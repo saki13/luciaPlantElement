@@ -22,17 +22,29 @@
 
 ---
 
-## 一、装 Node（只需一次）
+## 一、装运行时（只需一次，Python 或 Node 任选其一）
+
+服务端有两个等价实现，**有哪个用哪个，页面完全一样**：
+
+| 文件 | 需要 | 说明 |
+|---|---|---|
+| `server.py` | **Python 3.8+** | 只用标准库，**不用 pip install** |
+| `server.js` | **Node 18+** | 只用内置模块，**不用 npm install** |
+
+`start.command` / `start.bat` 会**自动挑**：先找 Python，没有再用 Node，
+两个都没有才提示你去装。
+
+自己确认一下：
 
 ```bash
-node --version        # 需要 v18 或更新
+python3 --version      # macOS，有 3.8+ 就行
+node --version         # 需要 18+
 ```
 
-没有就去 <https://nodejs.org/> 下 **LTS** 版，双击装完**重开终端**再验证。
+都没有的话（装任意一个即可，装完重开终端）：
 
-> **不需要 `npm install`**：服务端只用 Node 内置模块，零依赖。
-
----
+- Python：<https://www.python.org/downloads/>（Windows 记得勾 `Add python.exe to PATH`）
+- Node：<https://nodejs.org/>（下 LTS 版）
 
 ## 二、配令牌
 
@@ -68,11 +80,14 @@ $env:MODELSCOPE_TOKEN = "ms-你的令牌"      # Windows PowerShell
 | macOS | `start.command` |
 | Windows | `start.bat` |
 
-或命令行：
+或命令行（用哪个运行时都行）：
 
 ```bash
-node server.js          # 默认 8777
-node server.js 8888     # 换端口
+python3 server.py        # Python 版，默认 8777
+python3 server.py 8888   # 换端口
+
+node server.js           # Node 版，等价
+node server.js 8888
 ```
 
 看到这样就绪了：
@@ -222,6 +237,9 @@ POST /api/sheet      {key, image}                 覆盖精灵表
 ---
 
 ## 九、常见问题
+
+**`python3` 和 `node` 都没有**
+→ 装任意一个。Python 更省事：只要 3.8+，不用装包。
 
 **页面打不开 / 空白**
 → 服务没起来。看终端有没有报错；端口被占就换：`node server.js 8888`。
