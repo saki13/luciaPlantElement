@@ -50,7 +50,13 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .wrap{display:flex;justify-content:center;margin-top:6px}
 #log{font-size:11px;color:var(--dim);max-height:150px;overflow:auto;
   background:#12151b;border-radius:6px;padding:7px;margin-top:8px;white-space:pre-wrap}
-.badge{display:inline-block;font-size:10px;padding:0 6px;border-radius:999px;
+.cands{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:7px}
+  .cands .c{aspect-ratio:1;background:#fff;border:2px solid transparent;
+    border-radius:6px;overflow:hidden;cursor:pointer;display:flex;
+    align-items:center;justify-content:center}
+  .cands .c img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+  .cands .c:hover{border-color:var(--accent)}
+  .badge{display:inline-block;font-size:10px;padding:0 6px;border-radius:999px;
   background:#2d3546;color:var(--dim);margin-left:6px}
 </style>
 </head>
@@ -73,7 +79,14 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <textarea id="base" placeholder="用大白话写这株植物长什么样：颜色、形状、有没有眼睛、拿什么武器……这一条会拼进每一帧的 prompt"></textarea>
     <div class="hint">改现有角色时会自动带出它的原始描述（没有就空着）。</div>
 
-    <h2 style="margin-top:16px">③ 风格约束</h2>
+    <h2 style="margin-top:16px">③ 立绘三选一</h2>
+    <div class="row">
+      <button class="primary" id="gen3" style="width:100%">生成 3 张候选</button>
+    </div>
+    <div id="cands" class="cands"></div>
+    <div class="hint" id="candHint">用上面的整株描述一次抽 3 张，点一张即可设为 idle_0。</div>
+
+    <h2 style="margin-top:16px">④ 风格约束</h2>
     <textarea id="style">Q版圆润卡通，粗深色描边，明快平涂加少量渐变，一定要有一双又大又亮的卡通眼睛（黑色眼珠+白色高光），表情生动，正面平视，全身完整居中、站在画面底部中央，纯白色干净背景(#FFFFFF)，无地面投影，无文字水印，画面中只有这一个角色。</textarea>
   </section>
 
@@ -116,11 +129,26 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <button class="primary" id="buildSheet" style="width:100%">拼表并写入 assets/sprites</button>
     </div>
     <div class="hint" id="sheetState"></div>
-    <div class="hint" style="margin-top:10px">
-      拼表用的是各个已保存/已生成的帧，直接覆盖
+    <div class="hint" style="margin-top:6px">
+      拼表会直接覆盖
       <code>anim_demo/assets/sprites/&lt;key&gt;.png</code>。
       想回滚用 git checkout。
     </div>
+
+    <h2 style="margin-top:16px">⑤ 子弹 / 道具</h2>
+    <select id="projKind"></select>
+    <textarea id="projDesc" style="min-height:56px;margin-top:6px"
+      placeholder="描述这个道具长什么样（留空就用该类型的默认形态）"></textarea>
+    <div class="row">
+      <button class="primary" id="projGen">生成道具</button>
+      <button id="projSave">保存</button>
+      <button id="projClear">清空</button>
+    </div>
+    <div class="wrap" style="margin-top:8px">
+      <canvas id="projView" width="128" height="128"
+        style="width:128px;height:128px;background:#26303f;border-radius:6px;image-rendering:pixelated"></canvas>
+    </div>
+    <div class="hint" id="projHint">生成后会自动去掉白底，存成透明 PNG。</div>
   </section>
 </main>
 
@@ -181,6 +209,13 @@ async function selectUnit(key) {
   Object.assign(prompts, fr.prompts || {});
   baseText = fr.base || "";
   $("base").value = baseText;
+  loadProjKinds(fr.projectileKinds);
+  if (fr.projectile) {
+    if (fr.projectile.kind) $("projKind").value = fr.projectile.kind;
+    $("projDesc").value = fr.projectile.desc || "";
+  }
+  projData = fr.projectileImage ? "data:image/png;base64," + fr.projectileImage : null;
+  drawProjectile();
   let anySaved = false;
   for (const s of SLOTS) {
     if (!s.enabled) continue;
@@ -371,6 +406,185 @@ async function saveFrame() {
   } catch (e) { log("保存失败：" + e.message); }
 }
 
+/* ---------------- 立绘三选一 ---------------- */
+async function genCandidates() {
+  const desc = baseText.trim();
+  if (!desc) { log("先在「② 整株描述」里写点东西"); return; }
+  const prompt = desc + "。" + $("style").value.trim();
+  const btn = $("gen3"), old = btn.textContent;
+  btn.disabled = true; btn.textContent = "抽卡中…";
+  $("candHint").textContent = "并行生成 3 张，通常 20~60 秒…";
+  log("开始三连抽…");
+  try {
+    const r = await fetch("/api/generate3", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, n: 3 }),
+    });
+    const js = await r.json();
+    if (!js.ok) throw new Error(js.error || "失败");
+    const box = $("cands");
+    box.innerHTML = "";
+    js.images.forEach((src, i) => {
+      const d = document.createElement("div");
+      d.className = "c";
+      const im = document.createElement("img");
+      im.src = src;
+      d.appendChild(im);
+      d.title = "点这张设为 idle_0";
+      d.onclick = () => {
+        document.querySelectorAll("#cands .c").forEach(x => x.style.borderColor = "transparent");
+        d.style.borderColor = "#f5c85c";
+        pickCandidate(src);
+      };
+      box.appendChild(d);
+    });
+    $("candHint").textContent = `拿到 ${js.images.length} 张（${js.seconds}s），点一张设为 idle_0` +
+      (js.errors && js.errors.length ? "；" + js.errors.length + " 张失败" : "");
+    log(`三连抽完成 ${js.images.length} 张（${js.seconds}s）`);
+  } catch (e) {
+    log("三连抽失败：" + e.message);
+    $("candHint").textContent = "失败：" + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = old;
+  }
+}
+
+function pickCandidate(src) {
+  const s = SLOTS.find(x => x.name === "idle_0");
+  if (!s) return;
+  const idx = SLOTS.indexOf(s);
+  if (imgs[s.name]) undoStack[s.name] = imgs[s.name];
+  imgs[s.name] = { src, saved: false };
+  selected = idx;
+  renderGrid(); renderEditor();
+  log("已把这张设为 idle_0（记得「保存到磁盘」或点「生成并保存」）");
+}
+
+/* ---------------- 道具 ---------------- */
+let projData = null;      // 当前道具图 dataURL（已去背）
+
+function loadProjKinds(kinds) {
+  const sel = $("projKind");
+  sel.innerHTML = "";
+  Object.entries(kinds || {}).forEach(([k, label]) => {
+    const o = document.createElement("option");
+    o.value = k; o.textContent = label;
+    sel.appendChild(o);
+  });
+}
+
+/* 去掉白底：从四边泛洪，容差内变透明（保留角色内部的白色高光） */
+function removeWhiteBg(img) {
+  const cv = document.createElement("canvas");
+  cv.width = img.width; cv.height = img.height;
+  const ctx = cv.getContext("2d");
+  ctx.drawImage(img, 0, 0);
+  const d = ctx.getImageData(0, 0, cv.width, cv.height);
+  const px = d.data, W = cv.width, H = cv.height;
+  const tol = 26;
+  const seen = new Uint8Array(W * H);
+  const stack = [];
+  const isWhite = i => px[i * 4] > 255 - tol && px[i * 4 + 1] > 255 - tol && px[i * 4 + 2] > 255 - tol;
+  const push = i => { if (!seen[i] && isWhite(i)) { seen[i] = 1; stack.push(i); } };
+  for (let x = 0; x < W; x++) { push(x); push((H - 1) * W + x); }
+  for (let y = 0; y < H; y++) { push(y * W); push(y * W + W - 1); }
+  while (stack.length) {
+    const i = stack.pop();
+    px[i * 4 + 3] = 0;
+    const x = i % W, y = (i - x) / W;
+    if (x > 0) push(i - 1);
+    if (x < W - 1) push(i + 1);
+    if (y > 0) push(i - W);
+    if (y < H - 1) push(i + W);
+  }
+  ctx.putImageData(d, 0, 0);
+  // 裁到内容边界，再缩到 64 以内
+  let x0 = W, y0 = H, x1 = 0, y1 = 0;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      if (px[(y * W + x) * 4 + 3] > 8) {
+        if (x < x0) x0 = x; if (y < y0) y0 = y;
+        if (x > x1) x1 = x; if (y > y1) y1 = y;
+      }
+    }
+  }
+  if (x1 < x0) return cv;      // 全透明，原样返回
+  const w = x1 - x0 + 1, h = y1 - y0 + 1;
+  const out = document.createElement("canvas");
+  const side = Math.min(64, Math.max(w, h));
+  out.width = side; out.height = side;
+  const octx = out.getContext("2d");
+  const k = Math.min((side - 4) / w, (side - 4) / h);
+  octx.drawImage(cv, x0, y0, w, h,
+    Math.round((side - w * k) / 2), Math.round((side - h * k) / 2),
+    Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k)));
+  return out;
+}
+
+async function genProjectile() {
+  if (!current) return;
+  const kind = $("projKind").value;
+  const desc = $("projDesc").value.trim();
+  const btn = $("projGen"), old = btn.textContent;
+  btn.disabled = true; btn.textContent = "生成中…";
+  log(`生成道具（${kind}）…`);
+  try {
+    const pr = await (await fetch("/api/projectile-prompt", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind, desc }),
+    })).json();
+    const r = await fetch("/api/generate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: pr.prompt }),
+    });
+    const js = await r.json();
+    if (!js.ok) throw new Error(js.error || "生成失败");
+    const im = new Image();
+    await new Promise((res, rej) => { im.onload = res; im.onerror = rej; im.src = js.image; });
+    const cut = removeWhiteBg(im);
+    projData = cut.toDataURL("image/png");
+    drawProjectile();
+    $("projHint").textContent = `生成完成（${js.seconds}s），已去白底。点「保存」写入项目。`;
+    log("道具生成完成，记得保存");
+  } catch (e) {
+    log("道具生成失败：" + e.message);
+    $("projHint").textContent = "失败：" + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = old;
+  }
+}
+
+function drawProjectile() {
+  const cv = $("projView"), ctx = cv.getContext("2d");
+  ctx.clearRect(0, 0, cv.width, cv.height);
+  if (!projData) return;
+  const im = new Image();
+  im.onload = () => {
+    const k = Math.min(cv.width / im.width, cv.height / im.height) * 0.9;
+    const w = im.width * k, h = im.height * k;
+    ctx.drawImage(im, (cv.width - w) / 2, (cv.height - h) / 2, w, h);
+  };
+  im.src = projData;
+}
+
+async function saveProjectile(clear) {
+  if (!current) return;
+  try {
+    const r = await fetch("/api/projectile", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        key: current.key, kind: $("projKind").value,
+        desc: $("projDesc").value.trim(),
+        image: clear ? "" : (projData || ""),
+      }),
+    });
+    const js = await r.json();
+    if (!js.ok) throw new Error(js.error);
+    $("projHint").textContent = clear ? "已清空道具" : "已保存到项目";
+    log(clear ? "道具已清空" : "道具已保存");
+  } catch (e) { log("道具保存失败：" + e.message); }
+}
+
 /* ---------------- 拼表 ---------------- */
 function drawPreview() {
   const cv = $("preview"), ctx = cv.getContext("2d");
@@ -463,6 +677,10 @@ $("feUndo").onclick = () => {
 $("fePrev").onclick = () => moveSelection(-1);
 $("feNext").onclick = () => moveSelection(1);
 
+$("gen3").onclick = genCandidates;
+$("projGen").onclick = genProjectile;
+$("projSave").onclick = () => saveProjectile(false);
+$("projClear").onclick = () => { projData = null; drawProjectile(); saveProjectile(true); };
 $("base").addEventListener("input", () => {
   baseText = $("base").value;
   scheduleSaveProject();

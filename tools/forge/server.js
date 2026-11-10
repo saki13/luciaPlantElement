@@ -193,6 +193,30 @@ function idleFrameFile(key) {
 /* 用浏览器传来的每帧 PNG 拼成 256x256 —— 但 Node 没有图像库。
    变通：让浏览器用 canvas 拼好再上传（页面里做），这里只负责写盘。 */
 
+/* ------------------------------------------------------------------ 道具 */
+const PROJ_KINDS = {
+  seed: "种子/光球弹",
+  blade: "剑气/刀光",
+  leaf: "飞叶",
+  organ: "延伸器官/触手",
+};
+const PROJ_HINT = {
+  seed: "一颗圆润饱满、带简洁高光的种子形能量弹，略卡通可爱，适合从花口/炮口直线射出",
+  blade: "一道月牙形的半透明剑气刀光，带锐利刃缘和清晰的速度拖尾，朝向画面正前方",
+  leaf: "一片边缘锋利、叶脉清晰的飞旋叶片，造型利落、带轻微旋转动势",
+  organ: "一段可弹射出去的植物延伸器官（如卷须尖、硬刺或孢子囊），造型饱满有弹性",
+};
+/* 道具出图硬约束：只有道具本身 + 纯白底，便于前端自动去背 */
+const PROJ_TAIL =
+  "画面中只有这一个道具，不要出现整株植物、角色五官、花盆、地面、手或任何其它物体；" +
+  "纯白色干净背景(#FFFFFF)，2D 卡通 Q 版手游道具图标风格，粗深色描边、明快平涂加少量渐变，" +
+  "单个道具完整居中、四周充分留白、无地面投影、无文字水印。";
+
+function projPrompt(kind, desc) {
+  const part = (desc || "").trim() || PROJ_HINT[kind] || PROJ_HINT.seed;
+  return part + "。" + PROJ_TAIL;
+}
+
 /* ------------------------------------------------------------------ 生成 */
 async function generateOne(prompt, refBase64) {
   const { token } = loadToken();
@@ -276,8 +300,16 @@ async function api(req, res, url) {
       base = pj.base_desc || "";
       projectExists = true;
     } catch (e) { /* 没有项目文件 */ }
+    let projectile = null;
+    try {
+      const pj = JSON.parse(fs.readFileSync(projectJson(key), "utf-8"));
+      projectile = pj.projectile || null;
+    } catch (e) { /* ignore */ }
+    const projFile = path.join(projectDir(key), "projectile.png");
+    const projB64 = fs.existsSync(projFile) ? fs.readFileSync(projFile).toString("base64") : null;
     return send(res, 200, { ok: true, frames: out, prompts, base, projectExists,
-                            exists: framesOnDisk(key) });
+                            exists: framesOnDisk(key), projectile, projectileImage: projB64,
+                            projectileKinds: PROJ_KINDS });
   }
 
   if (p === "/api/generate" && req.method === "POST") {
@@ -296,6 +328,56 @@ async function api(req, res, url) {
       console.log("  生成失败:", e.message);
       return send(res, 400, { ok: false, error: e.message });
     }
+  }
+
+  if (p === "/api/generate3" && req.method === "POST") {
+    const body = JSON.parse((await readBody(req)).toString("utf-8"));
+    const prompt = (body.prompt || "").trim();
+    if (!prompt) return send(res, 400, { ok: false, error: "prompt 为空" });
+    const n = Math.min(4, Math.max(2, Number(body.n) || 3));
+    const t0 = Date.now();
+    // 并行提交：三张一起排队，比串行快得多
+    const jobs = [];
+    for (let i = 0; i < n; i++) jobs.push(generateOne(prompt, body.ref || null));
+    const settled = await Promise.allSettled(jobs);
+    const images = [], errors = [];
+    settled.forEach((r, i) => {
+      if (r.status === "fulfilled") images.push("data:image/png;base64," + r.value.buffer.toString("base64"));
+      else errors.push(`第${i + 1}张失败：${r.reason && r.reason.message}`);
+    });
+    console.log(`  三连抽完成 ${images.length}/${n}  ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+    if (!images.length) return send(res, 400, { ok: false, error: errors.join("；") || "全部失败" });
+    return send(res, 200, { ok: true, images, errors, seconds: Math.round((Date.now() - t0) / 1000) });
+  }
+
+  if (p === "/api/projectile" && req.method === "POST") {
+    const body = JSON.parse((await readBody(req)).toString("utf-8"));
+    const key = String(body.key || "").replace(/[^\w-]/g, "");
+    if (!key) return send(res, 400, { ok: false, error: "缺少 key" });
+    const b64 = String(body.image || "").replace(/^data:image\/\w+;base64,/, "");
+    let data = {};
+    try { data = JSON.parse(await fsp.readFile(projectJson(key), "utf-8")); } catch (e) { data = {}; }
+    data.key = key;
+    data.cn = data.cn || unitCn("plants", key);
+    if (b64) {
+      await fsp.mkdir(projectDir(key), { recursive: true });
+      await fsp.writeFile(path.join(projectDir(key), "projectile.png"), Buffer.from(b64, "base64"));
+      data.projectile = { enabled: true, kind: body.kind || "seed", desc: body.desc || "",
+                          file: "projectile.png" };
+    } else {
+      const f = path.join(projectDir(key), "projectile.png");
+      if (fs.existsSync(f)) await fsp.unlink(f);
+      data.projectile = { enabled: false, kind: body.kind || "seed", desc: body.desc || "", file: null };
+    }
+    data.updated = new Date().toISOString();
+    await fsp.mkdir(projectDir(key), { recursive: true });
+    await fsp.writeFile(projectJson(key), JSON.stringify(data, null, 2), "utf-8");
+    return send(res, 200, { ok: true, saved: !!b64 });
+  }
+
+  if (p === "/api/projectile-prompt" && req.method === "POST") {
+    const body = JSON.parse((await readBody(req)).toString("utf-8"));
+    return send(res, 200, { ok: true, prompt: projPrompt(body.kind || "seed", body.desc || "") });
   }
 
   if (p === "/api/project" && req.method === "POST") {
