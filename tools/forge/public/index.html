@@ -69,7 +69,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <div class="row"><button id="reload">重新载入</button></div>
     <div class="hint" id="unitInfo"></div>
 
-    <h2 style="margin-top:16px">② 风格约束</h2>
+    <h2 style="margin-top:16px">② 整株描述</h2>
+    <textarea id="base" placeholder="用大白话写这株植物长什么样：颜色、形状、有没有眼睛、拿什么武器……这一条会拼进每一帧的 prompt"></textarea>
+    <div class="hint">改现有角色时会自动带出它的原始描述（没有就空着）。</div>
+
+    <h2 style="margin-top:16px">③ 风格约束</h2>
     <textarea id="style">Q版圆润卡通，粗深色描边，明快平涂加少量渐变，一定要有一双又大又亮的卡通眼睛（黑色眼珠+白色高光），表情生动，正面平视，全身完整居中、站在画面底部中央，纯白色干净背景(#FFFFFF)，无地面投影，无文字水印，画面中只有这一个角色。</textarea>
   </section>
 
@@ -83,10 +87,20 @@ button:disabled{opacity:.45;cursor:not-allowed}
       <textarea id="fePrompt" disabled></textarea>
       <div class="row">
         <button class="primary" id="feGen">生成这一帧</button>
-        <button id="feSave">保存到磁盘</button>
+        <button class="primary" id="feGenSave">生成并保存</button>
+        <button id="feSave">只保存图片</button>
+        <button id="feUndo">撤销</button>
+      </div>
+      <div class="row">
+        <button id="fePrev">← 上一帧</button>
+        <button id="feNext">下一帧 →</button>
         <button id="feUpload">上传替换</button>
         <button id="feClear">清空</button>
         <input type="file" id="feFile" accept="image/*" style="display:none">
+      </div>
+      <div class="hint">
+        快捷键：<b>←/→</b> 切帧 · <b>Ctrl+Enter</b> 生成 · <b>Ctrl+S</b> 保存 ·
+        prompt 改完自动落盘
       </div>
       <div class="hint" id="feHint"></div>
     </div>
@@ -117,6 +131,9 @@ const FRAME = 64, COLS = 4;
 let SLOTS = [], units = [], current = null, selected = -1;
 const imgs = {};        // 当前帧图：slot -> {img: HTMLImageElement|HTMLCanvasElement, saved: bool}
 const prompts = {};     // slot -> 用户改过的 prompt
+let baseText = "";      // 整株描述
+const undoStack = {};   // slot -> 上一张图（只留一层）
+let saveTimer = null;
 
 function log(m) {
   const el = $("log");
@@ -162,6 +179,8 @@ async function selectUnit(key) {
   // 1) 先试项目里的帧
   const fr = await (await fetch("/api/frames?key=" + encodeURIComponent(key))).json();
   Object.assign(prompts, fr.prompts || {});
+  baseText = fr.base || "";
+  $("base").value = baseText;
   let anySaved = false;
   for (const s of SLOTS) {
     if (!s.enabled) continue;
@@ -246,7 +265,7 @@ function renderGrid() {
 
 /* ---------------- 编辑区 ---------------- */
 function defaultPrompt(slot) {
-  const desc = (current && current.cn) ? `${current.cn}。` : "";
+  const desc = baseText.trim() ? baseText.trim() + "。" : "";
   const hint = {
     idle: "平静待机，身体端正放松，眼睛自然睁开",
     walk: "茎叶被微风轻摇的循环姿态（植物不移动）",
@@ -273,13 +292,33 @@ function renderEditor() {
     (rec && rec.saved ? " · 已存到磁盘" : " · 还没保存到磁盘");
   $("fePrompt").disabled = false;
   $("fePrompt").value = prompts[s.name] || defaultPrompt(s);
-  $("feHint").textContent = rec
+  const custom = Object.prototype.hasOwnProperty.call(prompts, s.name);
+  $("feHint").textContent = (rec
     ? "生成时会用这一帧当参考图（图生图），保持还是同一株植物。"
-    : "这一帧还没有图，生成会用纯文生图。";
+    : "这一帧还没有图，生成会用纯文生图。") +
+    (custom ? "  · 这一帧的 prompt 是自定义的" : "");
+}
+
+/* ---------------- prompt 落盘 ---------------- */
+function scheduleSaveProject() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveProjectNow, 700);
+}
+async function saveProjectNow() {
+  if (!current) return;
+  try {
+    const r = await fetch("/api/project", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: current.key, base: baseText,
+                             frames: prompts }),
+    });
+    const js = await r.json();
+    if (!js.ok) throw new Error(js.error || "保存失败");
+  } catch (e) { log("prompt 保存失败：" + e.message); }
 }
 
 /* ---------------- 生成 / 保存 ---------------- */
-async function generateFrame() {
+async function generateFrame(autoSave) {
   if (selected < 0) { log("先选一帧"); return; }
   const s = SLOTS[selected];
   const prompt = ($("fePrompt").value || "").trim();
@@ -301,9 +340,11 @@ async function generateFrame() {
     });
     const js = await r.json();
     if (!js.ok) throw new Error(js.error || "生成失败");
+    if (rec) undoStack[s.name] = rec;
     imgs[s.name] = { src: js.image, saved: false };
     renderGrid(); renderEditor();
-    log(`${s.name} 生成完成（${js.seconds}s）。记得点「保存到磁盘」。`);
+    log(`${s.name} 生成完成（${js.seconds}s）。` + (autoSave ? "已保存。" : "记得点「保存到磁盘」。"));
+    if (autoSave) await saveFrame();
   } catch (e) {
     log("生成失败：" + e.message);
   } finally {
@@ -400,13 +441,54 @@ async function buildSheet() {
 /* ---------------- 绑定 ---------------- */
 $("unitSel").addEventListener("change", e => selectUnit(e.target.value));
 $("reload").onclick = () => selectUnit(current ? current.key : (units[0] && units[0].key));
-$("feGen").onclick = generateFrame;
+$("feGen").onclick = () => generateFrame(false);
+$("feGenSave").onclick = () => generateFrame(true);
 $("feSave").onclick = saveFrame;
 $("feClear").onclick = () => {
   if (selected < 0) return;
-  delete imgs[SLOTS[selected].name];
+  const n = SLOTS[selected].name;
+  if (imgs[n]) undoStack[n] = imgs[n];
+  delete imgs[n];
   renderGrid(); renderEditor();
 };
+$("feUndo").onclick = () => {
+  if (selected < 0) return;
+  const n = SLOTS[selected].name;
+  if (!undoStack[n]) { log("这一帧没有可撤销的操作"); return; }
+  imgs[n] = undoStack[n];
+  delete undoStack[n];
+  renderGrid(); renderEditor();
+  log("已撤销 " + n + "（记得保存）");
+};
+$("fePrev").onclick = () => moveSelection(-1);
+$("feNext").onclick = () => moveSelection(1);
+
+$("base").addEventListener("input", () => {
+  baseText = $("base").value;
+  scheduleSaveProject();
+  if (selected >= 0 && !Object.prototype.hasOwnProperty.call(prompts, SLOTS[selected].name)) {
+    renderEditor();          // 没自定义的帧，默认 prompt 跟着变
+  }
+});
+
+document.addEventListener("keydown", e => {
+  const inText = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target.tagName || ""));
+  if (e.key === "ArrowLeft" && !inText) { moveSelection(-1); e.preventDefault(); }
+  else if (e.key === "ArrowRight" && !inText) { moveSelection(1); e.preventDefault(); }
+  else if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { generateFrame(false); e.preventDefault(); }
+  else if ((e.key === "s" || e.key === "S") && (e.ctrlKey || e.metaKey)) { saveFrame(); e.preventDefault(); }
+});
+
+function moveSelection(d) {
+  const order = SLOTS.map((s, i) => s.enabled ? i : -1).filter(i => i >= 0);
+  if (!order.length) return;
+  const at = order.indexOf(selected);
+  const next = at < 0 ? order[0] : order[(at + d + order.length) % order.length];
+  selected = next;
+  renderGrid(); renderEditor();
+  const el = document.querySelectorAll("#grid .cell")[selected];
+  if (el) el.scrollIntoView({ block: "nearest" });
+}
 $("feUpload").onclick = () => $("feFile").click();
 $("feFile").onchange = e => {
   const f = e.target.files && e.target.files[0];
@@ -421,7 +503,9 @@ $("feFile").onchange = e => {
   e.target.value = "";
 };
 $("fePrompt").addEventListener("input", () => {
-  if (selected >= 0) prompts[SLOTS[selected].name] = $("fePrompt").value;
+  if (selected < 0) return;
+  prompts[SLOTS[selected].name] = $("fePrompt").value;
+  scheduleSaveProject();
 });
 $("buildSheet").onclick = buildSheet;
 

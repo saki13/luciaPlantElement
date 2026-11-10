@@ -269,9 +269,15 @@ async function api(req, res, url) {
       const f = path.join(framesDir(key), s.name + ".png");
       out[s.name] = fs.existsSync(f) ? fs.readFileSync(f).toString("base64") : null;
     }
-    let prompts = {};
-    try { prompts = JSON.parse(fs.readFileSync(projectJson(key), "utf-8")).frames || {}; } catch (e) { }
-    return send(res, 200, { ok: true, frames: out, prompts, exists: framesOnDisk(key) });
+    let prompts = {}, base = "", projectExists = false;
+    try {
+      const pj = JSON.parse(fs.readFileSync(projectJson(key), "utf-8"));
+      prompts = pj.frames || {};
+      base = pj.base_desc || "";
+      projectExists = true;
+    } catch (e) { /* 没有项目文件 */ }
+    return send(res, 200, { ok: true, frames: out, prompts, base, projectExists,
+                            exists: framesOnDisk(key) });
   }
 
   if (p === "/api/generate" && req.method === "POST") {
@@ -290,6 +296,24 @@ async function api(req, res, url) {
       console.log("  生成失败:", e.message);
       return send(res, 400, { ok: false, error: e.message });
     }
+  }
+
+  if (p === "/api/project" && req.method === "POST") {
+    const body = JSON.parse((await readBody(req)).toString("utf-8"));
+    const key = String(body.key || "").replace(/[^\w-]/g, "");
+    if (!key) return send(res, 400, { ok: false, error: "缺少 key" });
+    let data = {};
+    try { data = JSON.parse(await fsp.readFile(projectJson(key), "utf-8")); } catch (e) { data = {}; }
+    data.key = key;
+    data.cn = data.cn || unitCn("plants", key);
+    if (typeof body.base === "string") data.base_desc = body.base;
+    if (body.frames && typeof body.frames === "object") {
+      data.frames = Object.assign({}, data.frames || {}, body.frames);
+    }
+    data.updated = new Date().toISOString();
+    await fsp.mkdir(projectDir(key), { recursive: true });
+    await fsp.writeFile(projectJson(key), JSON.stringify(data, null, 2), "utf-8");
+    return send(res, 200, { ok: true, saved: true });
   }
 
   if (p === "/api/frame" && req.method === "POST") {
