@@ -60,6 +60,10 @@
   .badge.new{background:#3a2f1a;color:var(--accent)}
   .badge.dirty{background:#3a1f1f;color:#ef7a7a}
   #saveState{font-size:11px;color:var(--dim);margin-top:6px}
+  #banner{display:none;margin:0 18px;padding:9px 12px;border-radius:8px;
+    background:#3a2f1a;border:1px solid #6b5520;color:#f0dca8;font-size:12.5px}
+  #banner b{color:var(--accent)}
+  #banner .close{float:right;cursor:pointer;color:var(--dim)}
 </style>
 </head>
 <body>
@@ -68,6 +72,7 @@
   <span class="tag">单文件 · 内置现有 54 个角色 · 数据只在本机</span>
 </header>
 
+<div id="banner"><span class="close" onclick="this.parentNode.style.display='none'">✕</span><span id="bannerText"></span></div>
 <main>
   <!-- ============ 左：选单位 / 新建 ============ -->
   <section class="card">
@@ -113,7 +118,17 @@
       <button id="revertUnit">恢复该角色内置图</button>
     </div>
     <div class="row">
-      <button id="exportAll">导出全部已改（zip）</button>
+      <button class="primary" id="exportWorkspace" style="width:100%">
+        导出工作副本（下次双击它继续改）
+      </button>
+    </div>
+    <div class="hint">
+      <b>这是最稳的保存方式</b>：会下载一个新 HTML，里面已经包含你改过的所有图。
+      下次<b>双击这个新文件</b>就能看到全部改动，继续改完再导出一次。
+      换电脑、用 Safari、清缓存都不怕。
+    </div>
+    <div class="row">
+      <button id="exportAll">导出全部已改（zip，交给开发）</button>
       <button id="importArchive">导入存档…</button>
       <input type="file" id="importFile" accept=".json,.zip" style="display:none">
     </div>
@@ -218,38 +233,107 @@ const keyNorm = s => (s || "").trim().toLowerCase()
 
 /* ================= 本机存档（IndexedDB） ================= */
 const Store = (() => {
-  const DB = "plant-art-forge", ST = "units";
+  /* 三档后端，能力从高到低：
+     idb  IndexedDB     —— 容量大；Chrome/Edge 在 file:// 下可用
+     ls   localStorage  —— Safari 在 file:// 下通常也禁，但试一下
+     mem  纯内存        —— 兜底：只在本次会话有效
+     原因：Safari 把 file:// 当作不透明来源，存储 API 会直接抛错，
+     不降级的话「保存」会静默失效，设计师会以为存上了。 */
+  const DB = "plant-art-forge", ST = "units", LS_PREFIX = "paf_unit:";
+  let mode = "mem";
+  const mem = new Map();
   let dbp = null;
-  function open() {
+
+  function openIdb() {
     if (dbp) return dbp;
     dbp = new Promise((res, rej) => {
-      const r = indexedDB.open(DB, 1);
-      r.onupgradeneeded = () => {
-        const d = r.result;
+      let req;
+      try { req = indexedDB.open(DB, 1); } catch (e) { rej(e); return; }
+      req.onupgradeneeded = () => {
+        const d = req.result;
         if (!d.objectStoreNames.contains(ST)) d.createObjectStore(ST, { keyPath: "key" });
       };
-      r.onsuccess = () => res(r.result);
-      r.onerror = () => rej(r.error);
+      req.onsuccess = () => res(req.result);
+      req.onerror = () => rej(req.error || new Error("idb open failed"));
+      req.onblocked = () => rej(new Error("idb blocked"));
     });
     return dbp;
   }
-  async function tx(mode, fn) {
-    const d = await open();
+  async function idbTx(m, fn) {
+    const d = await openIdb();
     return new Promise((res, rej) => {
-      const t = d.transaction(ST, mode);
+      const t = d.transaction(ST, m);
       const st = t.objectStore(ST);
       let out;
       try { out = fn(st); } catch (e) { rej(e); return; }
       t.oncomplete = () => res(out && out.result !== undefined ? out.result : true);
       t.onerror = () => rej(t.error);
+      t.onabort = () => rej(t.error || new Error("idb abort"));
     });
   }
+
+  async function detect() {
+    try {
+      await idbTx("readwrite", st => st.put({ key: "__probe__", t: Date.now() }));
+      await idbTx("readonly", st => st.get("__probe__"));
+      await idbTx("readwrite", st => st.delete("__probe__"));
+      mode = "idb";
+      return;
+    } catch (e) { /* 降级 */ }
+    try {
+      localStorage.setItem("__paf_probe__", "1");
+      if (localStorage.getItem("__paf_probe__") !== "1") throw new Error("ls dead");
+      localStorage.removeItem("__paf_probe__");
+      mode = "ls";
+      return;
+    } catch (e) { /* 降级 */ }
+    mode = "mem";
+  }
+
+  const ready = detect();
+
   return {
-    get: key => tx("readonly", st => st.get(key)),
-    put: rec => tx("readwrite", st => st.put(rec)),
-    del: key => tx("readwrite", st => st.delete(key)),
-    all: () => tx("readonly", st => st.getAll()),
-    keys: () => tx("readonly", st => st.getAllKeys()),
+    get ready() { return ready; },
+    get mode() { return mode; },
+    async get(key) {
+      await ready;
+      if (mode === "idb") return idbTx("readonly", st => st.get(key));
+      if (mode === "ls") {
+        const raw = localStorage.getItem(LS_PREFIX + key);
+        return raw ? JSON.parse(raw) : undefined;
+      }
+      return mem.get(key);
+    },
+    async put(rec) {
+      await ready;
+      if (mode === "idb") return idbTx("readwrite", st => st.put(rec));
+      if (mode === "ls") {
+        try { localStorage.setItem(LS_PREFIX + rec.key, JSON.stringify(rec)); return true; }
+        catch (e) { throw new Error("localStorage 已满或被禁用：" + e.message); }
+      }
+      mem.set(rec.key, rec); return true;
+    },
+    async del(key) {
+      await ready;
+      if (mode === "idb") return idbTx("readwrite", st => st.delete(key));
+      if (mode === "ls") { localStorage.removeItem(LS_PREFIX + key); return true; }
+      mem.delete(key); return true;
+    },
+    async all() {
+      await ready;
+      if (mode === "idb") return idbTx("readonly", st => st.getAll());
+      if (mode === "ls") {
+        const out = [];
+        for (let k = 0; k < localStorage.length; k++) {
+          const key = localStorage.key(k);
+          if (key && key.startsWith(LS_PREFIX)) {
+            try { out.push(JSON.parse(localStorage.getItem(key))); } catch (e) { }
+          }
+        }
+        return out;
+      }
+      return Array.from(mem.values());
+    },
   };
 })();
 
@@ -266,6 +350,24 @@ function scheduleSave() {
   setSaveState("有改动，稍后自动保存…");
   saveTimer = setTimeout(saveNow, 800);
 }
+function showStorageBanner() {
+  const bn = $("banner"), tx = $("bannerText");
+  if (!bn || !tx) return;
+  const mode = Store.mode;
+  if (mode === "idb") { bn.style.display = "none"; return; }
+  bn.style.display = "block";
+  if (mode === "ls") {
+    tx.innerHTML = "<b>存档降级提醒</b>：这个浏览器在 <code>file://</code> 下禁用了 IndexedDB，" +
+      "已退回 localStorage（容量更小，图多时可能存不下）。" +
+      "建议定期点「导出工作副本」备份。";
+  } else {
+    tx.innerHTML = "<b>本机自动存档不可用</b>（常见于 <b>Safari</b> 双击打开的情况）。" +
+      "改动只在本次会话有效，关掉页面会丢。" +
+      "请<b>随时点左侧「导出工作副本」</b>——它会下载一个包含全部改动的新 HTML，" +
+      "下次双击那个文件就能接着改，不依赖浏览器存储，也不需要装任何东西。";
+  }
+}
+
 async function saveNow() {
   if (saving) return;
   if (!currentUnit) return;
@@ -278,7 +380,12 @@ async function saveNow() {
     };
     await Store.put(rec);
     const t = new Date();
-    setSaveState(`已保存到本机 ${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")}`);
+    const hh = String(t.getHours()).padStart(2, "0");
+    const mm = String(t.getMinutes()).padStart(2, "0");
+    const where = Store.mode === "idb" ? "本机"
+                : Store.mode === "ls" ? "本机(localStorage)" : "内存(临时)";
+    setSaveState(`已保存到${where} ${hh}:${mm}`
+      + (Store.mode === "mem" ? " · 关页面即失效，请及时导出" : ""));
   } catch (e) {
     setSaveState("保存失败：" + e.message);
   } finally { saving = false; }
@@ -686,6 +793,79 @@ async function genBase() {
   }
 }
 
+/* ================= 导出工作副本（自包含 HTML） ================= */
+/* 把当前所有改动合成新的 UNITS 数据，替换掉页面里原本的 const UNITS，
+   再整体另存为一个新 html。下次打开它，改动天然就在里面。 */
+async function exportWorkspace() {
+  // 先把当前角色落盘（内存模式下也要能导出）
+  if (currentUnit) await saveNow();
+
+  const recs = await Store.all();
+  const recMap = new Map(recs.map(r => [r.key, r]));
+
+  // 1) 以内置 UNITS 为底，用存档覆盖
+  const merged = [];
+  for (const u of UNITS) {
+    const r = recMap.get(u.key);
+    if (!r || !r.frames || !Object.keys(r.frames).length) {
+      merged.push({ key: u.key, cn: u.cn, role: u.role, kind: u.kind, desc: u.desc, sheet: u.sheet });
+    } else {
+      const cv = await composeFromMap(r.frames);
+      merged.push({ key: u.key, cn: u.cn, role: u.role, kind: u.kind, desc: u.desc,
+                    sheet: cv.toDataURL("image/png") });
+    }
+  }
+  // 2) 存档里新造的角色（内置里没有的）追加进去
+  for (const r of recs) {
+    if (UNITS.some(u => u.key === r.key)) continue;
+    if (!r.frames || !Object.keys(r.frames).length) {
+      merged.push({ key: r.key, cn: r.cn, role: r.role, kind: "plant",
+                    desc: r.desc || "", sheet: "" });
+    } else {
+      const cv = await composeFromMap(r.frames);
+      merged.push({ key: r.key, cn: r.cn, role: r.role, kind: "plant",
+                    desc: r.desc || "", sheet: cv.toDataURL("image/png") });
+    }
+  }
+
+  // 3) 取出当前页面的源码，替换 UNITS 字面量
+  let src = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+  const marker = "const UNITS = [";
+  const start = src.indexOf(marker);
+  if (start < 0) { log("导出失败：找不到 UNITS 数据块"); return; }
+  // 从 marker 起做括号配平，找到数组结束位置
+  let i = start + marker.length - 1, depth = 0, inStr = false, esc = false, end = -1;
+  for (; i < src.length; i++) {
+    const c = src[i];
+    if (inStr) {
+      if (esc) { esc = false; }
+      else if (c === "\\") { esc = true; }
+      else if (c === '"') { inStr = false; }
+      continue;
+    }
+    if (c === '"') { inStr = true; continue; }
+    if (c === "[") depth++;
+    else if (c === "]") { depth--; if (depth === 0) { end = i + 1; break; } }
+  }
+  if (end < 0) { log("导出失败：UNITS 数据块不完整"); return; }
+
+  const stamp = new Date();
+  const ss = stamp.getFullYear() + String(stamp.getMonth() + 1).padStart(2, "0")
+           + String(stamp.getDate()).padStart(2, "0") + "-"
+           + String(stamp.getHours()).padStart(2, "0")
+           + String(stamp.getMinutes()).padStart(2, "0");
+  const title = `植物立绘工坊-工作副本-${ss}`;
+  const payload = "const UNITS = " + JSON.stringify(merged) + ";";
+  src = src.slice(0, start) + payload + src.slice(end);
+  src = src.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`);
+
+  download(new Blob([src], { type: "text/html;charset=utf-8" }), title + ".html");
+  const changed = merged.length - UNITS.length;
+  log(`已导出工作副本「${title}.html」：${merged.length} 个角色` +
+      (changed > 0 ? `（其中 ${changed} 个是新建的）` : "") +
+      `。下次双击它继续改。`);
+}
+
 /* ================= 批量导出 / 导入存档 ================= */
 function composeFromMap(map) {
   const cv = document.createElement("canvas");
@@ -819,6 +999,7 @@ function init() {
     setSaveState("已恢复内置原图");
     loadUnit(currentUnit.key);
   };
+  $("exportWorkspace").onclick = exportWorkspace;
   $("exportAll").onclick = exportAll;
   $("importArchive").onclick = () => $("importFile").click();
   $("importFile").onchange = e => { if (e.target.files[0]) importArchive(e.target.files[0]); };
@@ -838,6 +1019,10 @@ function init() {
     $("apiKey").value = ""; log("已清除本机 Key。");
   };
   $("style").addEventListener("input", validate);
+  Store.ready.then(() => {
+    showStorageBanner();
+    if (Store.mode !== "idb") log("存档后端：" + Store.mode + "（见顶部提示）");
+  });
   if (UNITS.length) loadUnit(UNITS[0].key);
   window.addEventListener("beforeunload", () => { if (saveTimer) saveNow(); });
 }
