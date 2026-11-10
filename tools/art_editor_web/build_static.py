@@ -63,7 +63,11 @@ def build() -> int:
     payload = json.dumps(units, ensure_ascii=False, separators=(",", ":"))
     if "/*__UNITS__*/" not in tpl:
         raise SystemExit("模板缺少 /*__UNITS__*/ 占位")
+    seed = json.dumps({"style": "", "promptsByUnit": {}}, ensure_ascii=False)
+    if "__SEED__" not in tpl:
+        raise SystemExit("模板缺少 __SEED__ 占位")
     html = tpl.replace("/*__UNITS__*/", "const UNITS = " + payload + ";")
+    html = html.replace("__SEED__", seed)
     OUT.write_text(html, encoding="utf-8", newline="\n")
     size = OUT.stat().st_size / 1024
     print(f"收集 {len(units)} 个角色 -> {OUT.relative_to(ROOT)}")

@@ -30,6 +30,47 @@
 
 ---
 
+## ⚠️ 关于「在页面里直接生成」
+
+**已实测：ModelScope（Qwen-Image）不允许浏览器直连**，从网页发请求会得到
+`TypeError: Failed to fetch`——这是服务端的 CORS 策略，不是页面写错，
+换任何浏览器都一样。
+
+所以日常生产请走**离线批量**（下面的流程），它不受 CORS 限制、还能一次跑一批。
+
+### 离线批量流程（推荐）
+
+```
+设计师                          开发
+────────                        ────────
+写好每帧 prompt
+点「导出生成任务 .zip」  ───────►  python tools/art_batch.py 任务包.zip
+                                    （用我们自己的 MODELSCOPE_TOKEN）
+点「导入生成结果 .zip」 ◄───────  回传 xxx_results.zip
+自动回填到对应帧
+```
+
+命令行细节：
+
+```powershell
+$env:MODELSCOPE_TOKEN = "ms-xxxx"
+python toolsrt_batch.py ballista_jobs.zip            # 全跑
+python toolsrt_batch.py ballista_jobs.zip --dry-run  # 只看计划
+python toolsrt_batch.py ballista_jobs.zip --only idle_0,attack_1
+```
+
+任务包里每个 job 都带这一帧的完整 prompt 和参考图，
+所以生成出来还是同一株植物。
+
+### 如果你有代理
+
+「服务商」选 **本地代理**，地址填 `http://127.0.0.1:8787`（或你的中转站），
+就能在页面里直接生成、单帧重抽。代理只需把 `/v1/images/generations`
+和 `/v1/tasks/{id}` 原样转发到 `https://api-inference.modelscope.cn`，并放开 CORS：
+`Access-Control-Allow-Origin: *`。
+
+---
+
 ## 一、怎么用
 
 ### 1. 选角色 or 新建

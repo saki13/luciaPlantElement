@@ -205,12 +205,22 @@
   <section class="card">
     <h2>⑦ AI 生成（可选）</h2>
     <div class="hint">
-      支持 <b>OpenAI 兼容</b>接口。<br>
-      文生图 <code>/v1/images/generations</code> · 图生图 <code>/v1/images/edits</code><br>
+      <b>ModelScope 默认，Key 填 ms-xxx</b>。<br>
+      注意：ModelScope 服务端<b>不允许浏览器直连</b>（CORS，已实测），
+      直接点会报「连不上」。所以日常请用<b>离线批量</b>：<br>
+      ① 点右下「导出生成任务 .zip」→ 发给开发<br>
+      ② 开发跑完回传结果 zip → 点「导入生成结果」自动回填<br>
+      如果你自己有代理/中转，也可以把地址填成它，然后在页面里直接生成。<br>
       Key 只存本机浏览器，<b>不会</b>进导出包。
     </div>
+    <label>服务商</label>
+    <select id="apiProvider">
+      <option value="modelscope">ModelScope 魔搭（Qwen-Image，异步任务）</option>
+      <option value="openai">OpenAI 兼容（同步返回）</option>
+      <option value="proxy">本地代理（我在本机跑了一个转发）</option>
+    </select>
     <label>API 地址（Base URL）</label>
-    <input id="apiBase" placeholder="https://api.openai.com/v1">
+    <input id="apiBase" placeholder="https://api-inference.modelscope.cn">
     <label>模型名</label>
     <input id="apiModel" placeholder="gpt-image-1 / qwen-image / …">
     <label>API Key</label>
@@ -224,6 +234,17 @@
     <div class="row">
       <button class="primary" id="genBase" style="width:100%">文生图 → 填入 idle_0</button>
     </div>
+    <h2 style="margin-top:14px">离线批量（推荐）</h2>
+    <div class="hint">
+      把当前角色要出的帧整理成一个任务包，交给开发批量跑，再把产出的图导回来。
+      完全不受 CORS 限制。
+    </div>
+    <div class="row">
+      <button id="exportJobs">导出生成任务 .zip</button>
+      <button id="importResults">导入生成结果 .zip</button>
+      <input type="file" id="resultsFile" accept=".zip" style="display:none">
+    </div>
+    <div class="hint" id="jobsState"></div>
     <div class="hint" style="margin-top:8px">
       图生图会以<b>当前帧</b>为参考，保持同一个角色只改姿态——
       这是让 11 帧看起来是同一株植物的关键。
@@ -262,7 +283,10 @@ let images = new Array(SLOTS.length).fill(null);
    也能靠它在会话内切角色不丢、导出全部有内容。 */
 const sessionEdits = new Map();
 /* 每一帧自己的 prompt（用户可改，随档保存）。键是 slot 名，如 idle_0 */
-const framePrompts = {};
+const framePrompts = {};          // 当前角色的逐帧 prompt
+const promptsByUnit = {};         // 按角色归档：{unitKey: {slot: prompt}}
+/* 工作副本种子：导出时会整行替换成当前进展，重开即可恢复 */
+const WORKSPACE_SEED = __SEED__;
 /* 当前选中的帧下标；-1 表示未选 */
 let selectedSlot = -1;
 /* 只有真的改过才标记，避免仅浏览过的角色被当成已改导出 */
@@ -440,6 +464,7 @@ async function saveNow(force) {
       isNew: !!currentUnit.isNew,
       frames: snapshotFrames(), updated_at: new Date().toISOString()
     };
+    promptsByUnit[rec.key] = Object.assign({}, framePrompts);
     sessionEdits.set(rec.key, rec);
     try { await Store.put(rec); } catch (e) { /* 存储不可用也要留在会话里 */ }
     const t = new Date();
@@ -497,6 +522,8 @@ async function loadUnit(key) {
   // 描述来自内置数据（可在左栏改）
   if ($("desc")) $("desc").value = u.desc || "";
   Object.keys(framePrompts).forEach(k => delete framePrompts[k]);
+  // 先从会话归档恢复（切回来时不丢），稍后再叠加存档
+  if (promptsByUnit[key]) Object.assign(framePrompts, promptsByUnit[key]);
 
   const rec = await withTimeout(Store.get(key), 2500, null);
   if (rec && rec.frames && Object.keys(rec.frames).length) {
@@ -807,45 +834,132 @@ function api() {
     size: $("genSize").value
   };
 }
-async function callText2Img(prompt) {
-  const a = api();
-  if (!a.base || !a.key) throw new Error("请先填 API 地址与 Key");
-  const r = await fetch(a.base + "/images/generations", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + a.key },
-    body: JSON.stringify({ model: a.model || undefined, prompt, n: 1, size: a.size })
-  });
-  return parseImgResp(r);
+/* 所有网络错误统一解释，避免"点了没反应" */
+function explainNetError(e, url) {
+  const msg = (e && e.message) || String(e);
+  if (/Failed to fetch|NetworkError|Load failed/i.test(msg) || e.name === "TypeError") {
+    return `连不上 ${url}\n` +
+      `最常见原因：该服务不允许浏览器直连（CORS），或被网络/代理拦截。\n` +
+      `→ 改用「导出生成任务」离线跑，或在本机跑代理后把地址填成 http://127.0.0.1:8787`;
+  }
+  return msg;
 }
-async function callImg2Img(refImage, prompt) {
-  const a = api();
-  if (!a.base || !a.key) throw new Error("请先填 API 地址与 Key");
-  const blob = await new Promise(r => {
-    const cv = document.createElement("canvas");
-    cv.width = refImage.width; cv.height = refImage.height;
-    cv.getContext("2d").drawImage(refImage, 0, 0);
-    cv.toBlob(r, "image/png");
-  });
-  const fd = new FormData();
-  fd.append("image", blob, "ref.png");
-  fd.append("prompt", prompt);
-  fd.append("n", "1");
-  fd.append("size", a.size);
-  if (a.model) fd.append("model", a.model);
-  const r = await fetch(a.base + "/images/edits", {
-    method: "POST",
-    headers: { "Authorization": "Bearer " + a.key },
-    body: fd
-  });
-  return parseImgResp(r);
+
+function defaultBase() {
+  const p = $("apiProvider").value;
+  if (p === "modelscope") return "https://api-inference.modelscope.cn";
+  if (p === "proxy") return "http://127.0.0.1:8787";
+  return "https://api.openai.com/v1";
 }
-async function parseImgResp(r) {
-  if (!r.ok) throw new Error(`HTTP ${r.status} ${(await r.text()).slice(0, 160)}`);
+
+function imageToDataUrl(img) {
+  const cv = document.createElement("canvas");
+  cv.width = img.width; cv.height = img.height;
+  cv.getContext("2d").drawImage(img, 0, 0);
+  return cv.toDataURL("image/png");
+}
+
+/* --- ModelScope：异步任务，提交后轮询 --- */
+async function msGenerate(prompt, refImage, onTick) {
+  const a = api();
+  const base = (a.base || defaultBase()).replace(/\/+$/, "");
+  const url = base + "/v1/images/generations";
+  const payload = { model: a.model || "Qwen/Qwen-Image-2.1", prompt };
+  // 图生图：参考图以 data-uri 数组传入；注意此接口不能传 size
+  if (refImage) payload.image_url = [imageToDataUrl(refImage)];
+
+  let r;
+  try {
+    r = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + a.key,
+        "X-ModelScope-Async-Mode": "true"
+      },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    throw new Error(explainNetError(e, url));
+  }
+  if (!r.ok) throw new Error(`提交失败 HTTP ${r.status}：${(await r.text()).slice(0, 240)}`);
+  const sub = await r.json();
+  const taskId = sub.task_id;
+  if (!taskId) throw new Error("提交成功但没拿到 task_id：" + JSON.stringify(sub).slice(0, 200));
+
+  for (let i = 0; i < 120; i++) {
+    if (onTick) onTick(`排队/生成中… ${i + 1}`);
+    await new Promise(res => setTimeout(res, 3000));
+    const qurl = base + "/v1/tasks/" + taskId;
+    let q;
+    try {
+      q = await fetch(qurl, {
+        headers: {
+          "Authorization": "Bearer " + a.key,
+          "X-ModelScope-Task-Type": "image_generation"
+        }
+      });
+    } catch (e) {
+      throw new Error(explainNetError(e, qurl));
+    }
+    if (!q.ok) throw new Error(`查询任务失败 HTTP ${q.status}`);
+    const js = await q.json();
+    const st = js.task_status;
+    if (st === "SUCCEED") {
+      const imgs = js.output_images || [];
+      if (!imgs.length) throw new Error("任务成功但没有图片");
+      return await loadImg(imgs[0]);
+    }
+    if (st === "FAILED") throw new Error("生成失败：" + JSON.stringify(js).slice(0, 240));
+  }
+  throw new Error("轮询超时（6 分钟）");
+}
+
+/* --- OpenAI 兼容：同步返回 --- */
+async function oaGenerate(prompt, refImage) {
+  const a = api();
+  const base = (a.base || defaultBase()).replace(/\/+$/, "");
+  let r;
+  try {
+    if (refImage) {
+      const blob = await new Promise(res => {
+        const cv = document.createElement("canvas");
+        cv.width = refImage.width; cv.height = refImage.height;
+        cv.getContext("2d").drawImage(refImage, 0, 0);
+        cv.toBlob(res, "image/png");
+      });
+      const fd = new FormData();
+      fd.append("image", blob, "ref.png");
+      fd.append("prompt", prompt);
+      fd.append("n", "1");
+      if (a.model) fd.append("model", a.model);
+      r = await fetch(base + "/images/edits", {
+        method: "POST", headers: { "Authorization": "Bearer " + a.key }, body: fd
+      });
+    } else {
+      r = await fetch(base + "/images/generations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + a.key },
+        body: JSON.stringify({ model: a.model || undefined, prompt, n: 1, size: a.size })
+      });
+    }
+  } catch (e) {
+    throw new Error(explainNetError(e, base));
+  }
+  if (!r.ok) throw new Error(`HTTP ${r.status} ${(await r.text()).slice(0, 200)}`);
   const j = await r.json();
   const it = (j.data && j.data[0]) || {};
   const src = it.b64_json ? "data:image/png;base64," + it.b64_json : it.url;
   if (!src) throw new Error("返回里没有 b64_json / url");
   return await loadImg(src);
+}
+
+async function anyGenerate(prompt, refImage, onTick) {
+  const a = api();
+  if (!a.key && $("apiProvider").value !== "proxy") throw new Error("请先填 API Key");
+  const p = $("apiProvider").value;
+  if (p === "openai") return oaGenerate(prompt, refImage);
+  return msGenerate(prompt, refImage, onTick);   // modelscope / proxy 都走异步任务
 }
 function loadImg(src) {
   return new Promise((res, rej) => {
@@ -880,10 +994,13 @@ async function rerollFrame(i) {
     if (typed) prompt = typed;
   }
   busy[i] = true; renderGrid();
+  const btn = $("feReroll");
+  if (btn) { btn.disabled = true; btn.textContent = "生成中…"; }
+  log(`开始生成 ${SLOTS[i].name}（${ref ? "图生图" : "文生图"}，${$("apiProvider").value}）…`);
   try {
-    const img = ref
-      ? await callImg2Img(ref, prompt)     // 有图 -> 图生图，保持角色一致
-      : await callText2Img(prompt);        // 没图 -> 文生图
+    const img = await anyGenerate(prompt, ref, msg => {
+      if (btn) btn.textContent = msg;
+    });
     framePrompts[SLOTS[i].name] = prompt;  // 记下这次用的 prompt
     images[i] = img;
     dirty = true;
@@ -891,7 +1008,9 @@ async function rerollFrame(i) {
   } catch (e) {
     log(`重抽 ${SLOTS[i].name} 失败：${e.message}`);
   } finally {
-    busy[i] = false; renderGrid(); renderFrameEditor(); scheduleSave();
+    busy[i] = false;
+    if (btn) { btn.disabled = false; btn.textContent = "↻ 用这段 prompt 重抽这一帧"; }
+    renderGrid(); renderFrameEditor(); scheduleSave();
   }
 }
 async function rerollAll() {
@@ -905,13 +1024,125 @@ async function genBase() {
   const btn = $("genBase");
   btn.disabled = true; btn.textContent = "生成中…";
   try {
-    const img = await callText2Img(fullPrompt());
+    const img = await anyGenerate(fullPrompt(), null, msg => { btn.textContent = msg; });
     setImage(0, img);
     log("立绘已生成并填入 idle_0。可点「用 idle_0 填充空槽」。");
   } catch (e) {
     log("生成失败：" + e.message + "\n（若是 CORS，请改用复制 prompt 的方式）");
   } finally {
     btn.disabled = false; btn.textContent = "文生图 → 填入 idle_0";
+  }
+}
+
+/* ================= 离线批量：导出任务 / 导入结果 ================= */
+/* 任务包：jobs.json + frames/<key>__<slot>.png（参考图，仅图生图有）
+   结果包：<key>__<slot>.png，导入时按名回填 */
+async function exportJobs() {
+  try {
+    if (currentUnit && dirty) await saveNow(true);
+    const a = api();
+    const key = currentUnit ? currentUnit.key : "custom_plant";
+    const jobs = [];
+    const files = [];
+    for (let i = 0; i < SLOTS.length; i++) {
+      const slot = SLOTS[i];
+      if (!slot.enabled) continue;
+      const prompt = (framePrompts[slot.name] || "").trim() || defaultFramePrompt(i);
+      const job = { key, slot: slot.name, prompt };
+      if (images[i]) {
+        const name = `frames/${key}__${slot.name}.png`;
+        job.ref = name;
+        const data = await (await fetch(images[i].src)).arrayBuffer();
+        files.push({ name, data: new Uint8Array(data) });
+      }
+      jobs.push(job);
+    }
+    const meta = {
+      created_at: new Date().toISOString(),
+      provider: $("apiProvider").value,
+      model: a.model || "Qwen/Qwen-Image-2.1",
+      size: a.size,
+      note: "每个 job 出一张图；有 ref 的用图生图（保持同一株），没有的用文生图",
+      jobs
+    };
+    files.push({ name: "jobs.json",
+      data: new TextEncoder().encode(JSON.stringify(meta, null, 2)) });
+    download(zipStore(files), `${key}_jobs.zip`);
+    $("jobsState").textContent = `已导出 ${jobs.length} 个任务（${files.length - 1} 张参考图）`;
+    log(`已导出生成任务 ${key}_jobs.zip，共 ${jobs.length} 个任务。`);
+  } catch (e) {
+    log("导出任务失败：" + (e.message || e));
+  }
+}
+
+/* 读 zip 里每个条目的名与内容（只解析 store 或 deflate 之外的简单情况用不到，
+   这里用浏览器自带 DecompressionStream 处理 deflate） */
+async function readZipFiles(buf) {
+  const u8 = new Uint8Array(buf);
+  const dv = new DataView(u8.buffer);
+  // 找 End of Central Directory
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= 0 && i > u8.length - 66000; i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error("不是有效的 zip");
+  const count = dv.getUint16(eocd + 10, true);
+  let off = dv.getUint32(eocd + 16, true);
+  const out = {};
+  for (let n = 0; n < count; n++) {
+    if (dv.getUint32(off, true) !== 0x02014b50) break;
+    const method = dv.getUint16(off + 10, true);
+    const csize = dv.getUint32(off + 20, true);
+    const nameLen = dv.getUint16(off + 28, true);
+    const extraLen = dv.getUint16(off + 30, true);
+    const cmtLen = dv.getUint16(off + 32, true);
+    const localOff = dv.getUint32(off + 42, true);
+    const name = new TextDecoder().decode(u8.subarray(off + 46, off + 46 + nameLen));
+    const lNameLen = dv.getUint16(localOff + 26, true);
+    const lExtraLen = dv.getUint16(localOff + 28, true);
+    const dataStart = localOff + 30 + lNameLen + lExtraLen;
+    const raw = u8.subarray(dataStart, dataStart + csize);
+    let data;
+    if (method === 0) data = raw;
+    else if (method === 8) {
+      const ds = new DecompressionStream("deflate-raw");
+      const stream = new Blob([raw]).stream().pipeThrough(ds);
+      data = new Uint8Array(await new Response(stream).arrayBuffer());
+    } else throw new Error("不支持的压缩方式 " + method);
+    out[name] = data;
+    off += 46 + nameLen + extraLen + cmtLen;
+  }
+  return out;
+}
+
+async function importResults(file) {
+  try {
+    const buf = await file.arrayBuffer();
+    const entries = await readZipFiles(buf);
+    const names = Object.keys(entries).filter(n => /\.(png|webp|jpg|jpeg)$/i.test(n));
+    if (!names.length) throw new Error("这个 zip 里没有图片");
+    const mine = names.filter(n => n.split("/").pop().startsWith(
+      (currentUnit ? currentUnit.key : "") + "__"));
+    const use = mine.length ? mine : names;
+    let n = 0;
+    for (const name of use) {
+      const base = name.split("/").pop().replace(/\.[^.]+$/, "");
+      const idx = base.indexOf("__");
+      if (idx < 0) continue;
+      const slot = base.slice(idx + 2);
+      const i = SLOTS.findIndex(x => x.name === slot);
+      if (i < 0) continue;
+      const blob = new Blob([entries[name]]);
+      const img = await loadImg(URL.createObjectURL(blob));
+      images[i] = img;
+      n++;
+    }
+    if (!n) throw new Error("文件名里找不到 <key>__<slot> 格式");
+    dirty = true; renderGrid(); renderFrameEditor(); scheduleSave();
+    $("jobsState").textContent = `已导入 ${n} 帧`;
+    log(`已导入生成结果：${n} 帧。`);
+  } catch (e) {
+    log("导入结果失败：" + (e.message || e));
   }
 }
 
@@ -970,6 +1201,19 @@ async function exportWorkspace() {
     else if (c === "]") { depth--; if (depth === 0) { end = i + 1; break; } }
   }
   if (end < 0) { log("导出失败：UNITS 数据块不完整"); return; }
+
+  // 先把 prompt 种子写回源码，否则重开就丢了
+  const seedJson = JSON.stringify({
+    style: ($("style").value || "").trim(),
+    promptsByUnit: promptsByUnit
+  });
+  const seedMark = "const WORKSPACE_SEED = ";
+  const si = src.indexOf(seedMark);
+  if (si >= 0) {
+    let ei = src.indexOf(";\n", si);
+    if (ei < 0) ei = src.indexOf(";", si);
+    src = src.slice(0, si) + seedMark + seedJson + ";" + src.slice(ei + 1);
+  }
 
   const stamp = new Date();
   const ss = stamp.getFullYear() + String(stamp.getMonth() + 1).padStart(2, "0")
@@ -1082,7 +1326,8 @@ async function importArchive(file) {
 function loadKey() {
   try {
     if (localStorage.getItem("paf_key")) $("apiKey").value = localStorage.getItem("paf_key");
-    if (localStorage.getItem("paf_base")) $("apiBase").value = localStorage.getItem("paf_base");
+    if (localStorage.getItem("paf_provider")) $("apiProvider").value = localStorage.getItem("paf_provider");
+    $("apiBase").value = localStorage.getItem("paf_base") || defaultBase();
     if (localStorage.getItem("paf_model")) $("apiModel").value = localStorage.getItem("paf_model");
   } catch (e) { }
 }
@@ -1090,6 +1335,16 @@ function init() {
   buildGrid();
   fillUnitSelect();
   renderFrameEditor();
+  // 应用工作副本种子：风格约束 + 各角色逐帧 prompt
+  if (WORKSPACE_SEED && typeof WORKSPACE_SEED === "object") {
+    if (WORKSPACE_SEED.style) $("style").value = WORKSPACE_SEED.style;
+    if (WORKSPACE_SEED.promptsByUnit) {
+      Object.keys(WORKSPACE_SEED.promptsByUnit).forEach(k => {
+        promptsByUnit[k] = Object.assign({}, WORKSPACE_SEED.promptsByUnit[k]);
+      });
+      if (UNITS.length) Object.assign(framePrompts, promptsByUnit[UNITS[0].key] || {});
+    }
+  }
   loadKey();
   $("unitSel").onchange = e => loadUnit(e.target.value);
   $("newBtn").onclick = () => { $("unitSel").value = "__new__"; $("newForm").style.display = "block"; $("nKey").focus(); };
@@ -1166,6 +1421,16 @@ function init() {
     dirty = true; scheduleSave(); renderGrid();
   });
 
+  $("exportJobs").onclick = exportJobs;
+  $("importResults").onclick = () => $("resultsFile").click();
+  $("resultsFile").onchange = e => {
+    if (e.target.files && e.target.files[0]) importResults(e.target.files[0]);
+    e.target.value = "";
+  };
+  $("apiProvider").onchange = () => {
+    $("apiBase").value = defaultBase();
+    try { localStorage.setItem("paf_provider", $("apiProvider").value); } catch (e) { }
+  };
   $("exportWorkspace").onclick = exportWorkspace;
   $("exportAll").onclick = exportAll;
   $("importArchive").onclick = () => $("importFile").click();
@@ -1178,6 +1443,7 @@ function init() {
       localStorage.setItem("paf_key", $("apiKey").value.trim());
       localStorage.setItem("paf_base", $("apiBase").value.trim());
       localStorage.setItem("paf_model", $("apiModel").value.trim());
+      localStorage.setItem("paf_provider", $("apiProvider").value);
       log("Key 已保存到本机。");
     } catch (e) { log("保存失败：" + e.message); }
   };
