@@ -45,6 +45,17 @@
     font-family:inherit}
   .cell .ops button:hover{background:var(--accent);color:#1a1a1a;border-color:var(--accent)}
   .cell.off{opacity:.3}
+  .cell{cursor:pointer}
+  .cell.selected{outline:2px solid var(--accent);outline-offset:1px}
+  .cell .mark{position:absolute;right:5px;top:3px;font-size:9px;color:var(--accent);
+    display:none}
+  .cell.edited .mark{display:block}
+  #frameEditor{border:1px solid var(--accent);border-radius:8px;padding:11px;
+    margin-top:12px;background:#1b2130}
+  #frameEditor h3{margin:0 0 6px;font-size:12.5px;color:var(--accent);font-weight:600}
+  #frameEditor textarea{min-height:66px;font-size:12.5px}
+  #frameEditor .btns{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
+  .muted{color:var(--dim);font-size:11px}
   .cell.busy::after{content:"…";position:absolute;inset:0;display:flex;
     align-items:center;justify-content:center;font-size:20px;color:var(--accent);
     background:rgba(0,0,0,.45)}
@@ -106,7 +117,15 @@
       <div class="hint">游戏数值（阳光/血量/能力）我们拿到资源后再补，你只负责外形。</div>
     </div>
 
-    <h2 style="margin-top:16px">② 风格约束（自动拼接）</h2>
+    <h2 style="margin-top:16px">② 外观描述（自然语言）</h2>
+    <textarea id="desc" style="min-height:96px"
+      placeholder="用大白话写：这株植物长什么样、什么颜色、什么形状、有没有眼睛、拿什么武器……"></textarea>
+    <div class="hint">
+      这是这株植物的<b>总描述</b>，会拼进每一帧的 prompt。
+      改现有角色时已自动带出它的原始描述，可以随便改。
+    </div>
+
+    <h2 style="margin-top:16px">③ 风格约束（自动拼在后面）</h2>
     <textarea id="style" style="min-height:72px">Q版圆润卡通，粗深色描边，明快平涂加少量渐变，一定要有一双又大又亮的卡通眼睛（黑色眼珠+白色高光），表情生动，正面平视，全身完整居中、站在画面底部中央，纯白色干净背景(#FFFFFF)，无地面投影，无文字水印，画面中只有这一个角色。</textarea>
     <h2 style="margin-top:16px">③ 保存</h2>
     <div class="hint">
@@ -144,19 +163,34 @@
   <!-- ============ 中：帧网格 + 预览 ============ -->
   <section class="card">
     <h2>⑤ 动作帧 <span class="badge" id="frameBadge">0/11</span></h2>
+    <div id="frameEditor">
+      <h3 id="feTitle">选中一帧开始编辑</h3>
+      <div class="muted" id="feState">点下面任意一格来选中它。</div>
+      <label style="margin-top:8px">这一帧的 prompt（可改，随档保存）</label>
+      <textarea id="fePrompt" placeholder="选中帧后这里会显示该帧的默认 prompt，你可以改成更具体的要求，例如「炮口更张开、有冰霜喷出」"></textarea>
+      <div class="btns">
+        <button class="primary" id="feReroll">↻ 用这段 prompt 重抽这一帧</button>
+        <button id="feUpload">上传替换…</button>
+        <button id="feResetPrompt">恢复默认 prompt</button>
+        <button id="feClear">清空这一帧</button>
+        <input type="file" id="feFile" accept="image/*" style="display:none">
+      </div>
+      <div class="muted" id="feHint" style="margin-top:6px"></div>
+    </div>
+
     <div class="hint">
-      每格底部有 <b>↻ 重抽</b>（以该帧为参考图生图）和 <b>×</b>（清空）；点格子空白处才是选图。
+      <b>点任意一格选中它</b>，下方会出现这一帧的 prompt 编辑区和「重抽」按钮。
       共 11 个可用格：idle×2 / walk×4 / attack×3 / hurt×2（另 5 格留空）。
       留空的必需帧会用 idle_0 自动补齐。
     </div>
     <div id="grid"></div>
     <div class="row">
       <button id="fillAll">用 idle_0 填充空槽</button>
-      <button id="rerollAll">↻ 逐帧重抽全部（慢，按顺序）</button>
+      <button id="rerollAll">↻ 逐帧重抽全部（按各自 prompt，慢）</button>
       <button id="clearAll">清空全部</button>
     </div>
 
-    <h2 style="margin-top:16px">⑥ 合成预览</h2>
+    <h2 style="margin-top:16px">⑦ 合成预览</h2>
     <div id="previewWrap"><canvas id="preview" width="256" height="256"></canvas></div>
     <div class="checks" id="checks"></div>
 
@@ -227,6 +261,10 @@ let images = new Array(SLOTS.length).fill(null);
 /* 本轮改动缓存：即使浏览器存储不可用（Safari/file://），
    也能靠它在会话内切角色不丢、导出全部有内容。 */
 const sessionEdits = new Map();
+/* 每一帧自己的 prompt（用户可改，随档保存）。键是 slot 名，如 idle_0 */
+const framePrompts = {};
+/* 当前选中的帧下标；-1 表示未选 */
+let selectedSlot = -1;
 /* 只有真的改过才标记，避免仅浏览过的角色被当成已改导出 */
 let dirty = false;
 let currentUnit = null;   // {key, cn, role, desc, isNew}
@@ -396,7 +434,10 @@ async function saveNow(force) {
   try {
     const rec = {
       key: currentUnit.key, cn: currentUnit.cn, role: currentUnit.role,
-      desc: currentUnit.desc || "", isNew: !!currentUnit.isNew,
+      desc: ($("desc").value || currentUnit.desc || "").trim(),
+      style: ($("style").value || "").trim(),
+      framePrompts: Object.assign({}, framePrompts),
+      isNew: !!currentUnit.isNew,
       frames: snapshotFrames(), updated_at: new Date().toISOString()
     };
     sessionEdits.set(rec.key, rec);
@@ -453,13 +494,21 @@ async function loadUnit(key) {
   setSaveState("当前是内置原图，尚未修改");
 
   // 再异步叠加本机存档（读不到就保持内置图）
+  // 描述来自内置数据（可在左栏改）
+  if ($("desc")) $("desc").value = u.desc || "";
+  Object.keys(framePrompts).forEach(k => delete framePrompts[k]);
+
   const rec = await withTimeout(Store.get(key), 2500, null);
   if (rec && rec.frames && Object.keys(rec.frames).length) {
     await hydrateFrames(rec.frames);
+    if (rec.desc && $("desc")) $("desc").value = rec.desc;
+    if (rec.style && $("style")) $("style").value = rec.style;
+    if (rec.framePrompts) Object.assign(framePrompts, rec.framePrompts);
     $("unitInfo").innerHTML += ` <span class="badge dirty">已改过</span>`;
     const t = (rec.updated_at || "").slice(0, 16).replace("T", " ");
     setSaveState(`已叠加本机存档 ${t}`);
   }
+  renderGrid(); renderFrameEditor();
 }
 
 /* 用存档里的 dataURL 还原 10 帧 */
@@ -521,22 +570,9 @@ function buildGrid() {
     d.dataset.i = i;
     d.title = slot.enabled ? `${slot.name}（必需）` : `${slot.name}（可选）`;
     d.innerHTML = `<span class="lbl">${slot.name}</span>
-      <span class="ops">
-        <button type="button" class="re" title="以这一帧为参考重抽（图生图）">↻ 重抽</button>
-        <button type="button" class="rm" title="清空这一格">×</button>
-      </span>`;
-    // 按钮独立绑定并阻止冒泡，避免被格子的"选图"吞掉
-    d.querySelector(".re").addEventListener("click", ev => {
-      ev.stopPropagation(); ev.preventDefault(); rerollFrame(i);
-    });
-    d.querySelector(".rm").addEventListener("click", ev => {
-      ev.stopPropagation(); ev.preventDefault(); setImage(i, null);
-    });
-    // 点空白处才是"选图"
-    d.addEventListener("click", ev => {
-      if (ev.target.closest(".ops")) return;
-      pickFile(i);
-    });
+      <span class="mark" title="这一帧已修改">●</span>`;
+    // 点格子 = 选中这一帧，进入下方编辑区
+    d.addEventListener("click", () => selectFrame(i));
     d.addEventListener("dragover", ev => { ev.preventDefault(); d.style.borderColor = "#f5c85c"; });
     d.addEventListener("dragleave", () => { d.style.borderColor = ""; });
     d.addEventListener("drop", ev => {
@@ -552,6 +588,8 @@ function renderGrid() {
   document.querySelectorAll("#grid .cell").forEach((d, i) => {
     d.classList.toggle("filled", !!images[i]);
     d.classList.toggle("busy", busy[i]);
+    d.classList.toggle("selected", i === selectedSlot);
+    d.classList.toggle("edited", Object.prototype.hasOwnProperty.call(framePrompts, SLOTS[i].name));
     d.querySelectorAll("img").forEach(n => n.remove());
     if (images[i]) {
       const el = document.createElement("img");
@@ -579,7 +617,34 @@ function readToSlot(file, i) {
   };
   fr.readAsDataURL(file);
 }
-function setImage(i, img) { images[i] = img; dirty = true; renderGrid(); scheduleSave(); }
+function setImage(i, img) { images[i] = img; dirty = true; renderGrid(); renderFrameEditor(); scheduleSave(); }
+
+/* ================= 选中帧与编辑区 ================= */
+function selectFrame(i) {
+  selectedSlot = i;
+  renderGrid();
+  renderFrameEditor();
+}
+function renderFrameEditor() {
+  const t = $("feTitle"), st = $("feState"), ta = $("fePrompt"), hint = $("feHint");
+  if (!t) return;
+  if (selectedSlot < 0) {
+    t.textContent = "选中一帧开始编辑";
+    st.textContent = "点上面任意一格来选中它。";
+    ta.value = ""; ta.disabled = true; hint.textContent = "";
+    return;
+  }
+  const slot = SLOTS[selectedSlot];
+  const has = !!images[selectedSlot];
+  const own = Object.prototype.hasOwnProperty.call(framePrompts, slot.name);
+  t.textContent = `正在编辑：${slot.name}` + (slot.enabled ? "" : "（这一格在游戏里用不到）");
+  st.textContent = (has ? "当前已有图" : "当前为空") + (own ? " · 你改过这一帧的 prompt" : " · 使用默认 prompt");
+  ta.disabled = false;
+  ta.value = framePrompt(selectedSlot);
+  hint.textContent = has
+    ? "重抽会以这一帧为参考图（图生图），保证还是同一株植物。"
+    : "这一帧还没有图，重抽会用纯文本生成（文生图）。";
+}
 
 /* ================= 合成 ================= */
 function drawCell(ctx, img, cx, cy) {
@@ -701,6 +766,9 @@ async function exportZip() {
     key, cn, role: currentUnit ? currentUnit.role : $("nRole").value,
     is_new_unit: currentUnit ? !!currentUnit.isNew : true,
     prompt: fullPrompt(),
+    desc: ($("desc").value || "").trim(),
+    style: ($("style").value || "").trim(),
+    frame_prompts: Object.assign({}, framePrompts),
     frames: SLOTS.filter((s, i) => images[i]).map(s => s.name),
     filled_by_idle0: SLOTS.filter((s, i) => s.enabled && !images[i]).map(s => s.name),
     spec: { size: [256, 256], frame: 64, cols: 4, row_frames: ROW_FRAMES },
@@ -786,25 +854,44 @@ function loadImg(src) {
     im.src = src;
   });
 }
+/* 这一帧的默认 prompt：总描述 + 该行姿态要求 + 风格约束 */
+function defaultFramePrompt(i) {
+  const slot = SLOTS[i];
+  const desc = ($("desc").value || "").trim() || (currentUnit ? (currentUnit.desc || "") : "");
+  const style = ($("style").value || "").trim();
+  return (desc ? desc + "。" : "") +
+    `当前这一帧是「${slot.name}」：${ROW_HINT[slot.rowName]}。` +
+    `保持同一株植物的颜色、描边、器官结构完全不变，只改姿态与表情。` +
+    (style ? "，" + style : "");
+}
+/* 取用户为该帧写过的 prompt，没有就用默认 */
 function framePrompt(i) {
-  const s = SLOTS[i];
-  return `${fullPrompt()}。当前这一帧是「${s.name}」：${ROW_HINT[s.rowName]}。` +
-         `保持同一株植物的颜色、描边、器官结构完全不变，只改姿态与表情。`;
+  const name = SLOTS[i].name;
+  const own = (framePrompts[name] || "").trim();
+  return own || defaultFramePrompt(i);
 }
 async function rerollFrame(i) {
   if (busy[i]) return;
   const ref = images[i];
+  // 如果正在编辑这一帧，优先用编辑区里当前的文字（可能是刚改没保存的）
+  let prompt = framePrompt(i);
+  if (i === selectedSlot && $("fePrompt") && !$("fePrompt").disabled) {
+    const typed = ($("fePrompt").value || "").trim();
+    if (typed) prompt = typed;
+  }
   busy[i] = true; renderGrid();
   try {
     const img = ref
-      ? await callImg2Img(ref, framePrompt(i))     // 有图 -> 图生图，保持角色一致
-      : await callText2Img(framePrompt(i));        // 没图 -> 文生图
+      ? await callImg2Img(ref, prompt)     // 有图 -> 图生图，保持角色一致
+      : await callText2Img(prompt);        // 没图 -> 文生图
+    framePrompts[SLOTS[i].name] = prompt;  // 记下这次用的 prompt
     images[i] = img;
+    dirty = true;
     log(`第 ${SLOTS[i].name} 帧已重抽（${ref ? "图生图" : "文生图"}）`);
   } catch (e) {
     log(`重抽 ${SLOTS[i].name} 失败：${e.message}`);
   } finally {
-    busy[i] = false; renderGrid();
+    busy[i] = false; renderGrid(); renderFrameEditor(); scheduleSave();
   }
 }
 async function rerollAll() {
@@ -1002,6 +1089,7 @@ function loadKey() {
 function init() {
   buildGrid();
   fillUnitSelect();
+  renderFrameEditor();
   loadKey();
   $("unitSel").onchange = e => loadUnit(e.target.value);
   $("newBtn").onclick = () => { $("unitSel").value = "__new__"; $("newForm").style.display = "block"; $("nKey").focus(); };
@@ -1048,6 +1136,36 @@ function init() {
     setSaveState("已恢复内置原图");
     loadUnit(currentUnit.key);
   };
+  // ---- 帧编辑区
+  $("feReroll").onclick = () => {
+    if (selectedSlot < 0) { log("先点一格选中它。"); return; }
+    rerollFrame(selectedSlot);
+  };
+  $("feUpload").onclick = () => {
+    if (selectedSlot < 0) { log("先点一格选中它。"); return; }
+    $("feFile").click();
+  };
+  $("feFile").onchange = e => {
+    const f = e.target.files && e.target.files[0];
+    if (f && selectedSlot >= 0) readToSlot(f, selectedSlot);
+    e.target.value = "";
+  };
+  $("feResetPrompt").onclick = () => {
+    if (selectedSlot < 0) return;
+    delete framePrompts[SLOTS[selectedSlot].name];
+    renderFrameEditor(); renderGrid(); dirty = true; scheduleSave();
+    log("已恢复该帧的默认 prompt。");
+  };
+  $("feClear").onclick = () => {
+    if (selectedSlot < 0) return;
+    setImage(selectedSlot, null);
+  };
+  $("fePrompt").addEventListener("input", () => {
+    if (selectedSlot < 0) return;
+    framePrompts[SLOTS[selectedSlot].name] = $("fePrompt").value;
+    dirty = true; scheduleSave(); renderGrid();
+  });
+
   $("exportWorkspace").onclick = exportWorkspace;
   $("exportAll").onclick = exportAll;
   $("importArchive").onclick = () => $("importFile").click();

@@ -51,7 +51,7 @@ def collect() -> list[dict]:
                 "cn": d.get("cn", key),
                 "role": d.get("role", "ranged"),
                 "kind": kind,
-                "desc": d.get("art_prompt", "") or d.get("_note", ""),
+                "desc": d.get("art_prompt", "") or "",
                 "sheet": to_png_b64(sheet),
             })
     return units
