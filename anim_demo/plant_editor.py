@@ -59,6 +59,97 @@ PROJECTILE_TAIL = (
 PROJECTILE_REF_HINT = "配色、描边质感与参考图中的植物保持同一套体系，但画面只画道具本身；"
 
 
+
+# 精灵表布局：4 列，行帧数 [2,4,3,2]，共 11 个可用格
+FRAME_ROW = {"idle": 0, "walk": 1, "attack": 2, "hurt": 3}
+FRAME_SIZE = 64
+SHEET_COLS = 4
+
+
+def import_from_sheet(key):
+    """把 assets/sprites/<key>.png 拆成 11 帧，建立可编辑的项目目录。
+
+    返回 True 表示成功导入；False 表示没有可用的精灵表。
+    已存在的 frames 文件不会被覆盖（可重复调用）。
+    """
+    sheet = os.path.join(SPRITES_DIR, key + ".png")
+    if not os.path.exists(sheet):
+        alt = os.path.join(SPRITES_DIR, "enemies", key + ".png")
+        if os.path.exists(alt):
+            sheet = alt
+        else:
+            return False
+    from PIL import Image
+    im = Image.open(sheet).convert("RGBA")
+    proj = Project(key)
+    os.makedirs(proj.frames_dir, exist_ok=True)
+    os.makedirs(proj.cand_dir, exist_ok=True)
+
+    # 按名字推 (行, 列)
+    counters = {}
+    saved = 0
+    for name in FRAME_NAMES:
+        group = name.rsplit("_", 1)[0]
+        idx = counters.get(group, 0)
+        counters[group] = idx + 1
+        row = FRAME_ROW.get(group)
+        if row is None:
+            continue
+        box = (idx * FRAME_SIZE, row * FRAME_SIZE,
+               (idx + 1) * FRAME_SIZE, (row + 1) * FRAME_SIZE)
+        if box[0] >= im.width or box[3] > im.height:
+            continue
+        cell = im.crop(box)
+        dst = os.path.join(proj.frames_dir, name + ".png")
+        if not os.path.exists(dst):
+            cell.save(dst)
+        saved += 1
+
+    # base.png 用 idle_0
+    idle0 = os.path.join(proj.frames_dir, "idle_0.png")
+    if os.path.exists(idle0) and not os.path.exists(proj.base_path):
+        shutil.copyfile(idle0, proj.base_path)
+
+    # 建 plant.json（描述尽量取游戏数据里的 art_prompt）
+    desc = ""
+    data_json = os.path.join(HERE, "..", "tdgame", "data", "plants", key + ".json")
+    try:
+        with open(data_json, "r", encoding="utf-8") as f:
+            desc = json.load(f).get("art_prompt", "") or ""
+    except Exception:
+        desc = ""
+    if not os.path.exists(proj.json_path):
+        frames = default_frame_prompts()
+        proj.data = {
+            "key": key, "cn": key, "base_desc": desc, "frames": frames,
+            "projectile": {"enabled": False, "kind": "seed", "desc": "", "file": None},
+            "sheet": os.path.relpath(proj.sheet_path, HERE),
+            "imported_from_sheet": True,
+            "updated": time.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        proj.save()
+    return saved > 0
+
+
+def all_unit_keys():
+    """所有可编辑的角色：已有项目的 + sprites 里还没项目的。"""
+    keys = set()
+    if os.path.isdir(PLANTS_ROOT):
+        for d in os.listdir(PLANTS_ROOT):
+            if os.path.isdir(os.path.join(PLANTS_ROOT, d)):
+                keys.add(d)
+    if os.path.isdir(SPRITES_DIR):
+        for f in os.listdir(SPRITES_DIR):
+            if f.lower().endswith(".png"):
+                keys.add(os.path.splitext(f)[0])
+        enemy_dir = os.path.join(SPRITES_DIR, "enemies")
+        if os.path.isdir(enemy_dir):
+            for f in os.listdir(enemy_dir):
+                if f.lower().endswith(".png"):
+                    keys.add(os.path.splitext(f)[0])
+    return sorted(keys)
+
+
 def default_frame_prompts():
     d = dict(COMMON_FRAMES)
     d.update(DEFAULT_ATTACK)
@@ -98,6 +189,12 @@ class Project:
     @classmethod
     def open(cls, key):
         p = cls(key)
+        # 没有项目但有游戏精灵表 -> 先拆表，让现有角色也能直接编辑
+        if not os.path.exists(p.json_path) and not os.path.isdir(p.frames_dir):
+            try:
+                import_from_sheet(key)
+            except Exception as exc:                      # noqa: BLE001
+                print(f"[import_from_sheet] {key} 失败: {exc}")
         if os.path.exists(p.json_path):
             with open(p.json_path, "r", encoding="utf-8") as f:
                 p.data = json.load(f)
@@ -371,8 +468,7 @@ class App(tk.Tk):
     # ============ 项目管理 ============
     def refresh_project_list(self):
         os.makedirs(PLANTS_ROOT, exist_ok=True)
-        keys = sorted(d for d in os.listdir(PLANTS_ROOT)
-                      if os.path.isdir(os.path.join(PLANTS_ROOT, d)))
+        keys = all_unit_keys()
         self.proj_combo["values"] = keys
         if self.proj and self.proj.key in keys:
             self.proj_combo.set(self.proj.key)
