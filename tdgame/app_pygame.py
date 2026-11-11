@@ -30,6 +30,7 @@ from .engine.session import SHOVEL, PlaySession
 from .scenarios.i_zombie import ZombieBot, ZombiePlaySession
 from .scenarios.savegame import default_save_path, load_from, save_to
 from .scenarios.level_run import load_levels
+from . import ui_clear, ui_portal
 
 # ---- 配色 ----
 COL_A = (126, 196, 95)
@@ -205,6 +206,8 @@ class GameApp:
         self.cards_rect: list[tuple[pygame.Rect, str]] = []
         self.shovel_rect = pygame.Rect(0, 0, 0, 0)
         self.running = True
+        self._clear_shown = False
+        self._want_portal = False
         self.message = ""
         self.message_t = 0.0
         self.new_game()
@@ -234,6 +237,10 @@ class GameApp:
         self.message = ""
         self.message_t = 0.0
         self._recorded = False
+        try:
+            self._was_new = self.level_key not in getattr(self.progress, 'cleared', [])
+        except Exception:
+            self._was_new = False
 
     def open_workshop(self) -> None:
         """就地打开工坊；造完植物后重新开局本关。"""
@@ -398,6 +405,9 @@ class GameApp:
             self.bot.think(target)
         self.session.tick(dt_seconds)
         self._record_clear_if_needed()
+        if self.session.over and not getattr(self, '_clear_shown', False):
+            self._clear_shown = True
+            self._after_over()
         if self.message_t > 0:
             self.message_t -= dt_seconds
             if self.message_t <= 0:
@@ -639,6 +649,59 @@ class GameApp:
         hint = self.font.render(self.lbl_restart, True, (230, 230, 220))
         s.blit(hint, (WIN_W // 2 - hint.get_width() // 2, WIN_H // 2 + 10))
 
+    # ------------------------------------------------------------------ 通关
+    def _clear_ctx(self) -> dict:
+        lv = self.levels.get(self.level_key) or {}
+        rw = lv.get("reward") or {}
+        keys = sorted(self.levels)
+        nxt = None
+        if self.level_key in keys:
+            i = keys.index(self.level_key)
+            if i + 1 < len(keys):
+                nxt = keys[i + 1]
+        won = bool(getattr(self.session, "won", False))
+        return {
+            "key": self.level_key,
+            "cn": lv.get("cn") or self.level_key,
+            "won": won,
+            "duration": float(getattr(self.session, "elapsed", 0.0) or 0.0),
+            "coins": int(rw.get("coins") or 0) if won else 0,
+            "plant": rw.get("plant") if won else None,
+            "is_new": bool(getattr(self, "_was_new", False)) and won,
+            "next_key": nxt if won else None,
+            "progress": self.progress,
+        }
+
+    def _after_over(self) -> None:
+        """弹「恭喜通关」界面，并按玩家选择处理后续。"""
+        ctx = self._clear_ctx()
+        try:
+            act = ui_clear.run(ctx, screen=self.screen)
+        except Exception as exc:                     # noqa: BLE001
+            print(f"[ui_clear] {exc.__class__.__name__}: {exc}")
+            act = "restart"
+        if act == "level" and ctx.get("next_key"):
+            self.level_key = ctx["next_key"]
+            self._restart_current()
+        elif act == "restart":
+            self._restart_current()
+        elif act == "workshop":
+            self.open_workshop()
+            self._restart_current()
+        elif act == "portal":
+            self._want_portal = True
+            self.running = False
+        else:
+            self.running = False
+
+    def _restart_current(self) -> None:
+        self._recorded = False
+        self._clear_shown = False
+        self.last_clear = {}
+        self.guide = ""
+        self.message = ""
+        self.new_game()
+
     def save_snapshot(self, path: str | Path, warmup_frames: int = 30) -> Path:
         for _ in range(warmup_frames):
             self.advance(1 / 60)
@@ -692,9 +755,31 @@ def main(argv=None) -> int:
         print("snapshot:", out)
     if args.smoke:
         app.run(frames_limit=args.frames)
-    else:
-        app.run()
-    return 0
+        return 0
+
+    # 非冒烟：先进门户，玩家选完再进关卡；一局结束后回门户
+    while True:
+        act, key = ui_portal.run(app.progress, app.levels,
+                                 last_key=app.level_key, screen=app.screen)
+        if act == "quit":
+            return 0
+        if act == "workshop":
+            app.open_workshop()
+            continue
+        if act != "play" or not key:
+            return 0
+        app.level_key = key
+        app.new_game()
+        try:
+            app.run()
+        except pygame.error:
+            pass
+        if not getattr(app, "_want_portal", False):
+            return 0
+        # 回门户前把 pygame 重新拉起来（run() 结束时已经 quit）
+        pygame.init()
+        app.screen = pygame.display.set_mode((WIN_W, WIN_H))
+        app._want_portal = False
 
 
 if __name__ == "__main__":
