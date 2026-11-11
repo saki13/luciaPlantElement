@@ -141,9 +141,7 @@
     "win": 1.0
   },
   "m2_swarm": {
-    "stretch": 1.0,
-    "dur": 180.0,
-    "win": 0.0
+    "stretch": 1.7
   },
   "m3_01": {
     "waves": 9,
@@ -216,39 +214,29 @@
     "win": 0.5
   },
   "m3_11": {
-    "waves": 27,
-    "cap_max": 5,
-    "wave_gap": 13.0,
-    "dur": 176.7,
-    "win": 0.25
+    "waves": 13,
+    "cap_max": 4,
+    "wave_gap": 13.0
   },
   "m3_12": {
-    "waves": 28,
-    "cap_max": 5,
-    "wave_gap": 13.0,
-    "dur": 179.4,
-    "win": 0.25
+    "waves": 13,
+    "cap_max": 4,
+    "wave_gap": 13.0
   },
   "m3_13": {
-    "waves": 29,
+    "waves": 13,
     "cap_max": 4,
-    "wave_gap": 13.0,
-    "dur": 352.3,
-    "win": 1.0
+    "wave_gap": 13.0
   },
   "m3_14": {
-    "waves": 30,
+    "waves": 14,
     "cap_max": 4,
-    "wave_gap": 13.0,
-    "dur": 364.6,
-    "win": 1.0
+    "wave_gap": 13.0
   },
   "m3_15": {
-    "waves": 22,
-    "cap_max": 5,
-    "wave_gap": 13.0,
-    "dur": 249.6,
-    "win": 0.75
+    "waves": 14,
+    "cap_max": 6,
+    "wave_gap": 13.0
   },
   "m3_boss": {
     "stretch": 1.45,

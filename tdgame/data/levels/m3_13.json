@@ -23,7 +23,7 @@
   ],
   "spawn": {
     "mode": "budget",
-    "waves": 29,
+    "waves": 13,
     "allowed": [
       "normal",
       "fast",
